@@ -1,0 +1,16 @@
+name: CI/CD Pipeline
+
+on: 
+  push: 
+    branches: [ main ]
+  pull_request:
+    branches: [ main ]
+
+jobs: 
+  build-test: 
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: No operation
+        run: echo "This workflow currently does nothing."
+    
