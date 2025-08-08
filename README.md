@@ -41,7 +41,14 @@ Users and clients
 |Monitoring and logging|AWS cloudwatch (API: Cloudwatch API)|
  
 ### Architecture
+#### Architecture diagram: 
+![architecture_diagram](https://github.com/user-attachments/assets/41c95eae-5899-4f39-bf18-85d2d4e159ee)
 
+#### Entity Relationship diagram: 
+<img width="1412" height="1183" alt="er_diagram" src="https://github.com/user-attachments/assets/3d3d1711-d732-48c8-bbcc-7611dff5da4b" />
+
+#### Class diagram: 
+<img width="1618" height="1515" alt="class_diagram" src="https://github.com/user-attachments/assets/44d4c4fb-03b8-45d6-bba9-3f7a2ff876ae" />
 
 ### User Interfaces
 The platform has five major pages: 
