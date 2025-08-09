@@ -1,9 +1,23 @@
 #!/usr/bin/env node
 import * as cdk from 'aws-cdk-lib';
-import { InfrastructureStack } from '../lib/infrastructure-stack';
+import { ApiComputeStack } from '../lib/api-compute-stack';
+import { AuthStack } from '../lib/auth-stack';
+import { DataStorageStack } from '../lib/data-storage-stack';
+import { MonitoringStack } from '../lib/monitoring-stack';
 
 const app = new cdk.App();
-new InfrastructureStack(app, 'InfrastructureStack', {
+
+const env = {
+  account: process.env.CDK_DEFAULT_ACCOUNT,
+  region: process.env.CDK_DEFAULT_REGION,
+};
+
+new ApiComputeStack(app, 'ApiComputeStack', { env });
+new AuthStack(app, 'AuthStack', { env });
+new DataStorageStack(app, 'DataStorageStack', { env });
+new MonitoringStack(app, 'MonitoringStack', { env });
+
+// new InfrastructureStack(app, 'InfrastructureStack', {
   /* If you don't specify 'env', this stack will be environment-agnostic.
    * Account/Region-dependent features and context lookups will not work,
    * but a single synthesized template can be deployed anywhere. */
@@ -17,4 +31,4 @@ new InfrastructureStack(app, 'InfrastructureStack', {
   // env: { account: '123456789012', region: 'us-east-1' },
 
   /* For more information, see https://docs.aws.amazon.com/cdk/latest/guide/environments.html */
-});
+// });
