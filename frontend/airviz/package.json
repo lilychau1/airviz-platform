@@ -9,8 +9,14 @@
     "preview": "vite preview"
   },
   "devDependencies": {
+    "@poppanator/sveltekit-svg": "^5.0.1",
     "@sveltejs/vite-plugin-svelte": "^6.1.0",
     "svelte": "^5.37.3",
     "vite": "^7.1.0"
+  },
+  "dependencies": {
+    "@observablehq/runtime": "^6.0.0",
+    "@observablehq/stdlib": "^5.8.8",
+    "svelte-spa-router": "^4.0.1"
   }
 }
