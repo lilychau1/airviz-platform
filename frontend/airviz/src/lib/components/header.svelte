@@ -1,4 +1,4 @@
-<script>
+<script lang="ts">
   import logoUrl from '../../assets/logo.svg?url';
   import DropdownIcon from '../../assets/dropdown.svg?component';
 </script>
