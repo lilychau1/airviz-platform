@@ -2,6 +2,7 @@
 <script lang="ts">
   import { onMount, onDestroy } from 'svelte';
   import maplibregl, { Map } from "maplibre-gl";
+  import 'maplibre-gl/dist/maplibre-gl.css';
   import {fetchCurrentLocation, fetchAllLocations, fetchPollutantData, fetchMapRadius, type Coordinate, type Location} from '../MockApi'
   import { POLLUTANTS } from '../constants';
 
@@ -77,9 +78,11 @@
       const popup = new maplibregl.Popup({
         closeButton: false,
         closeOnClick: false,
+        // offset: [25, -1200], 
         anchor: "top",
         className: "custom-popup"
-      }).setOffset([125, -800]);
+      });
+      // });
 
       map.on("mouseenter", "points-layer", async (e) => {
         dotIsHovered = true;
@@ -132,9 +135,9 @@
               ${rows.join("")}
             </table>
           `;
-
+          
           popup.setLngLat(coordinates).setHTML(popupHTML).addTo(map);
-
+          
         } catch (error) {
           console.error("Failed to fetch pollutant data:", error);
           popup.remove();
