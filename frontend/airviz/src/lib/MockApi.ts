@@ -23,6 +23,12 @@ export async function fetchMapRadius(): Promise<number> {
     return 5
 }
 // Fetch all points
+export interface Colour {
+    red: number;
+    green: number;
+    blue: number;
+}
+
 export interface Location {
     id: number;
     // regionId: number; 
@@ -34,6 +40,7 @@ export interface Location {
     // subBoroughRegion: string; 
     // postcodeArea: string; 
     // description: string; 
+    currentAqiColour: Colour
 }
 
 export async function fetchAllLocations(
@@ -56,6 +63,7 @@ export async function fetchAllLocations(
         // subBoroughRegion: p.subBoroughRegion, 
         // postcodeArea: p.postcodeArea, 
         // description: p.description, 
+        currentAqiColour: p.currentAqiColour
     }));
 }
 

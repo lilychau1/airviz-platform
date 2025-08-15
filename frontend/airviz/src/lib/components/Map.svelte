@@ -33,6 +33,9 @@
         geometry: { type: "Point", coordinates: [loc.longitude, loc.latitude]},
         properties: {
           id: loc.id,
+          red: loc.currentAqiColour.red,
+          green: loc.currentAqiColour.green,
+          blue: loc.currentAqiColour.blue, 
         }
       }))
     };
@@ -58,11 +61,18 @@
         source: "points",
         paint: {
           "circle-radius": 10,
-          "circle-color": "#0078a8",
+          "circle-color": [
+            "rgb",
+            ["*", ["get", "red"], 255],
+            ["*", ["get", "green"], 255],
+            ["*", ["get", "blue"], 255]
+          ],
           "circle-stroke-width": 2,
           "circle-stroke-color": "#fff"
         }
       });
+      console.log(JSON.stringify(geojson.features, null, 2));
+
       map.on('move', () => {
         const center = map.getCenter();
         console.log(`Map moved to: [${center.lng.toFixed(6)}, ${center.lat.toFixed(6)}]`);
