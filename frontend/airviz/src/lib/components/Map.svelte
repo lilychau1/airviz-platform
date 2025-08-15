@@ -1,77 +1,46 @@
+
 <script lang="ts">
   import { onMount, onDestroy } from 'svelte';
   import maplibregl, { Map } from "maplibre-gl";
+  import {fetchCurrentLocation, fetchAllLocations, fetchPollutantData, fetchMapRadius, type Coordinate, type Location} from '../MockApi'
+  import { POLLUTANTS } from '../constants';
 
   const mapTilerAPIKey: string = import.meta.env.VITE_MAPTILER_API_KEY as string;
 
-  // Placeholder: Marker locations with names and coordinates
 
-  interface Location {
-    name: string; 
-    coordinates: [number, number]; 
-  }
+  let currentLocation: Coordinate;
+  let mapRadius: number; 
+  let allLocations: Location[];
 
-  const locations: Location[] = [
-    { name: "Main", coordinates: [-0.09, 51.505] },
-    { name: "Nearby 1", coordinates: [-0.091, 51.506] },
-    { name: "Nearby 2", coordinates: [-0.088, 51.504] },
-    { name: "Nearby 3", coordinates: [-0.092, 51.5055] }
-  ];
-
-  // Generate mock PM2.5 and PM10 data
-  interface PollutantData {
-    time: string; 
-    pm25: number; 
-    pm10: number; 
-  }
-
-  const now = new Date();
-  function generateData(): PollutantData[] {
-    const data: PollutantData[] = [];
-    for (let i = 4; i >= 1; i--) {
-      const t = new Date(now.getTime() - i * 15 * 60 * 1000);
-      data.push({
-        time: t.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
-        pm25: (10 + Math.random() * 10),
-        pm10: (20 + Math.random() * 10), 
-      });
-    }
-    return data;
-  }
-
-  // Create popup HTML string for a location
-  function makePopupHTML(loc: Location, data: PollutantData[]): string {
-    return `
-      <strong>Air Quality Data</strong><br>
-      <em>Location: [${loc.coordinates[1].toFixed(4)}, ${loc.coordinates[0].toFixed(4)}]</em>
-      <table style="margin-top:0.5em;font-size:90%">
-        <tr><th>Time</th><th>PM2.5</th><th>PM10</th></tr>
-        ${data.map(d => `<tr><td>${d.time}</td><td>${d.pm25.toFixed(1)}</td><td>${d.pm10.toFixed(1)}</td></tr>`).join("")}
-      </table>
-    `;
-  }
+  onMount(async () => {
+    // Placeholder: Fetch current locations with coordinates
+    currentLocation = await fetchCurrentLocation();
+    mapRadius = await fetchMapRadius();
+    // Placeholder: Fetch all locations on map area with latitude, longitude and radius
+    allLocations = await fetchAllLocations(currentLocation.latitude, currentLocation.longitude, mapRadius);
+    initializeMap(); // call a separate function to set up the map with allLocations, currentLocation
+  });
 
   let map: Map;
 
-  onMount(() => {
+  function initializeMap() {
     // Create GeoJSON with properties for popups
     const geojson: GeoJSON.FeatureCollection = {
       type: "FeatureCollection",
-      features: locations.map(loc => {
-        const data = generateData();
-        return {
-          type: "Feature",
-          geometry: { type: "Point", coordinates: loc.coordinates},
-          properties: { popupHTML: makePopupHTML(loc, data) }
-        };
-      })
+      features: allLocations.map(loc => ({
+        type: "Feature",
+        geometry: { type: "Point", coordinates: [loc.longitude, loc.latitude]},
+        properties: {
+          id: loc.id,
+        }
+      }))
     };
 
     // Initialise the map
     map = new maplibregl.Map({
       container: "map", 
       style: `https://api.maptiler.com/maps/winter-v2/style.json?key=${mapTilerAPIKey}`,
-      center: locations[0].coordinates,
+      center: [currentLocation.longitude, currentLocation.latitude],
       zoom: 15
     });
     console.log(`Map initialized center: [${map.getCenter().lng.toFixed(6)}, ${map.getCenter().lat.toFixed(6)}]`);
@@ -112,14 +81,64 @@
         className: "custom-popup"
       }).setOffset([125, -800]);
 
-      map.on("mouseenter", "points-layer", (e) => {
+      map.on("mouseenter", "points-layer", async (e) => {
         dotIsHovered = true;
         map.getCanvas().style.cursor = "pointer";
 
-        const coordinates = (e.features?.[0].geometry as GeoJSON.Point).coordinates.slice() as [number, number];
-        const html = (e.features?.[0].properties?.popupHTML) as string;
+        const feature = e.features?.[0];
+        if (!feature) return;
 
-        popup.setLngLat(coordinates).setHTML(html).addTo(map);
+        const coordinates = (feature.geometry as GeoJSON.Point).coordinates.slice() as [number, number];
+        const locationId = feature.properties?.id;
+
+        if (!locationId) {
+          console.warn("Location ID not found in feature properties"); 
+          return;
+        }
+        
+        try {
+          // Placeholder: Fetch last 5 records for the specific location ID, PM2.5 and PM10 pollutants
+          const [pm25Data, pm10Data] = await Promise.all([
+            fetchPollutantData(locationId, POLLUTANTS.PM25.id), 
+            fetchPollutantData(locationId, POLLUTANTS.PM10.id), 
+          ])
+
+          const rows = []; 
+          const maxRecords = 5;
+          const length = Math.min(pm25Data.length, pm10Data.length, maxRecords); // limit to 5 records or less
+          
+          for (let i = length - 1; i >= 0; i--) {
+
+            const pm25Record = pm25Data[i];
+            console.log("PM2.5 Data:", pm25Data);
+
+            const pm10Record = pm10Data[i];
+            console.log("PM10 Data:", pm10Data);
+
+            if (!pm25Record || !pm10Record) continue;  // skip if missing
+
+            const timestamp = new Date(pm25Record.timestamp).toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" });
+            const pm25 = pm25Record.concentration_value != null ? pm25Record.concentration_value.toFixed(1) : "N/A";
+            const pm10 = pm10Record.concentration_value != null ? pm10Record.concentration_value.toFixed(1) : "N/A";
+
+            rows.push(`<tr><td>${timestamp}</td><td>${pm25}</td><td>${pm10}</td></tr>`);
+          }
+
+          const popupHTML = `
+            <strong>Air Quality Data</strong><br>
+            <em>Location ID: ${locationId}</em>
+            <table style="margin-top:0.5em;font-size:90%">
+              <tr><th>Time</th><th>PM2.5 (µg/m³)</th><th>PM10 (µg/m³)</th></tr>
+              ${rows.join("")}
+            </table>
+          `;
+
+          popup.setLngLat(coordinates).setHTML(popupHTML).addTo(map);
+
+        } catch (error) {
+          console.error("Failed to fetch pollutant data:", error);
+          popup.remove();
+        }
 
         setTimeout(() => {
           const popupEl = document.querySelector('.maplibregl-popup');
@@ -147,7 +166,7 @@
         }, 10);
       });
     });
-  });
+  };
 
   onDestroy(() => {
     if (map) {

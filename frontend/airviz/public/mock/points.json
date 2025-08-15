@@ -1,6 +1,0 @@
-[
-  { "id": 1, "name": "Point 1", "coordinates": [-0.09, 51.505] },
-  { "id": 2, "name": "Point 2", "coordinates": [-0.091, 51.506] },
-  { "id": 3, "name": "Point 3", "coordinates": [-0.088, 51.504] },
-  { "id": 4, "name": "Point 4", "coordinates": [-0.092, 51.5055] }
-]
