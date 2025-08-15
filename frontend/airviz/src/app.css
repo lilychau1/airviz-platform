@@ -178,3 +178,24 @@ nav a {
 .dropdown:hover .dropdown-icon {
   transform: rotate(180deg);
 }
+
+/* Map */
+.map-landing-container {
+  width: 100vw;
+  height: calc(100vh - 64px);
+  position: relative;
+  margin-top: 64px;
+}
+
+.maplibregl-popup.custom-popup {
+  font-size: 0.9rem;
+  max-width: 250px;
+}
+
+.maplibregl-popup.custom-popup .maplibregl-popup-content {
+  background-color: white;       /* <-- white background */
+  color: #000;                    /* text color */
+  padding: 10px;                  /* some inner space */
+  border-radius: 4px;             /* round corners if you like */
+  box-shadow: 0 2px 8px rgba(0,0,0,0.2); /* drop shadow */
+}
