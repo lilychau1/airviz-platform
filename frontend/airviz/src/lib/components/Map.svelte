@@ -3,8 +3,8 @@
   import { onMount, onDestroy } from 'svelte';
   import maplibregl, { Map } from "maplibre-gl";
   import 'maplibre-gl/dist/maplibre-gl.css';
-  import {fetchCurrentLocation, fetchAllLocations, fetchPollutantData, fetchMapRadius, type Coordinate, type Location} from '../MockApi'
-  import { POLLUTANTS } from '../constants';
+  import {fetchCurrentLocation, fetchAllLocations, fetchPollutantData, fetchMapRadius} from '../../api/MockApi'
+  import { Pollutants, type Location, type Coordinate } from '../constants';
 
   const mapTilerAPIKey: string = import.meta.env.VITE_MAPTILER_API_KEY as string;
 
@@ -112,8 +112,8 @@
         try {
           // Placeholder: Fetch last 5 records for the specific location ID, PM2.5 and PM10 pollutants
           const [pm25Data, pm10Data] = await Promise.all([
-            fetchPollutantData(locationId, POLLUTANTS.PM25.id), 
-            fetchPollutantData(locationId, POLLUTANTS.PM10.id), 
+            fetchPollutantData(locationId, Pollutants.PM25.id), 
+            fetchPollutantData(locationId, Pollutants.PM10.id), 
           ])
 
           const rows = []; 
