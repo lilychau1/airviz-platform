@@ -25,8 +25,8 @@ export async function fetchAllTiles(
     currentLongitude: number, 
     currentLatitude: number, 
     radius: number): Promise<Tile[]> {
-    const resp = await fetch('/mock/locations.json')
-    if (!resp.ok) throw new Error("Failed to fetch locations");
+    const resp = await fetch('/mock/tiles.json')
+    if (!resp.ok) throw new Error("Failed to fetch tiles");
     const data = await resp.json();
 
     return data.map((p: any) => ({
