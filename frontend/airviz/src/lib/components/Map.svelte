@@ -31,14 +31,14 @@
     // Create GeoJSON with properties for popups
     const geojson: GeoJSON.FeatureCollection = {
       type: "FeatureCollection",
-      features: allTiles.map(loc => ({
+      features: allTiles.map(tile => ({
         type: "Feature",
-        geometry: { type: "Point", coordinates: [loc.longitude, loc.latitude]},
+        geometry: { type: "Point", coordinates: [tile.longitude, tile.latitude]},
         properties: {
-          id: loc.id,
-          red: loc.currentAqiColour.red,
-          green: loc.currentAqiColour.green,
-          blue: loc.currentAqiColour.blue, 
+          id: tile.id,
+          red: tile.currentAqiColour.red,
+          green: tile.currentAqiColour.green,
+          blue: tile.currentAqiColour.blue, 
         }
       }))
     };

@@ -39,12 +39,12 @@ export async function fetchAllTiles(
 
 // Fetch pollutant records
 export async function fetchPollutantData(
-    locationId: number, 
+    tileId: number, 
     pollutantId: PollutantId
 ): Promise<PollutantRecord[]> {
-    const resp = await fetch(`/mock/${locationId}/${pollutantId}.json`); 
+    const resp = await fetch(`/mock/${tileId}/${pollutantId}.json`); 
     if (!resp.ok) {
-        throw new Error(`Failed to load ${pollutantId} data for point ${locationId}`); 
+        throw new Error(`Failed to load ${pollutantId} data for point ${tileId}`); 
     }
 
     return resp.json() as Promise<PollutantRecord[]>;
