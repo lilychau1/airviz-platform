@@ -1,10 +1,7 @@
-import type { PollutantId } from "./constants";
+import type { PollutantId, Coordinate, PollutantRecord, Location } from "../lib/constants";
 
 // Fetch current location
-export interface Coordinate {
-    latitude: number;
-    longitude: number; 
-}
+
 
 export async function fetchCurrentLocation(): Promise<Coordinate> {
     const resp = await fetch('/mock/current-location.json');
@@ -23,26 +20,6 @@ export async function fetchMapRadius(): Promise<number> {
     return 5
 }
 // Fetch all points
-export interface Colour {
-    red: number;
-    green: number;
-    blue: number;
-}
-
-export interface Location {
-    id: number;
-    // regionId: number; 
-    // name: string; 
-    longitude: number; 
-    latitude: number; 
-    // boroughRegion: string; 
-    // zoneRegion: string; 
-    // subBoroughRegion: string; 
-    // postcodeArea: string; 
-    // description: string; 
-    currentAqiColour: Colour
-}
-
 export async function fetchAllLocations(
     // Params not used for now in mock
     currentLongitude: number, 
@@ -54,27 +31,13 @@ export async function fetchAllLocations(
 
     return data.map((p: any) => ({
         id: p.id, 
-        // regionId: p.regionId, 
-        // name: p.name, 
         longitude: p.longitude, 
         latitude: p.latitude, 
-        // boroughRegion: p.boroughRegion, 
-        // zoneRegion: p.zoneRegion, 
-        // subBoroughRegion: p.subBoroughRegion, 
-        // postcodeArea: p.postcodeArea, 
-        // description: p.description, 
         currentAqiColour: p.currentAqiColour
     }));
 }
 
 // Fetch pollutant records
-export interface PollutantRecord {
-    pollutantId: PollutantId; 
-    timestamp: string; 
-    concentration_value: number;
-    unit: string;
-}
-
 export async function fetchPollutantData(
     locationId: number, 
     pollutantId: PollutantId
