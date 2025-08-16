@@ -190,7 +190,6 @@ nav a {
 .maplibregl-popup.map-popup {
   font-size: 0.9rem;
   max-width: none !important;
-  width: 400px;
 }
 
 .maplibregl-popup.map-popup .maplibregl-popup-content {
@@ -199,11 +198,18 @@ nav a {
   padding: 10px; 
   border-radius: 4px; 
   box-shadow: 0 2px 8px rgba(0,0,0,0.2); 
+  width: 400px;
+  height: 320px;
+  box-sizing: border-box;
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  font-family: inherit;
 }
 
 .popup-chart-container {
   width: 350px; 
-  height: 300px; 
+  height: 250px; 
   padding: 10px;
   box-sizing: border-box;
 }
@@ -212,4 +218,11 @@ nav a {
   width: 100% !important; 
   height: 100% !important; 
   display: block;
+  flex-grow: '1';
+}
+
+.popup-info {
+  font-size: 14px;
+  line-height: 1.4;
+  font-family: inherit;
 }

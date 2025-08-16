@@ -120,7 +120,20 @@
             fetchPollutantData(locationId, Pollutants.PM10.id), 
           ])
           
-          // placeholder for testing
+          const popupContent = document.createElement('div'); 
+          popupContent.className = 'popup-chart-container'
+
+          // Popup information
+          const popupInfoDiv = document.createElement('div'); 
+          popupInfoDiv.innerHTML = `
+            <strong>Location Info</strong><br>
+            ID: ${locationId}<br>
+            Latitude: ${coordinates[1].toFixed(3)}, Longitude: ${coordinates[0].toFixed(3)}
+          `;
+          popupInfoDiv.className = 'popup-info'
+          popupContent.appendChild(popupInfoDiv);
+
+          // placeholder date for testing
           // const now = Date.now();
           const now = new Date("2025-08-11T20:00:00Z").getTime();
           const showHours = 24;
@@ -132,9 +145,6 @@
             hour: '2-digit', 
             minute: '2-digit'
           }));
-
-          const popupContent = document.createElement('div'); 
-          popupContent.className = 'popup-chart-container'
 
           const popupChartCanvas = document.createElement('canvas'); 
           popupChartCanvas.className = 'popup-chart-canvas'
@@ -203,6 +213,7 @@
               }
             }
           ); 
+          
         } catch (error) {
           console.error("Failed to fetch pollutant data:", error);
           popup.remove();
