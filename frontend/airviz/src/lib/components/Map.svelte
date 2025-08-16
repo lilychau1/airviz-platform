@@ -115,10 +115,20 @@
         try {
 
           // Placeholder: Fetch last 24 hours' records for the specific location ID, PM2.5 and PM10 pollutants
-          const [pm25Data, pm10Data, no2Data] = await Promise.all([
+          const [
+            pm25Data, 
+            pm10Data, 
+            no2Data, 
+            coData, 
+            o3Data, 
+            so2Data, 
+          ] = await Promise.all([
             fetchPollutantData(locationId, Pollutants.PM25.id), 
             fetchPollutantData(locationId, Pollutants.PM10.id), 
             fetchPollutantData(locationId, Pollutants.NO2.id), 
+            fetchPollutantData(locationId, Pollutants.CO.id), 
+            fetchPollutantData(locationId, Pollutants.O3.id), 
+            fetchPollutantData(locationId, Pollutants.SO2.id), 
           ])
           
           const popupContent = document.createElement('div'); 
@@ -140,9 +150,12 @@
           const showHours = 24;
           const cutoff = now - showHours * 60 * 60 * 1000; 
 
-          const filteredPm25 = pm25Data.filter(d => (new Date(d.timestamp)).getTime() >= cutoff)
-          const filteredPm10 = pm10Data.filter(d => (new Date(d.timestamp)).getTime() >= cutoff)
-          const filteredNo2 = no2Data.filter(d => (new Date(d.timestamp)).getTime() >= cutoff)
+          const filteredPm25 = pm25Data.filter(d => (new Date(d.timestamp)).getTime() >= cutoff); 
+          const filteredPm10 = pm10Data.filter(d => (new Date(d.timestamp)).getTime() >= cutoff); 
+          const filteredNo2 = no2Data.filter(d => (new Date(d.timestamp)).getTime() >= cutoff); 
+          const filteredCo = coData.filter(d => (new Date(d.timestamp)).getTime() >= cutoff); 
+          const filteredO3 = o3Data.filter(d => (new Date(d.timestamp)).getTime() >= cutoff); 
+          const filteredSo2 = so2Data.filter(d => (new Date(d.timestamp)).getTime() >= cutoff); 
 
           const labels = filteredPm25.map(d => new Date(d.timestamp).toLocaleTimeString([], {
             hour: '2-digit', 
@@ -170,8 +183,8 @@
                   {
                     label: 'PM2.5 (µg/m³)',
                     data: filteredPm25.map(d => d.concentration_value),
-                    yAxisID: 'y-left', 
-                    borderColor: 'rgba(255, 99, 132, 1)',
+                    yAxisID: 'y-left',
+                    borderColor: 'rgba(255, 99, 132, 1)',        // Red
                     backgroundColor: 'rgba(255, 99, 132, 0.2)',
                     fill: true,
                     tension: 0.3,
@@ -179,17 +192,44 @@
                   {
                     label: 'PM10 (µg/m³)',
                     data: filteredPm10.map(d => d.concentration_value),
-                    yAxisID: 'y-left', 
-                    borderColor: 'rgba(54, 162, 235, 1)',
+                    yAxisID: 'y-left',
+                    borderColor: 'rgba(54, 162, 235, 1)',        // Blue
                     backgroundColor: 'rgba(54, 162, 235, 0.2)',
                     fill: true,
                     tension: 0.3,
                   },
                   {
-                    label: 'NO2 (Parts per Billion)',
+                    label: 'NO2 (ppb)',
                     data: filteredNo2.map(d => d.concentration_value),
-                    yAxisID: 'y-right', 
-                    borderColor: 'rgba(75, 192, 192, 1)',
+                    yAxisID: 'y-right',
+                    borderColor: 'rgba(255, 206, 86, 1)',         // Yellow
+                    backgroundColor: 'rgba(255, 206, 86, 0.2)',
+                    fill: true,
+                    tension: 0.3,
+                  },
+                  {
+                    label: 'CO (ppb)',
+                    data: filteredCo.map(d => d.concentration_value),
+                    yAxisID: 'y-right',
+                    borderColor: 'rgba(153, 102, 255, 1)',        // Purple
+                    backgroundColor: 'rgba(153, 102, 255, 0.2)',
+                    fill: true,
+                    tension: 0.3,
+                  },
+                  {
+                    label: 'O3 (ppb)',
+                    data: filteredO3.map(d => d.concentration_value),
+                    yAxisID: 'y-right',
+                    borderColor: 'rgba(255, 159, 64, 1)',         // Orange
+                    backgroundColor: 'rgba(255, 159, 64, 0.2)',
+                    fill: true,
+                    tension: 0.3,
+                  },
+                  {
+                    label: 'SO2 (ppb)',
+                    data: filteredSo2.map(d => d.concentration_value),
+                    yAxisID: 'y-right',
+                    borderColor: 'rgba(75, 192, 192, 1)',         // Teal
                     backgroundColor: 'rgba(75, 192, 192, 0.2)',
                     fill: true,
                     tension: 0.3,
@@ -222,7 +262,7 @@
                     position: 'right',
                     title: {
                       display: true,
-                      text: 'Concentration (ppb)'
+                      text: 'Concentration (Parts Per Billion)'
                     },
                     grid: {
                       drawOnChartArea: false 
@@ -233,11 +273,20 @@
                 plugins: {
                   legend: {
                     display: true,
+                    position: 'top', 
+                    labels: {
+                      font: {
+                        size: 10 
+                      },
+                      usePointStyle: true,
+                      padding: 5
+                    }
                   }
                 },
-                interaction: {
-                  mode: 'nearest',
-                  intersect: false
+                layout: {
+                  padding: {
+                    top: 10,             
+                  }
                 }
               }
             }
