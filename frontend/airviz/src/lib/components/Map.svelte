@@ -3,11 +3,13 @@
   import { onMount, onDestroy } from 'svelte';
   import maplibregl, { Map } from "maplibre-gl";
   import 'maplibre-gl/dist/maplibre-gl.css';
+  import ChartLib from "chart.js/auto";
+  import type { Chart } from "chart.js";
+
   import {fetchCurrentLocation, fetchAllLocations, fetchPollutantData, fetchMapRadius} from '../../api/MockApi'
   import { Pollutants, type Location, type Coordinate } from '../constants';
 
   const mapTilerAPIKey: string = import.meta.env.VITE_MAPTILER_API_KEY as string;
-
 
   let currentLocation: Coordinate;
   let mapRadius: number; 
@@ -23,6 +25,7 @@
   });
 
   let map: Map;
+  let chart: Chart | null = null;
 
   function initializeMap() {
     // Create GeoJSON with properties for popups
@@ -71,16 +74,16 @@
           "circle-stroke-color": "#fff"
         }
       });
-      console.log(JSON.stringify(geojson.features, null, 2));
+      // console.log(JSON.stringify(geojson.features, null, 2));
 
       map.on('move', () => {
         const center = map.getCenter();
-        console.log(`Map moved to: [${center.lng.toFixed(6)}, ${center.lat.toFixed(6)}]`);
+        // console.log(`Map moved to: [${center.lng.toFixed(6)}, ${center.lat.toFixed(6)}]`);
       });
 
       map.on('moveend', () => {
         const center = map.getCenter();
-        console.log(`Map move ended at: [${center.lng.toFixed(6)}, ${center.lat.toFixed(6)}]`);
+        // console.log(`Map move ended at: [${center.lng.toFixed(6)}, ${center.lat.toFixed(6)}]`);
       });
 
       let popupIsHovered = false;
@@ -90,7 +93,7 @@
         closeOnClick: false,
         // offset: [25, -1200], 
         anchor: "top",
-        className: "custom-popup"
+        className: "map-popup"
       });
       // });
 
@@ -110,44 +113,96 @@
         }
         
         try {
-          // Placeholder: Fetch last 5 records for the specific location ID, PM2.5 and PM10 pollutants
+
+          // Placeholder: Fetch last 24 hours' records for the specific location ID, PM2.5 and PM10 pollutants
           const [pm25Data, pm10Data] = await Promise.all([
             fetchPollutantData(locationId, Pollutants.PM25.id), 
             fetchPollutantData(locationId, Pollutants.PM10.id), 
           ])
-
-          const rows = []; 
-          const maxRecords = 5;
-          const length = Math.min(pm25Data.length, pm10Data.length, maxRecords); // limit to 5 records or less
           
-          for (let i = length - 1; i >= 0; i--) {
+          // placeholder for testing
+          // const now = Date.now();
+          const now = new Date("2025-08-11T20:00:00Z").getTime();
+          const showHours = 24;
+          const cutoff = now - showHours * 60 * 60 * 1000; 
 
-            const pm25Record = pm25Data[i];
-            console.log("PM2.5 Data:", pm25Data);
+          const filteredPm25 = pm25Data.filter(d => (new Date(d.timestamp)).getTime() >= cutoff)
+          const filteredPm10 = pm10Data.filter(d => (new Date(d.timestamp)).getTime() >= cutoff)
+          const labels = filteredPm25.map(d => new Date(d.timestamp).toLocaleTimeString([], {
+            hour: '2-digit', 
+            minute: '2-digit'
+          }));
 
-            const pm10Record = pm10Data[i];
-            console.log("PM10 Data:", pm10Data);
+          const popupContent = document.createElement('div'); 
+          popupContent.className = 'popup-chart-container'
 
-            if (!pm25Record || !pm10Record) continue;  // skip if missing
+          const popupChartCanvas = document.createElement('canvas'); 
+          popupChartCanvas.className = 'popup-chart-canvas'
 
-            const timestamp = new Date(pm25Record.timestamp).toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" });
-            const pm25 = pm25Record.concentration_value != null ? pm25Record.concentration_value.toFixed(1) : "N/A";
-            const pm10 = pm10Record.concentration_value != null ? pm10Record.concentration_value.toFixed(1) : "N/A";
-
-            rows.push(`<tr><td>${timestamp}</td><td>${pm25}</td><td>${pm10}</td></tr>`);
+          popupContent.appendChild(popupChartCanvas); 
+          
+          popup.setLngLat(coordinates).setDOMContent(popupContent).addTo(map);
+          
+          if (chart) {
+            chart.destroy(); 
+            chart = null; 
           }
-
-          const popupHTML = `
-            <strong>Air Quality Data</strong><br>
-            <em>Location ID: ${locationId}</em>
-            <table style="margin-top:0.5em;font-size:90%">
-              <tr><th>Time</th><th>PM2.5 (µg/m³)</th><th>PM10 (µg/m³)</th></tr>
-              ${rows.join("")}
-            </table>
-          `;
           
-          popup.setLngLat(coordinates).setHTML(popupHTML).addTo(map);
-          
+          chart = new ChartLib(
+            popupChartCanvas, {
+              type: 'line', 
+              data: {
+                labels: labels, 
+                datasets: [
+                  {
+                    label: 'PM2.5 (µg/m³)',
+                    data: filteredPm25.map(d => d.concentration_value),
+                    borderColor: 'rgba(255, 99, 132, 1)',
+                    backgroundColor: 'rgba(255, 99, 132, 0.2)',
+                    fill: true,
+                    tension: 0.3,
+                  },
+                  {
+                    label: 'PM10 (µg/m³)',
+                    data: filteredPm10.map(d => d.concentration_value),
+                    borderColor: 'rgba(54, 162, 235, 1)',
+                    backgroundColor: 'rgba(54, 162, 235, 0.2)',
+                    fill: true,
+                    tension: 0.3,
+                  }
+                ]
+              }, 
+              options: {
+                responsive: true,
+                maintainAspectRatio: false,
+                scales: {
+                  x: {
+                    display: true,
+                    title: {
+                      display: true,
+                      text: 'Time'
+                    }
+                  },
+                  y: {
+                    display: true,
+                    title: {
+                      display: true,
+                      text: 'Concentration (µg/m³)'
+                    }
+                  }
+                },
+                plugins: {
+                  legend: {
+                    display: true,
+                  }
+                },
+                interaction: {
+                  mode: 'nearest',
+                  intersect: false
+                }
+              }
+            }
+          ); 
         } catch (error) {
           console.error("Failed to fetch pollutant data:", error);
           popup.remove();

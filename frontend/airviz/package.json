@@ -21,6 +21,7 @@
   "dependencies": {
     "@observablehq/runtime": "^6.0.0",
     "@observablehq/stdlib": "^5.8.8",
+    "chart.js": "^4.5.0",
     "svelte-spa-router": "^4.0.1"
   }
 }
