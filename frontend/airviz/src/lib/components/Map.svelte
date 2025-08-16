@@ -115,9 +115,10 @@
         try {
 
           // Placeholder: Fetch last 24 hours' records for the specific location ID, PM2.5 and PM10 pollutants
-          const [pm25Data, pm10Data] = await Promise.all([
+          const [pm25Data, pm10Data, no2Data] = await Promise.all([
             fetchPollutantData(locationId, Pollutants.PM25.id), 
             fetchPollutantData(locationId, Pollutants.PM10.id), 
+            fetchPollutantData(locationId, Pollutants.NO2.id), 
           ])
           
           const popupContent = document.createElement('div'); 
@@ -141,6 +142,8 @@
 
           const filteredPm25 = pm25Data.filter(d => (new Date(d.timestamp)).getTime() >= cutoff)
           const filteredPm10 = pm10Data.filter(d => (new Date(d.timestamp)).getTime() >= cutoff)
+          const filteredNo2 = no2Data.filter(d => (new Date(d.timestamp)).getTime() >= cutoff)
+
           const labels = filteredPm25.map(d => new Date(d.timestamp).toLocaleTimeString([], {
             hour: '2-digit', 
             minute: '2-digit'
@@ -167,6 +170,7 @@
                   {
                     label: 'PM2.5 (µg/m³)',
                     data: filteredPm25.map(d => d.concentration_value),
+                    yAxisID: 'y-left', 
                     borderColor: 'rgba(255, 99, 132, 1)',
                     backgroundColor: 'rgba(255, 99, 132, 0.2)',
                     fill: true,
@@ -175,8 +179,18 @@
                   {
                     label: 'PM10 (µg/m³)',
                     data: filteredPm10.map(d => d.concentration_value),
+                    yAxisID: 'y-left', 
                     borderColor: 'rgba(54, 162, 235, 1)',
                     backgroundColor: 'rgba(54, 162, 235, 0.2)',
+                    fill: true,
+                    tension: 0.3,
+                  },
+                  {
+                    label: 'NO2 (Parts per Billion)',
+                    data: filteredNo2.map(d => d.concentration_value),
+                    yAxisID: 'y-right', 
+                    borderColor: 'rgba(75, 192, 192, 1)',
+                    backgroundColor: 'rgba(75, 192, 192, 0.2)',
                     fill: true,
                     tension: 0.3,
                   }
@@ -193,12 +207,27 @@
                       text: 'Time'
                     }
                   },
-                  y: {
-                    display: true,
+                  'y-left': {
+                    type: 'linear', 
+                    position: 'left', 
+
                     title: {
                       display: true,
                       text: 'Concentration (µg/m³)'
-                    }
+                    }, 
+                    min: 0, 
+                  }, 
+                  'y-right': {
+                    type: 'linear',
+                    position: 'right',
+                    title: {
+                      display: true,
+                      text: 'Concentration (ppb)'
+                    },
+                    grid: {
+                      drawOnChartArea: false 
+                    },
+                    min: 0, 
                   }
                 },
                 plugins: {
