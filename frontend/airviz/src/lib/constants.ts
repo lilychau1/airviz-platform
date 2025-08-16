@@ -24,7 +24,7 @@ export interface Colour {
     blue: number;
 }
 
-export interface Location {
+export interface Tile {
     id: number;
     longitude: number; 
     latitude: number;
@@ -35,4 +35,11 @@ export interface PollutantRecord {
     timestamp: string; 
     concentration_value: number;
     unit: string;
+}
+
+export interface Tile {
+    id: number;
+    longitude: number; 
+    latitude: number;
+    currentAqiColour: Colour
 }

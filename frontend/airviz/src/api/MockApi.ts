@@ -1,4 +1,4 @@
-import type { PollutantId, Coordinate, PollutantRecord, Location } from "../lib/constants";
+import type { PollutantId, Coordinate, PollutantRecord, Tile } from "../lib/constants";
 
 // Fetch current location
 
@@ -20,11 +20,11 @@ export async function fetchMapRadius(): Promise<number> {
     return 5
 }
 // Fetch all points
-export async function fetchAllLocations(
+export async function fetchAllTiles(
     // Params not used for now in mock
     currentLongitude: number, 
     currentLatitude: number, 
-    radius: number): Promise<Location[]> {
+    radius: number): Promise<Tile[]> {
     const resp = await fetch('/mock/locations.json')
     if (!resp.ok) throw new Error("Failed to fetch locations");
     const data = await resp.json();

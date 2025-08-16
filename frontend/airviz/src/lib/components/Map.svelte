@@ -6,21 +6,21 @@
   import ChartLib from "chart.js/auto";
   import type { Chart } from "chart.js";
 
-  import {fetchCurrentLocation, fetchAllLocations, fetchPollutantData, fetchMapRadius} from '../../api/MockApi'
-  import { Pollutants, type Location, type Coordinate } from '../constants';
+  import {fetchCurrentLocation, fetchAllTiles as fetchAllTiles, fetchPollutantData, fetchMapRadius} from '../../api/MockApi'
+  import { Pollutants, type Tile, type Coordinate } from '../constants';
 
   const mapTilerAPIKey: string = import.meta.env.VITE_MAPTILER_API_KEY as string;
 
   let currentLocation: Coordinate;
   let mapRadius: number; 
-  let allLocations: Location[];
+  let allTiles: Tile[];
 
   onMount(async () => {
     // Placeholder: Fetch current locations with coordinates
     currentLocation = await fetchCurrentLocation();
     mapRadius = await fetchMapRadius();
     // Placeholder: Fetch all locations on map area with latitude, longitude and radius
-    allLocations = await fetchAllLocations(currentLocation.latitude, currentLocation.longitude, mapRadius);
+    allTiles = await fetchAllTiles(currentLocation.latitude, currentLocation.longitude, mapRadius);
     initializeMap(); // call a separate function to set up the map with allLocations, currentLocation
   });
 
@@ -31,7 +31,7 @@
     // Create GeoJSON with properties for popups
     const geojson: GeoJSON.FeatureCollection = {
       type: "FeatureCollection",
-      features: allLocations.map(loc => ({
+      features: allTiles.map(loc => ({
         type: "Feature",
         geometry: { type: "Point", coordinates: [loc.longitude, loc.latitude]},
         properties: {
@@ -105,16 +105,16 @@
         if (!feature) return;
 
         const coordinates = (feature.geometry as GeoJSON.Point).coordinates.slice() as [number, number];
-        const locationId = feature.properties?.id;
+        const tileId = feature.properties?.id;
 
-        if (!locationId) {
-          console.warn("Location ID not found in feature properties"); 
+        if (!tileId) {
+          console.warn("Tile ID not found in feature properties"); 
           return;
         }
         
         try {
 
-          // Placeholder: Fetch last 24 hours' records for the specific location ID, PM2.5 and PM10 pollutants
+          // Placeholder: Fetch last 24 hours' records for the specific Tile ID, PM2.5 and PM10 pollutants
           const [
             pm25Data, 
             pm10Data, 
@@ -123,12 +123,12 @@
             o3Data, 
             so2Data, 
           ] = await Promise.all([
-            fetchPollutantData(locationId, Pollutants.PM25.id), 
-            fetchPollutantData(locationId, Pollutants.PM10.id), 
-            fetchPollutantData(locationId, Pollutants.NO2.id), 
-            fetchPollutantData(locationId, Pollutants.CO.id), 
-            fetchPollutantData(locationId, Pollutants.O3.id), 
-            fetchPollutantData(locationId, Pollutants.SO2.id), 
+            fetchPollutantData(tileId, Pollutants.PM25.id), 
+            fetchPollutantData(tileId, Pollutants.PM10.id), 
+            fetchPollutantData(tileId, Pollutants.NO2.id), 
+            fetchPollutantData(tileId, Pollutants.CO.id), 
+            fetchPollutantData(tileId, Pollutants.O3.id), 
+            fetchPollutantData(tileId, Pollutants.SO2.id), 
           ])
           
           const popupContent = document.createElement('div'); 
@@ -137,8 +137,8 @@
           // Popup information
           const popupInfoDiv = document.createElement('div'); 
           popupInfoDiv.innerHTML = `
-            <strong>Location Info</strong><br>
-            ID: ${locationId}<br>
+            <strong>Tile Info</strong><br>
+            ID: ${tileId}<br>
             Latitude: ${coordinates[1].toFixed(3)}, Longitude: ${coordinates[0].toFixed(3)}
           `;
           popupInfoDiv.className = 'popup-info'
