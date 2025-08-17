@@ -1,6 +1,0 @@
-[
-  { "id": 1, "regionId": 1, "name": "Point 1", "longitude": -0.09,  "latitude":51.505, "boroughRegion": "Borough 1", "zoneRegion": "Zone 1", "subBoroughRegion": "subBoroughRegion 1", "postcodeArea": "SE1", "description": "This location is...", "currentAqiColour": { "red": 0.0, "green": 0.8, "blue": 0.0 }},
-  { "id": 2,  "regionId": 1,"name": "Point 2", "longitude": -0.091, "latitude": 51.506, "boroughRegion": "Borough 1", "zoneRegion": "Zone 1", "subBoroughRegion": "subBoroughRegion 1", "postcodeArea": "SE1", "description": "This location is...", "currentAqiColour": { "red": 1.0, "green": 1.0, "blue": 0.0 }},
-  { "id": 3, "regionId": 3, "name": "Point 3", "longitude": -0.088, "latitude": 51.504, "boroughRegion": "Borough 2", "zoneRegion": "Zone 2", "subBoroughRegion": "subBoroughRegion 2", "postcodeArea": "NW1", "description": "This location is...", "currentAqiColour": { "red": 1.0, "green": 0.55, "blue": 0.0 }},
-  { "id": 4, "regionId": 2, "name": "Point 4", "longitude": -0.092, "latitude": 51.5055, "boroughRegion": "Borough 2", "zoneRegion": "Zone 2", "subBoroughRegion": "subBoroughRegion 2", "postcodeArea": "NW1", "description": "This location is...", "currentAqiColour": { "red": 0.5, "green": 0.0, "blue": 0.0 }}
-]

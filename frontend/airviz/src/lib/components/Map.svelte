@@ -3,39 +3,42 @@
   import { onMount, onDestroy } from 'svelte';
   import maplibregl, { Map } from "maplibre-gl";
   import 'maplibre-gl/dist/maplibre-gl.css';
-  import {fetchCurrentLocation, fetchAllLocations, fetchPollutantData, fetchMapRadius} from '../../api/MockApi'
-  import { Pollutants, type Location, type Coordinate } from '../constants';
+  import ChartLib from "chart.js/auto";
+  import type { Chart } from "chart.js";
+
+  import {fetchCurrentLocation, fetchAllTiles as fetchAllTiles, fetchPollutantData, fetchMapRadius, fetchTileInformation} from '../../api/MockApi'
+  import { Pollutants, type Tile, type Coordinate, LevelCategory } from '../constants';
 
   const mapTilerAPIKey: string = import.meta.env.VITE_MAPTILER_API_KEY as string;
 
-
   let currentLocation: Coordinate;
   let mapRadius: number; 
-  let allLocations: Location[];
+  let allTiles: Tile[];
 
   onMount(async () => {
     // Placeholder: Fetch current locations with coordinates
     currentLocation = await fetchCurrentLocation();
     mapRadius = await fetchMapRadius();
     // Placeholder: Fetch all locations on map area with latitude, longitude and radius
-    allLocations = await fetchAllLocations(currentLocation.latitude, currentLocation.longitude, mapRadius);
+    allTiles = await fetchAllTiles(currentLocation.latitude, currentLocation.longitude, mapRadius);
     initializeMap(); // call a separate function to set up the map with allLocations, currentLocation
   });
 
   let map: Map;
+  let chart: Chart | null = null;
 
   function initializeMap() {
     // Create GeoJSON with properties for popups
     const geojson: GeoJSON.FeatureCollection = {
       type: "FeatureCollection",
-      features: allLocations.map(loc => ({
+      features: allTiles.map(tile => ({
         type: "Feature",
-        geometry: { type: "Point", coordinates: [loc.longitude, loc.latitude]},
+        geometry: { type: "Point", coordinates: [tile.longitude, tile.latitude]},
         properties: {
-          id: loc.id,
-          red: loc.currentAqiColour.red,
-          green: loc.currentAqiColour.green,
-          blue: loc.currentAqiColour.blue, 
+          id: tile.id,
+          red: tile.currentAqiColour.red,
+          green: tile.currentAqiColour.green,
+          blue: tile.currentAqiColour.blue, 
         }
       }))
     };
@@ -63,24 +66,24 @@
           "circle-radius": 10,
           "circle-color": [
             "rgb",
-            ["*", ["get", "red"], 255],
-            ["*", ["get", "green"], 255],
-            ["*", ["get", "blue"], 255]
+            ["*", ["coalesce", ["get", "red"], 0], 255],
+            ["*", ["coalesce", ["get", "green"], 0], 255],
+            ["*", ["coalesce", ["get", "blue"], 0], 255], 
           ],
           "circle-stroke-width": 2,
           "circle-stroke-color": "#fff"
         }
       });
-      console.log(JSON.stringify(geojson.features, null, 2));
+      // console.log(JSON.stringify(geojson.features, null, 2));
 
       map.on('move', () => {
         const center = map.getCenter();
-        console.log(`Map moved to: [${center.lng.toFixed(6)}, ${center.lat.toFixed(6)}]`);
+        // console.log(`Map moved to: [${center.lng.toFixed(6)}, ${center.lat.toFixed(6)}]`);
       });
 
       map.on('moveend', () => {
         const center = map.getCenter();
-        console.log(`Map move ended at: [${center.lng.toFixed(6)}, ${center.lat.toFixed(6)}]`);
+        // console.log(`Map move ended at: [${center.lng.toFixed(6)}, ${center.lat.toFixed(6)}]`);
       });
 
       let popupIsHovered = false;
@@ -90,7 +93,7 @@
         closeOnClick: false,
         // offset: [25, -1200], 
         anchor: "top",
-        className: "custom-popup"
+        className: "map-popup"
       });
       // });
 
@@ -102,51 +105,213 @@
         if (!feature) return;
 
         const coordinates = (feature.geometry as GeoJSON.Point).coordinates.slice() as [number, number];
-        const locationId = feature.properties?.id;
+        const tileId = feature.properties?.id;
 
-        if (!locationId) {
-          console.warn("Location ID not found in feature properties"); 
+        if (!tileId) {
+          console.warn("Tile ID not found in feature properties"); 
           return;
         }
-        
-        try {
-          // Placeholder: Fetch last 5 records for the specific location ID, PM2.5 and PM10 pollutants
-          const [pm25Data, pm10Data] = await Promise.all([
-            fetchPollutantData(locationId, Pollutants.PM25.id), 
-            fetchPollutantData(locationId, Pollutants.PM10.id), 
-          ])
 
-          const rows = []; 
-          const maxRecords = 5;
-          const length = Math.min(pm25Data.length, pm10Data.length, maxRecords); // limit to 5 records or less
-          
-          for (let i = length - 1; i >= 0; i--) {
+        // Initialise pop-up content space
+        const popupContent = document.createElement('div'); 
+        popupContent.className = 'popup-chart-container'
 
-            const pm25Record = pm25Data[i];
-            console.log("PM2.5 Data:", pm25Data);
+        const googleMapLink = document.createElement('a');
+        googleMapLink.href = `https://www.google.com/maps?q=${coordinates[1]},${coordinates[0]}`;
+        googleMapLink.target = '_blank';
+        googleMapLink.rel = 'noopener noreferrer';
+        googleMapLink.textContent = 'Google Map';
 
-            const pm10Record = pm10Data[i];
-            console.log("PM10 Data:", pm10Data);
+        // Popup tile information
+        const tileInformationDiv = document.createElement('div'); 
+        tileInformationDiv.innerHTML = 'Loading tile details...'; 
+        tileInformationDiv.className = 'popup-tile-information'; 
+        popupContent.appendChild(tileInformationDiv); 
+        fetchTileInformation(tileId).then((data) => {
+          tileInformationDiv.innerHTML = `
+            <strong>Name: ${data.name}</strong><br>
 
-            if (!pm25Record || !pm10Record) continue;  // skip if missing
-
-            const timestamp = new Date(pm25Record.timestamp).toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" });
-            const pm25 = pm25Record.concentration_value != null ? pm25Record.concentration_value.toFixed(1) : "N/A";
-            const pm10 = pm10Record.concentration_value != null ? pm10Record.concentration_value.toFixed(1) : "N/A";
-
-            rows.push(`<tr><td>${timestamp}</td><td>${pm25}</td><td>${pm10}</td></tr>`);
-          }
-
-          const popupHTML = `
-            <strong>Air Quality Data</strong><br>
-            <em>Location ID: ${locationId}</em>
-            <table style="margin-top:0.5em;font-size:90%">
-              <tr><th>Time</th><th>PM2.5 (µg/m³)</th><th>PM10 (µg/m³)</th></tr>
-              ${rows.join("")}
-            </table>
+            Region: ${data.region}<br>
+            Borough: ${data.boroughRegion}<br>
+            AQI: <span style="color: ${LevelCategory[data.currentAqiCategoryLevel as 1 | 2 | 3]?.colour ?? 'black'}">${data.currentAqi}<br></span>
+            <span style="color: ${LevelCategory[data.currentPm25Level as 1 | 2 | 3]?.colour ?? 'black'}">PM2.5</span>&nbsp;&nbsp;&nbsp;&nbsp;
+            <span style="color: ${LevelCategory[data.currentPm10Level as 1 | 2 | 3]?.colour ?? 'black'}">PM10</span>&nbsp;&nbsp;&nbsp;&nbsp;
+            <span style="color: ${LevelCategory[data.currentNo2Level as 1 | 2 | 3]?.colour ?? 'black'}">NO2</span>&nbsp;&nbsp;&nbsp;&nbsp;
+            <span style="color: ${LevelCategory[data.currentO3Level as 1 | 2 | 3]?.colour ?? 'black'}">O3</span>&nbsp;&nbsp;&nbsp;&nbsp;
+            <span style="color: ${LevelCategory[data.currentSo2Level as 1 | 2 | 3]?.colour ?? 'black'}">SO2</span>&nbsp;&nbsp;&nbsp;&nbsp;
+            <span style="color: ${LevelCategory[data.currentCoLevel as 1 | 2 | 3]?.colour ?? 'black'}">CO</span>
           `;
+        }).catch((error) => {
+          tileInformationDiv.innerHTML = `<span style="color: red;">Failed to load tile information.</span>`;
+          console.error(error);
+        });
+      
+        try {
+
+          // Placeholder: Fetch last 24 hours' records for the specific Tile ID, PM2.5 and PM10 pollutants
+          const [
+            pm25Data, 
+            pm10Data, 
+            no2Data, 
+            coData, 
+            o3Data, 
+            so2Data, 
+          ] = await Promise.all([
+            fetchPollutantData(tileId, Pollutants.PM25.id), 
+            fetchPollutantData(tileId, Pollutants.PM10.id), 
+            fetchPollutantData(tileId, Pollutants.NO2.id), 
+            fetchPollutantData(tileId, Pollutants.CO.id), 
+            fetchPollutantData(tileId, Pollutants.O3.id), 
+            fetchPollutantData(tileId, Pollutants.SO2.id), 
+          ])
           
-          popup.setLngLat(coordinates).setHTML(popupHTML).addTo(map);
+          // placeholder date for testing
+          // const now = Date.now();
+          const now = new Date("2025-08-11T20:00:00Z").getTime();
+          const showHours = 24;
+          const cutoff = now - showHours * 60 * 60 * 1000; 
+
+          const filteredPm25 = pm25Data.filter(d => (new Date(d.timestamp)).getTime() >= cutoff); 
+          const filteredPm10 = pm10Data.filter(d => (new Date(d.timestamp)).getTime() >= cutoff); 
+          const filteredNo2 = no2Data.filter(d => (new Date(d.timestamp)).getTime() >= cutoff); 
+          const filteredCo = coData.filter(d => (new Date(d.timestamp)).getTime() >= cutoff); 
+          const filteredO3 = o3Data.filter(d => (new Date(d.timestamp)).getTime() >= cutoff); 
+          const filteredSo2 = so2Data.filter(d => (new Date(d.timestamp)).getTime() >= cutoff); 
+
+          const labels = filteredPm25.map(d => new Date(d.timestamp).toLocaleTimeString([], {
+            hour: '2-digit', 
+            minute: '2-digit'
+          }));
+
+          const popupChartCanvas = document.createElement('canvas'); 
+          popupChartCanvas.className = 'popup-chart-canvas'
+
+          popupContent.appendChild(popupChartCanvas); 
+          
+          popup.setLngLat(coordinates).setDOMContent(popupContent).addTo(map);
+          
+          if (chart) {
+            chart.destroy(); 
+            chart = null; 
+          }
+          
+          chart = new ChartLib(
+            popupChartCanvas, {
+              type: 'line', 
+              data: {
+                labels: labels, 
+                datasets: [
+                  {
+                    label: 'PM2.5 (µg/m³)',
+                    data: filteredPm25.map(d => d.concentration_value),
+                    yAxisID: 'y-left',
+                    borderColor: 'rgba(255, 99, 132, 1)',        // Red
+                    backgroundColor: 'rgba(255, 99, 132, 0.2)',
+                    fill: true,
+                    tension: 0.3,
+                  },
+                  {
+                    label: 'PM10 (µg/m³)',
+                    data: filteredPm10.map(d => d.concentration_value),
+                    yAxisID: 'y-left',
+                    borderColor: 'rgba(54, 162, 235, 1)',        // Blue
+                    backgroundColor: 'rgba(54, 162, 235, 0.2)',
+                    fill: true,
+                    tension: 0.3,
+                  },
+                  {
+                    label: 'NO2 (ppb)',
+                    data: filteredNo2.map(d => d.concentration_value),
+                    yAxisID: 'y-right',
+                    borderColor: 'rgba(255, 206, 86, 1)',         // Yellow
+                    backgroundColor: 'rgba(255, 206, 86, 0.2)',
+                    fill: true,
+                    tension: 0.3,
+                  },
+                  {
+                    label: 'CO (ppb)',
+                    data: filteredCo.map(d => d.concentration_value),
+                    yAxisID: 'y-right',
+                    borderColor: 'rgba(153, 102, 255, 1)',        // Purple
+                    backgroundColor: 'rgba(153, 102, 255, 0.2)',
+                    fill: true,
+                    tension: 0.3,
+                  },
+                  {
+                    label: 'O3 (ppb)',
+                    data: filteredO3.map(d => d.concentration_value),
+                    yAxisID: 'y-right',
+                    borderColor: 'rgba(255, 159, 64, 1)',         // Orange
+                    backgroundColor: 'rgba(255, 159, 64, 0.2)',
+                    fill: true,
+                    tension: 0.3,
+                  },
+                  {
+                    label: 'SO2 (ppb)',
+                    data: filteredSo2.map(d => d.concentration_value),
+                    yAxisID: 'y-right',
+                    borderColor: 'rgba(75, 192, 192, 1)',         // Teal
+                    backgroundColor: 'rgba(75, 192, 192, 0.2)',
+                    fill: true,
+                    tension: 0.3,
+                  }
+                ]
+              }, 
+              options: {
+                responsive: true,
+                maintainAspectRatio: false,
+                scales: {
+                  x: {
+                    display: true,
+                    title: {
+                      display: true,
+                      text: 'Time'
+                    }
+                  },
+                  'y-left': {
+                    type: 'linear', 
+                    position: 'left', 
+
+                    title: {
+                      display: true,
+                      text: 'Concentration (µg/m³)'
+                    }, 
+                    min: 0, 
+                  }, 
+                  'y-right': {
+                    type: 'linear',
+                    position: 'right',
+                    title: {
+                      display: true,
+                      text: 'Concentration (Parts Per Billion)'
+                    },
+                    grid: {
+                      drawOnChartArea: false 
+                    },
+                    min: 0, 
+                  }
+                },
+                plugins: {
+                  legend: {
+                    display: true,
+                    position: 'top', 
+                    labels: {
+                      font: {
+                        size: 10 
+                      },
+                      usePointStyle: true,
+                      padding: 5
+                    }
+                  }
+                },
+                layout: {
+                  padding: {
+                    top: 10,             
+                  }
+                }
+              }
+            }
+          ); 
           
         } catch (error) {
           console.error("Failed to fetch pollutant data:", error);

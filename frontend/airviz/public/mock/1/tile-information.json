@@ -1,0 +1,13 @@
+{ 
+    "name": "Point 1", 
+    "region": "Greater London", 
+    "boroughRegion": "Southwark", 
+    "currentAqi": 82, 
+    "currentAqiCategoryLevel": 1, 
+    "currentPm25Level": 1, 
+    "currentPm10Level": 1, 
+    "currentNo2Level": 1, 
+    "currentO3Level": 1, 
+    "currentSo2Level": 1, 
+    "currentCoLevel": 1
+}

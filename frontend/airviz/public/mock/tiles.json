@@ -1,0 +1,43 @@
+[
+  { 
+    "id": 1, 
+    "longitude": -0.09, 
+    "latitude":51.505, 
+    "currentAqiColour":
+    { 
+      "red": 0.30980393, 
+      "green": 0.73333335, 
+      "blue": 0.20784314 
+    }
+  },
+  { 
+    "id": 2, 
+    "longitude": -0.096432, 
+    "latitude": 51.499646, 
+    "currentAqiColour":
+    { 
+      "red": 1, 
+      "green": 0.16470589 
+    }
+  },
+  { 
+    "id": 3, 
+    "longitude": -0.109721, 
+    "latitude": 51.504270, 
+    "currentAqiColour":
+    { 
+      "red": 1, 
+      "green": 0.77254903 
+    }
+  },
+  { 
+    "id": 4, 
+    "longitude": -0.108662, 
+    "latitude": 51.498403, 
+    "currentAqiColour":
+    { 
+      "red": 1, 
+      "green": 0.4117647 
+    }
+  }
+]
