@@ -1,6 +1,6 @@
 [
-  { "id": 1, "regionId": 1, "name": "Point 1", "longitude": -0.09,  "latitude":51.505, "boroughRegionId": 1, "zoneRegionId": 1, "subBoroughRegionId": 1, "postcodeAreaId": 1, "description": "This location is...", "currentAqiColour": { "red": 0.30980393, "green": 0.73333335, "blue": 0.20784314 }},
-  { "id": 2,  "regionId": 1,"name": "Point 2", "longitude": -0.091, "latitude": 51.506, "boroughRegionId": 1, "zoneRegionId": 1, "subBoroughRegionId": 1, "postcodeAreaId": 2, "description": "This location is...", "currentAqiColour": { "red": 1, "green": 0.16470589 }},
-  { "id": 3, "regionId": 3, "name": "Point 3", "longitude": -0.088, "latitude": 51.504, "boroughRegionId": 2, "zoneRegionId": 2, "subBoroughRegionId": 2, "postcodeAreaId": 2, "description": "This location is...", "currentAqiColour": { "red": 1, "green": 0.77254903 }},
-  { "id": 4, "regionId": 2, "name": "Point 4", "longitude": -0.092, "latitude": 51.5055, "boroughRegionId": 2, "zoneRegionId": 2, "subBoroughRegionId": 2, "postcodeAreaId": 2, "description": "This location is...", "currentAqiColour": { "red": 1, "green": 0.4117647 }}
+  { "id": 1, "regionId": 1, "name": "Point 1", "longitude": -0.09,  "latitude":51.505, "currentAqiColour": { "red": 0.30980393, "green": 0.73333335, "blue": 0.20784314 }},
+  { "id": 2,  "regionId": 1,"name": "Point 2", "longitude": -0.091, "latitude": 51.506, "currentAqiColour": { "red": 1, "green": 0.16470589 }},
+  { "id": 3, "regionId": 3, "name": "Point 3", "longitude": -0.088, "latitude": 51.504, "currentAqiColour": { "red": 1, "green": 0.77254903 }},
+  { "id": 4, "regionId": 2, "name": "Point 4", "longitude": -0.092, "latitude": 51.5055, "currentAqiColour": { "red": 1, "green": 0.4117647 }}
 ]
