@@ -6,8 +6,8 @@
   import ChartLib from "chart.js/auto";
   import type { Chart } from "chart.js";
 
-  import {fetchCurrentLocation, fetchAllTiles as fetchAllTiles, fetchPollutantData, fetchMapRadius} from '../../api/MockApi'
-  import { Pollutants, type Tile, type Coordinate } from '../constants';
+  import {fetchCurrentLocation, fetchAllTiles as fetchAllTiles, fetchPollutantData, fetchMapRadius, fetchTileInformation} from '../../api/MockApi'
+  import { Pollutants, type Tile, type Coordinate, LevelCategory } from '../constants';
 
   const mapTilerAPIKey: string = import.meta.env.VITE_MAPTILER_API_KEY as string;
 
@@ -111,7 +111,41 @@
           console.warn("Tile ID not found in feature properties"); 
           return;
         }
-        
+
+        // Initialise pop-up content space
+        const popupContent = document.createElement('div'); 
+        popupContent.className = 'popup-chart-container'
+
+        const googleMapLink = document.createElement('a');
+        googleMapLink.href = `https://www.google.com/maps?q=${coordinates[1]},${coordinates[0]}`;
+        googleMapLink.target = '_blank';
+        googleMapLink.rel = 'noopener noreferrer';
+        googleMapLink.textContent = 'Google Map';
+
+        // Popup tile information
+        const tileInformationDiv = document.createElement('div'); 
+        tileInformationDiv.innerHTML = 'Loading tile details...'; 
+        tileInformationDiv.className = 'popup-tile-information'; 
+        popupContent.appendChild(tileInformationDiv); 
+        fetchTileInformation(tileId).then((data) => {
+          tileInformationDiv.innerHTML = `
+            <strong>Name: ${data.name}</strong><br>
+
+            Region: ${data.region}<br>
+            Borough: ${data.boroughRegion}<br>
+            AQI: <span style="color: ${LevelCategory[data.currentAqiCategoryLevel as 1 | 2 | 3]?.colour ?? 'black'}">${data.currentAqi}<br></span>
+            <span style="color: ${LevelCategory[data.currentPm25Level as 1 | 2 | 3]?.colour ?? 'black'}">PM2.5</span>&nbsp;&nbsp;&nbsp;&nbsp;
+            <span style="color: ${LevelCategory[data.currentPm10Level as 1 | 2 | 3]?.colour ?? 'black'}">PM10</span>&nbsp;&nbsp;&nbsp;&nbsp;
+            <span style="color: ${LevelCategory[data.currentNo2Level as 1 | 2 | 3]?.colour ?? 'black'}">NO2</span>&nbsp;&nbsp;&nbsp;&nbsp;
+            <span style="color: ${LevelCategory[data.currentO3Level as 1 | 2 | 3]?.colour ?? 'black'}">O3</span>&nbsp;&nbsp;&nbsp;&nbsp;
+            <span style="color: ${LevelCategory[data.currentSo2Level as 1 | 2 | 3]?.colour ?? 'black'}">SO2</span>&nbsp;&nbsp;&nbsp;&nbsp;
+            <span style="color: ${LevelCategory[data.currentCoLevel as 1 | 2 | 3]?.colour ?? 'black'}">CO</span>
+          `;
+        }).catch((error) => {
+          tileInformationDiv.innerHTML = `<span style="color: red;">Failed to load tile information.</span>`;
+          console.error(error);
+        });
+      
         try {
 
           // Placeholder: Fetch last 24 hours' records for the specific Tile ID, PM2.5 and PM10 pollutants
@@ -131,19 +165,6 @@
             fetchPollutantData(tileId, Pollutants.SO2.id), 
           ])
           
-          const popupContent = document.createElement('div'); 
-          popupContent.className = 'popup-chart-container'
-
-          // Popup information
-          const popupInfoDiv = document.createElement('div'); 
-          popupInfoDiv.innerHTML = `
-            <strong>Tile Info</strong><br>
-            ID: ${tileId}<br>
-            Latitude: ${coordinates[1].toFixed(3)}, Longitude: ${coordinates[0].toFixed(3)}
-          `;
-          popupInfoDiv.className = 'popup-info'
-          popupContent.appendChild(popupInfoDiv);
-
           // placeholder date for testing
           // const now = Date.now();
           const now = new Date("2025-08-11T20:00:00Z").getTime();
