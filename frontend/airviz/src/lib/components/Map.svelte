@@ -66,9 +66,9 @@
           "circle-radius": 10,
           "circle-color": [
             "rgb",
-            ["*", ["get", "red"], 255],
-            ["*", ["get", "green"], 255],
-            ["*", ["get", "blue"], 255]
+            ["*", ["coalesce", ["get", "red"], 0], 255],
+            ["*", ["coalesce", ["get", "green"], 0], 255],
+            ["*", ["coalesce", ["get", "blue"], 0], 255], 
           ],
           "circle-stroke-width": 2,
           "circle-stroke-color": "#fff"
