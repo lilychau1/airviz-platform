@@ -198,22 +198,18 @@
         const popupContent = document.createElement('div'); 
         popupContent.className = 'popup-chart-container';
 
-        const googleMapLink = document.createElement('a');
-        googleMapLink.href = `https://www.google.com/maps?q=${coordinates[1]},${coordinates[0]}`;
-        googleMapLink.target = '_blank';
-        googleMapLink.rel = 'noopener noreferrer';
-        googleMapLink.textContent = 'Google Map';
-
         // Popup tile information
         const tileInformationDiv = document.createElement('div'); 
         tileInformationDiv.innerHTML = 'Loading tile details...'; 
         tileInformationDiv.className = 'popup-tile-information'; 
         popupContent.appendChild(tileInformationDiv); 
+
         fetchTileInformation(tileId).then((data) => {
           tileInformationDiv.innerHTML = `
             <strong>Name: ${data.name}</strong><br>
             Region: ${data.region}<br>
             Borough: ${data.boroughRegion}<br>
+            View in Google Map
             AQI: <span style="color: ${LevelCategory[data.currentAqiCategoryLevel as 1 | 2 | 3]?.colour ?? 'black'}">${data.currentAqi}<br></span>
             <span style="color: ${LevelCategory[data.currentPm25Level as 1 | 2 | 3]?.colour ?? 'black'}">PM2.5</span>&nbsp;&nbsp;&nbsp;&nbsp;
             <span style="color: ${LevelCategory[data.currentPm10Level as 1 | 2 | 3]?.colour ?? 'black'}">PM10</span>&nbsp;&nbsp;&nbsp;&nbsp;
@@ -227,6 +223,15 @@
           console.error(error);
         });
       
+        // Google map link
+        const googleMapLink = document.createElement('a');
+        googleMapLink.href = `https://www.google.com/maps?q=${coordinates[1]},${coordinates[0]}`;
+        googleMapLink.target = '_blank';
+        googleMapLink.rel = 'noopener noreferrer';
+        googleMapLink.textContent = 'View Tile in Google Map';
+
+        popupContent.appendChild(googleMapLink);
+
         try {
 
           // Placeholder: Fetch last 24 hours' records for the specific Tile ID, PM2.5 and PM10 pollutants
@@ -263,7 +268,6 @@
 
           const popupChartCanvas = document.createElement('canvas'); 
           popupChartCanvas.className = 'popup-chart-canvas'
-
           popupContent.appendChild(popupChartCanvas); 
           
           popup.setLngLat(coordinates).setDOMContent(popupContent).addTo(map);

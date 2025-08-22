@@ -266,3 +266,53 @@ nav a {
   margin-top: 6px;
   font-size: 0.85rem;
 }
+
+/* Tile details */
+
+.tile-details-container h1.tile-name {
+  font-size: 2rem;
+  font-weight: bold;
+  margin-bottom: 0.2rem;
+}
+
+.tile-details-container h3.tile-subheader {
+  font-size: 1.25rem;
+  color: #555;
+  margin-bottom: 1rem;
+}
+
+/* Container for card + map side by side */
+.tile-details-container .content {
+  display: flex;
+  gap: 1rem;
+}
+
+/* The card container */
+.tile-details-container .details-card {
+  background: white;
+  padding: 1rem;
+  border-radius: 12px;
+  box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+  flex: 1;
+  /* Optional max-width to keep left half */
+  max-width: 50%;
+}
+
+/* Grid inside the card for two columns of labels and values */
+.tile-details-container .details-grid {
+  display: grid;
+  grid-template-columns: auto auto;
+  gap: 0.6rem 1rem;
+  font-size: 0.9rem;
+  color: #333;
+}
+
+/* The map container on the right */
+.tile-details-container .map-frame {
+  flex: 1;
+  min-height: 300px;
+  border-radius: 12px;
+  overflow: hidden;
+  /* Optional max-width for right half */
+  max-width: 50%;
+}

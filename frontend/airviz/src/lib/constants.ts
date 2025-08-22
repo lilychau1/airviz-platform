@@ -37,13 +37,6 @@ export interface PollutantRecord {
   unit: string;
 }
 
-export interface Tile {
-  id: number;
-  longitude: number; 
-  latitude: number;
-  currentAqiColour: Colour
-}
-
 export interface TileInformation {
   name: string; 
   region: string; 
@@ -72,3 +65,15 @@ export const LevelCategory: { readonly [key in LevelKey]: LevelInfo } = {
   2: {category: "Moderate", colour: "#FFAE42"}, 
   3: {category: "Poor", colour: "crimson"}, 
 } as const; 
+
+export interface TileDetails {
+  id: number; 
+  name: string;
+  longitude: number;
+  latitude: number; 
+  region: string; 
+  boroughRegion: string;
+  zoneRegion: number;
+  postcodeArea: string;
+  Description: string;
+}

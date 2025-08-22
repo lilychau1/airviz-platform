@@ -1,0 +1,41 @@
+<script lang="ts">
+  import { params } from 'svelte-spa-router';
+  import TileDetailsSection from '../lib/components/tileDetails/TileDetailsSection.svelte';
+  import { fetchTileDetails } from '../api/MockApi';
+  import type { TileDetails } from '../lib/constants';
+
+  // Get ID from the route param (string -> number)
+$: tileId = Number($params?.id ?? 0);
+
+  let tileDetails: TileDetails;
+  let error: string | null = null;
+  let loading = true;
+
+  $: if (tileId) {
+    // Reset states when tileId changes
+    loading = true;
+    error = null;
+
+    fetchTileDetails(tileId)
+      .then(data => {
+        tileDetails = data;
+      })
+      .catch(e => {
+        error = `Failed to fetch tile details for tile ID ${tileId}`;
+        console.error(error, e);
+      })
+      .finally(() => {
+        loading = false;
+      });
+  }
+</script>
+
+{#if loading}
+  <p>Loading tile details for tile ID {tileId}...</p>
+{:else if error}
+  <p>{error}</p>
+{:else if tileDetails}
+  <TileDetailsSection tile={tileDetails} />
+{:else}
+  <p>No tile details found.</p>
+{/if}

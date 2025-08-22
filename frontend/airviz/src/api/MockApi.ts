@@ -1,4 +1,4 @@
-import type { PollutantId, Coordinates, PollutantRecord, Tile, TileInformation } from "../lib/constants";
+import type { PollutantId, Coordinates, PollutantRecord, Tile, TileInformation, TileDetails } from "../lib/constants";
 
 // Fetch current location
 
@@ -69,8 +69,21 @@ export async function fetchTileInformation(
 ): Promise<TileInformation> {
     const resp = await fetch(`/mock/${tileId}/tile-information.json`); 
     if (!resp.ok) {
-        throw new Error(`Failed to load Tile ID ${tileId} data for point ${tileId}`); 
+        throw new Error(`Failed to load data for tile ID ${tileId}`); 
     }
 
     return resp.json() as Promise<TileInformation>;
+}
+
+// Fetch tile details (on tile details page)
+export async function fetchTileDetails(
+    tileId: number
+): Promise<TileDetails> {
+    const resp = await fetch(`/mock/${tileId}/tile-details.json`); 
+    console.log(resp)
+    if (!resp.ok) {
+        throw new Error(`Failed to load Tile details for tile ID ${tileId}`); 
+    }
+
+    return resp.json() as Promise<TileDetails>;
 }
