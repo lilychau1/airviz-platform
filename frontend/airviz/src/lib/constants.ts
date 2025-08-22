@@ -13,7 +13,7 @@ export type PollutantId = typeof Pollutants[keyof typeof Pollutants]["id"];
 
 export type PollutantLabel = typeof Pollutants[keyof typeof Pollutants]["label"];
 
-export interface Coordinate {
+export interface Coordinates {
   latitude: number;
   longitude: number; 
 }

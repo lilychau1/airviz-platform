@@ -7,25 +7,102 @@
   import type { Chart } from "chart.js";
 
   import {fetchCurrentLocation, fetchAllTiles as fetchAllTiles, fetchPollutantData, fetchMapRadius, fetchTileInformation} from '../../api/MockApi'
-  import { Pollutants, type Tile, type Coordinate, LevelCategory } from '../constants';
+  import { Pollutants, type Tile, type Coordinates, LevelCategory } from '../constants';
 
   const mapTilerAPIKey: string = import.meta.env.VITE_MAPTILER_API_KEY as string;
 
-  let currentLocation: Coordinate;
+  let currentLocation: Coordinates;
   let mapRadius: number; 
   let allTiles: Tile[];
+
+  // Filter data
+  function filterByTimeRange<T extends { timestamp: string }>(
+    data: T[], 
+    fromTimestamp: number, 
+    toTimestamp: number
+  ): T[] {
+    return data.filter(d => {
+      const t = new Date(d.timestamp).getTime();
+      return t >= fromTimestamp && t <= toTimestamp;
+    });
+  }
+
+  function updateMapSourceData(tiles: Tile[]) {
+    if (!map || !map.isStyleLoaded()) return;
+
+    const geojson: GeoJSON.FeatureCollection = {
+      type: "FeatureCollection",
+      features: tiles.map(tile => ({
+        type: "Feature",
+        geometry: { type: "Point", coordinates: [tile.longitude, tile.latitude] },
+        properties: {
+          id: tile.id,
+          red: tile.currentAqiColour.red,
+          green: tile.currentAqiColour.green,
+          blue: tile.currentAqiColour.blue,
+        }
+      }))
+    };
+
+    if (map.getSource("points")) {
+      (map.getSource("points") as maplibregl.GeoJSONSource).setData(geojson);
+    } else {
+      map.addSource("points", { type: "geojson", data: geojson });
+      map.addLayer({
+        id: "points-layer",
+        type: "circle",
+        source: "points",
+        paint: {
+          "circle-radius": 10,
+          "circle-color": [
+            "rgb",
+            ["*", ["coalesce", ["get", "red"], 0], 255],
+            ["*", ["coalesce", ["get", "green"], 0], 255],
+            ["*", ["coalesce", ["get", "blue"], 0], 255],
+          ],
+          "circle-stroke-width": 2,
+          "circle-stroke-color": "#fff"
+        }
+      });
+    }
+  }
 
   onMount(async () => {
     // Placeholder: Fetch current locations with coordinates
     currentLocation = await fetchCurrentLocation();
     mapRadius = await fetchMapRadius();
     // Placeholder: Fetch all locations on map area with latitude, longitude and radius
-    allTiles = await fetchAllTiles(currentLocation.latitude, currentLocation.longitude, mapRadius);
-    initializeMap(); // call a separate function to set up the map with allLocations, currentLocation
+    allTiles = await fetchAllTiles(
+      currentLocation.latitude, 
+      currentLocation.longitude, 
+      mapRadius, 
+      selectedTimestamp
+    );
+    initializeMap();
   });
 
   let map: Map;
   let chart: Chart | null = null;
+
+  // placeholder date for testing
+  // const now = Date.now();
+  const now = new Date("2025-08-11T20:00:00Z").getTime();
+  let sliderHour = 0;
+  $: selectedTimestamp = now - sliderHour * 3600 * 1000;
+  $: if (selectedTimestamp && currentLocation && mapRadius) {
+    fetchAllTiles(
+      currentLocation.latitude,
+      currentLocation.longitude,
+      mapRadius,
+      selectedTimestamp
+    ).then(tiles => {
+      allTiles = tiles;
+      if (map) {
+        updateMapSourceData(allTiles);
+      }
+    }).catch(console.error);
+  }
+
 
   function initializeMap() {
     // Create GeoJSON with properties for popups
@@ -74,7 +151,7 @@
           "circle-stroke-color": "#fff"
         }
       });
-      // console.log(JSON.stringify(geojson.features, null, 2));
+      console.log(JSON.stringify(geojson.features, null, 2));
 
       map.on('move', () => {
         const center = map.getCenter();
@@ -165,18 +242,15 @@
             fetchPollutantData(tileId, Pollutants.SO2.id), 
           ])
           
-          // placeholder date for testing
-          // const now = Date.now();
-          const now = new Date("2025-08-11T20:00:00Z").getTime();
           const showHours = 24;
-          const cutoff = now - showHours * 60 * 60 * 1000; 
+          const cutoff = selectedTimestamp - showHours * 60 * 60 * 1000; 
 
-          const filteredPm25 = pm25Data.filter(d => (new Date(d.timestamp)).getTime() >= cutoff); 
-          const filteredPm10 = pm10Data.filter(d => (new Date(d.timestamp)).getTime() >= cutoff); 
-          const filteredNo2 = no2Data.filter(d => (new Date(d.timestamp)).getTime() >= cutoff); 
-          const filteredCo = coData.filter(d => (new Date(d.timestamp)).getTime() >= cutoff); 
-          const filteredO3 = o3Data.filter(d => (new Date(d.timestamp)).getTime() >= cutoff); 
-          const filteredSo2 = so2Data.filter(d => (new Date(d.timestamp)).getTime() >= cutoff); 
+          const filteredPm25 = filterByTimeRange(pm25Data, cutoff, selectedTimestamp); 
+          const filteredPm10 = filterByTimeRange(pm10Data, cutoff, selectedTimestamp); 
+          const filteredNo2 = filterByTimeRange(no2Data, cutoff, selectedTimestamp); 
+          const filteredCo = filterByTimeRange(coData, cutoff, selectedTimestamp); 
+          const filteredO3 = filterByTimeRange(o3Data, cutoff, selectedTimestamp); 
+          const filteredSo2 = filterByTimeRange(so2Data, cutoff, selectedTimestamp); 
 
           const labels = filteredPm25.map(d => new Date(d.timestamp).toLocaleTimeString([], {
             hour: '2-digit', 
@@ -205,7 +279,7 @@
                     label: 'PM2.5 (µg/m³)',
                     data: filteredPm25.map(d => d.concentration_value),
                     yAxisID: 'y-left',
-                    borderColor: 'rgba(255, 99, 132, 1)',        // Red
+                    borderColor: 'rgba(255, 99, 132, 1)', 
                     backgroundColor: 'rgba(255, 99, 132, 0.2)',
                     fill: true,
                     tension: 0.3,
@@ -214,7 +288,7 @@
                     label: 'PM10 (µg/m³)',
                     data: filteredPm10.map(d => d.concentration_value),
                     yAxisID: 'y-left',
-                    borderColor: 'rgba(54, 162, 235, 1)',        // Blue
+                    borderColor: 'rgba(54, 162, 235, 1)',
                     backgroundColor: 'rgba(54, 162, 235, 0.2)',
                     fill: true,
                     tension: 0.3,
@@ -223,7 +297,7 @@
                     label: 'NO2 (ppb)',
                     data: filteredNo2.map(d => d.concentration_value),
                     yAxisID: 'y-right',
-                    borderColor: 'rgba(255, 206, 86, 1)',         // Yellow
+                    borderColor: 'rgba(255, 206, 86, 1)', 
                     backgroundColor: 'rgba(255, 206, 86, 0.2)',
                     fill: true,
                     tension: 0.3,
@@ -232,7 +306,7 @@
                     label: 'CO (ppb)',
                     data: filteredCo.map(d => d.concentration_value),
                     yAxisID: 'y-right',
-                    borderColor: 'rgba(153, 102, 255, 1)',        // Purple
+                    borderColor: 'rgba(153, 102, 255, 1)',
                     backgroundColor: 'rgba(153, 102, 255, 0.2)',
                     fill: true,
                     tension: 0.3,
@@ -241,7 +315,7 @@
                     label: 'O3 (ppb)',
                     data: filteredO3.map(d => d.concentration_value),
                     yAxisID: 'y-right',
-                    borderColor: 'rgba(255, 159, 64, 1)',         // Orange
+                    borderColor: 'rgba(255, 159, 64, 1)',
                     backgroundColor: 'rgba(255, 159, 64, 0.2)',
                     fill: true,
                     tension: 0.3,
@@ -250,7 +324,7 @@
                     label: 'SO2 (ppb)',
                     data: filteredSo2.map(d => d.concentration_value),
                     yAxisID: 'y-right',
-                    borderColor: 'rgba(75, 192, 192, 1)',         // Teal
+                    borderColor: 'rgba(75, 192, 192, 1)',
                     backgroundColor: 'rgba(75, 192, 192, 0.2)',
                     fill: true,
                     tension: 0.3,
@@ -353,4 +427,21 @@
   });
 </script>
 
-<div id="map" class="map-landing-container"></div>
+<div class="map-wrapper">
+  <div id="map" class="map-landing-container"></div>
+
+  <div class="time-slider-container">
+    <label for="timeSlider">Show Hour: {24 - sliderHour}h ago</label>
+    <input 
+      id="timeSlider" 
+      type="range" 
+      min="0" 
+      max="23" 
+      bind:value={sliderHour} 
+      step="1" 
+    />
+    <div class="time-slider-timestamp">
+      {new Date(selectedTimestamp).toLocaleString()}
+    </div>
+  </div>
+</div>
