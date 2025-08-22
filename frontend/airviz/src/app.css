@@ -226,3 +226,43 @@ nav a {
   line-height: 1.4;
   font-family: inherit;
 }
+
+.map-wrapper {
+  position: relative;
+  width: 100vw;
+  height: calc(100vh - 64px);
+  margin-top: 64px;
+}
+
+.time-slider-container {
+  position: absolute;
+  top: 10px;
+  left: 10px;
+  transform: none;
+  background: rgba(255, 255, 255, 0.9);
+  padding: 10px 15px;
+  border-radius: 8px;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.15);
+  z-index: 1000;
+  width: 320px;
+  font-family: inherit;
+  text-align: left;
+}
+
+
+.time-slider-container label {
+  font-weight: 600;
+  font-size: 0.9rem;
+  margin-bottom: 6px;
+  display: block;
+}
+
+.time-slider-container input[type="range"] {
+  width: 100%;
+  direction: rtl;
+}
+
+.time-slider-timestamp {
+  margin-top: 6px;
+  font-size: 0.85rem;
+}

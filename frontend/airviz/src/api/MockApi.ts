@@ -1,9 +1,9 @@
-import type { PollutantId, Coordinate, PollutantRecord, Tile, TileInformation } from "../lib/constants";
+import type { PollutantId, Coordinates, PollutantRecord, Tile, TileInformation } from "../lib/constants";
 
 // Fetch current location
 
 
-export async function fetchCurrentLocation(): Promise<Coordinate> {
+export async function fetchCurrentLocation(): Promise<Coordinates> {
     const resp = await fetch('/mock/current-location.json');
     if (!resp.ok) throw new Error("Failed to fetch current locations");
     
@@ -24,12 +24,25 @@ export async function fetchAllTiles(
     // Params not used for now in mock
     currentLongitude: number, 
     currentLatitude: number, 
-    radius: number): Promise<Tile[]> {
+    radius: number, 
+    timestamp: number,     
+): Promise<Tile[]> {
+    const timestampDate = new Date(timestamp);
+    timestampDate.setMinutes(0, 0, 0);
+    const isoTimestampString = timestampDate.toISOString().replace(/\.\d{3}Z$/, 'Z');;
+
     const resp = await fetch('/mock/tiles.json')
     if (!resp.ok) throw new Error("Failed to fetch tiles");
     const data = await resp.json();
+    const tileDataForTimestamp = data[isoTimestampString];
 
-    return data.map((p: any) => ({
+    if (tileDataForTimestamp) {
+    console.log('Tiles for this hour:', tileDataForTimestamp);
+    } else {
+    console.log('No tile data found for timestamp:', isoTimestampString);
+    }
+
+    return tileDataForTimestamp.map((p: any) => ({
         id: p.id, 
         longitude: p.longitude, 
         latitude: p.latitude, 
