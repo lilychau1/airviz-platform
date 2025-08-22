@@ -1,4 +1,3 @@
-
 <script lang="ts">
   import { onMount, onDestroy } from 'svelte';
   import maplibregl, { Map } from "maplibre-gl";
@@ -6,7 +5,13 @@
   import ChartLib from "chart.js/auto";
   import type { Chart } from "chart.js";
 
-  import {fetchCurrentLocation, fetchAllTiles as fetchAllTiles, fetchPollutantData, fetchMapRadius, fetchTileInformation} from '../../api/MockApi'
+  import { 
+    fetchCurrentLocation, 
+    fetchAllTiles, 
+    fetchPollutantData, 
+    fetchMapRadius, 
+    fetchTileInformation 
+  } from '../../api/MockApi';
   import { Pollutants, type Tile, type Coordinates, LevelCategory } from '../constants';
 
   const mapTilerAPIKey: string = import.meta.env.VITE_MAPTILER_API_KEY as string;
@@ -15,7 +20,15 @@
   let mapRadius: number; 
   let allTiles: Tile[];
 
-  // Filter data
+  let map: Map;
+  let chart: Chart | null = null;
+
+  // placeholder date for testing
+  const now = new Date("2025-08-11T20:00:00Z").getTime();
+  let sliderHour = 0;
+  let selectedTimestamp = now;
+
+  // Helper functions
   function filterByTimeRange<T extends { timestamp: string }>(
     data: T[], 
     fromTimestamp: number, 
@@ -67,6 +80,22 @@
     }
   }
 
+  async function refreshTiles() {
+    if (!currentLocation || !mapRadius) return;
+    try {
+      const tiles = await fetchAllTiles(
+        currentLocation.latitude,
+        currentLocation.longitude,
+        mapRadius,
+        selectedTimestamp
+      );
+      allTiles = tiles;
+      updateMapSourceData(allTiles);
+    } catch (err) {
+      console.error("Failed to refresh tiles:", err);
+    }
+  }
+
   onMount(async () => {
     // Placeholder: Fetch current locations with coordinates
     currentLocation = await fetchCurrentLocation();
@@ -81,28 +110,11 @@
     initializeMap();
   });
 
-  let map: Map;
-  let chart: Chart | null = null;
-
-  // placeholder date for testing
-  // const now = Date.now();
-  const now = new Date("2025-08-11T20:00:00Z").getTime();
-  let sliderHour = 0;
-  $: selectedTimestamp = now - sliderHour * 3600 * 1000;
-  $: if (selectedTimestamp && currentLocation && mapRadius) {
-    fetchAllTiles(
-      currentLocation.latitude,
-      currentLocation.longitude,
-      mapRadius,
-      selectedTimestamp
-    ).then(tiles => {
-      allTiles = tiles;
-      if (map) {
-        updateMapSourceData(allTiles);
-      }
-    }).catch(console.error);
-  }
-
+  onDestroy(() => {
+    if (map) {
+      map.remove();
+    }
+  });
 
   function initializeMap() {
     // Create GeoJSON with properties for popups
@@ -153,14 +165,10 @@
       });
       console.log(JSON.stringify(geojson.features, null, 2));
 
-      map.on('move', () => {
-        const center = map.getCenter();
-        // console.log(`Map moved to: [${center.lng.toFixed(6)}, ${center.lat.toFixed(6)}]`);
-      });
-
       map.on('moveend', () => {
         const center = map.getCenter();
-        // console.log(`Map move ended at: [${center.lng.toFixed(6)}, ${center.lat.toFixed(6)}]`);
+        currentLocation = { latitude: center.lat, longitude: center.lng };
+        refreshTiles();
       });
 
       let popupIsHovered = false;
@@ -168,16 +176,13 @@
       const popup = new maplibregl.Popup({
         closeButton: false,
         closeOnClick: false,
-        // offset: [25, -1200], 
         anchor: "top",
         className: "map-popup"
       });
-      // });
 
       map.on("mouseenter", "points-layer", async (e) => {
         dotIsHovered = true;
         map.getCanvas().style.cursor = "pointer";
-
         const feature = e.features?.[0];
         if (!feature) return;
 
@@ -191,7 +196,7 @@
 
         // Initialise pop-up content space
         const popupContent = document.createElement('div'); 
-        popupContent.className = 'popup-chart-container'
+        popupContent.className = 'popup-chart-container';
 
         const googleMapLink = document.createElement('a');
         googleMapLink.href = `https://www.google.com/maps?q=${coordinates[1]},${coordinates[0]}`;
@@ -207,7 +212,6 @@
         fetchTileInformation(tileId).then((data) => {
           tileInformationDiv.innerHTML = `
             <strong>Name: ${data.name}</strong><br>
-
             Region: ${data.region}<br>
             Borough: ${data.boroughRegion}<br>
             AQI: <span style="color: ${LevelCategory[data.currentAqiCategoryLevel as 1 | 2 | 3]?.colour ?? 'black'}">${data.currentAqi}<br></span>
@@ -241,7 +245,7 @@
             fetchPollutantData(tileId, Pollutants.O3.id), 
             fetchPollutantData(tileId, Pollutants.SO2.id), 
           ])
-          
+
           const showHours = 24;
           const cutoff = selectedTimestamp - showHours * 60 * 60 * 1000; 
 
@@ -420,11 +424,10 @@
     });
   };
 
-  onDestroy(() => {
-    if (map) {
-      map.remove();
-    }
-  });
+  $: if (sliderHour !== undefined) {
+    selectedTimestamp = now - sliderHour * 3600 * 1000;
+    refreshTiles();
+  }
 </script>
 
 <div class="map-wrapper">
