@@ -285,7 +285,7 @@
                 datasets: [
                   {
                     label: 'PM2.5 (µg/m³)',
-                    data: filteredPm25.map(d => d.concentration_value),
+                    data: filteredPm25.map(d => d.value),
                     yAxisID: 'y-left',
                     borderColor: 'rgba(255, 99, 132, 1)', 
                     backgroundColor: 'rgba(255, 99, 132, 0.2)',
@@ -294,7 +294,7 @@
                   },
                   {
                     label: 'PM10 (µg/m³)',
-                    data: filteredPm10.map(d => d.concentration_value),
+                    data: filteredPm10.map(d => d.value),
                     yAxisID: 'y-left',
                     borderColor: 'rgba(54, 162, 235, 1)',
                     backgroundColor: 'rgba(54, 162, 235, 0.2)',
@@ -303,7 +303,7 @@
                   },
                   {
                     label: 'NO2 (ppb)',
-                    data: filteredNo2.map(d => d.concentration_value),
+                    data: filteredNo2.map(d => d.value),
                     yAxisID: 'y-right',
                     borderColor: 'rgba(255, 206, 86, 1)', 
                     backgroundColor: 'rgba(255, 206, 86, 0.2)',
@@ -312,7 +312,7 @@
                   },
                   {
                     label: 'CO (ppb)',
-                    data: filteredCo.map(d => d.concentration_value),
+                    data: filteredCo.map(d => d.value),
                     yAxisID: 'y-right',
                     borderColor: 'rgba(153, 102, 255, 1)',
                     backgroundColor: 'rgba(153, 102, 255, 0.2)',
@@ -321,7 +321,7 @@
                   },
                   {
                     label: 'O3 (ppb)',
-                    data: filteredO3.map(d => d.concentration_value),
+                    data: filteredO3.map(d => d.value),
                     yAxisID: 'y-right',
                     borderColor: 'rgba(255, 159, 64, 1)',
                     backgroundColor: 'rgba(255, 159, 64, 0.2)',
@@ -330,7 +330,7 @@
                   },
                   {
                     label: 'SO2 (ppb)',
-                    data: filteredSo2.map(d => d.concentration_value),
+                    data: filteredSo2.map(d => d.value),
                     yAxisID: 'y-right',
                     borderColor: 'rgba(75, 192, 192, 1)',
                     backgroundColor: 'rgba(75, 192, 192, 0.2)',

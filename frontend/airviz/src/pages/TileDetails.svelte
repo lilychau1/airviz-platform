@@ -3,6 +3,7 @@
   import TileDetailsSection from '../lib/components/tileDetails/TileDetailsSection.svelte';
   import { fetchTileDetails } from '../api/MockApi';
   import type { TileDetails } from '../lib/constants';
+    import CurrentAirQualityInfo from '../lib/components/tileDetails/CurrentAirQualityInfo.svelte';
 
   // Get ID from the route param (string -> number)
 $: tileId = Number($params?.id ?? 0);
@@ -35,7 +36,11 @@ $: tileId = Number($params?.id ?? 0);
 {:else if error}
   <p>{error}</p>
 {:else if tileDetails}
+  <!-- Tile details section -->
   <TileDetailsSection tile={tileDetails} />
+
+  <!-- Current air quality section -->
+  <CurrentAirQualityInfo tileId={tileId} />
 {:else}
   <p>No tile details found.</p>
 {/if}

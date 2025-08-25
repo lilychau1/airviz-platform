@@ -3,10 +3,19 @@
   line-height: 1.5;
   font-weight: 400;
 
-  /* Only use light mode */
+  /* Light mode */
+  --color-text-dark: #213547;
+  --color-background-light: #ffffff;
+  --color-background-dark: #1a1a1a;
+  --color-text-light: #ffffff;      
+  --color-primary: #646cff;         
+  --color-primary-hover: #008C96;   
+  --color-table-header: #f3f3f3;
+  --color-border: #ddd;
+
   color-scheme: light;
-  color: #213547; /* Dark text */
-  background-color: #ffffff; /* White background */
+  color: var(--color-text-dark);
+  background-color: var(--color-background-light);
 
   font-synthesis: none;
   text-rendering: optimizeLegibility;
@@ -249,7 +258,6 @@ nav a {
   text-align: left;
 }
 
-
 .time-slider-container label {
   font-weight: 600;
   font-size: 0.9rem;
@@ -281,7 +289,6 @@ nav a {
   margin-bottom: 1rem;
 }
 
-/* Container for card + map side by side */
 .tile-details-container .content {
   display: flex;
   gap: 1rem;
@@ -298,7 +305,6 @@ nav a {
   max-width: 50%;
 }
 
-/* Grid inside the card for two columns of labels and values */
 .tile-details-container .details-grid {
   display: grid;
   grid-template-columns: auto auto;
@@ -316,3 +322,73 @@ nav a {
   /* Optional max-width for right half */
   max-width: 50%;
 }
+
+/* Tile details page */
+.air-quality-info {
+  margin-top: 2rem;
+}
+
+table {
+  width: 100%;
+  border-collapse: collapse;
+}
+
+th, td {
+  padding: 0.3em 0.7em;
+  border-bottom: 1px solid #eee;
+}
+
+th {
+  background: #f3f3f3;
+}
+
+.current-air-quality-cards {
+  display: flex;
+  flex-direction: row;
+  justify-content: left;
+  align-items: center;
+  gap: 1rem;
+  width: 100%;
+  max-width: 100%; 
+  margin: 0 auto 1.5rem auto;
+  flex-wrap: nowrap; 
+}
+
+.current-air-quality-card {
+  flex: 0 0 150px; 
+  aspect-ratio: 1 / 1;
+  background-color: var(--color-primary-hover);
+  color: var(--color-text-light);
+  border-radius: 1rem;
+  padding: 1rem;
+  text-align: center;
+  box-shadow: 0 2px 6px rgba(0,0,0,0.15);
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  align-items: center;
+  border: 1px solid var(--color-border);
+}
+
+.current-air-quality-card-title,
+.current-air-quality-card-value,
+.current-air-quality-card-footer {
+  color: var(--color-text-light);
+}
+
+
+.current-air-quality-card-title {
+  font-size: 0.9rem;
+  font-weight: bold;
+}
+
+.current-air-quality-card-value {
+  font-size: 3rem;
+  font-weight: bold;
+  margin: 0.5rem 0;
+}
+
+.current-air-quality-card-footer {
+  font-size: 0.85rem;
+}
+

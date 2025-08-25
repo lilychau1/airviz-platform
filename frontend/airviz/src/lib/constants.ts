@@ -30,11 +30,17 @@ export interface Tile {
   latitude: number;
   currentAqiColour: Colour
 }
+
 export interface PollutantRecord {
   pollutantId: PollutantId; 
   timestamp: string; 
-  concentration_value: number;
-  unit: string;
+  value: number;
+  unit: PollutantUnitId;
+}
+
+export interface PollutantCurrentRecord extends PollutantRecord {
+  level: number;
+  healthImpact: string;
 }
 
 export interface TileInformation {
@@ -76,4 +82,57 @@ export interface TileDetails {
   zoneRegion: number;
   postcodeArea: string;
   Description: string;
+}
+
+export const PollutantUnit = {
+  MICROGRAM_PER_CUBIC_METER: { id: "microgram_per_cubic_meter", label: "µg/m³" },
+  PART_PER_MILLION: { id: "ppm", label: "ppm" },
+  PART_PER_BILLION:  { id: "ppb",  label: "ppb" },
+} as const;
+
+export type PollutantUnitKey = keyof typeof Pollutants;
+
+export type PollutantUnitId = typeof Pollutants[keyof typeof Pollutants]["id"];
+
+export type PollutantUnitLabel = typeof Pollutants[keyof typeof Pollutants]["label"];
+
+
+export const HealthImpacts = {
+  "pm25": {
+    1: "Low health impact",
+    2: "Irritates lungs in sensitive groups",
+    3: "Worsens asthma and heart disease"
+  },
+  "pm10": {
+    1: "Low health impact",
+    2: "Causes coughing in sensitive people",
+    3: "Aggravates asthma and lung disease"
+  },
+  "no2": {
+    1: "Low health impact",
+    2: "Irritates eyes and throat",
+    3: "Inflames lungs, reduces lung function"
+  },
+  "o3": {
+    1: "Low health impact",
+    2: "Causes chest tightness outdoors",
+    3: "Triggers coughing and breathing pain"
+  },
+  "so2": {
+    1: "Low health impact",
+    2: "Irritates throat and eyes",
+    3: "Severe breathing difficulty for asthmatics"
+  },
+  "co": {
+    1: "Low health impact",
+    2: "Causes mild headache and fatigue",
+    3: "Reduces oxygen, dangerous to heart"
+  }
+}
+
+export interface CurrentAirQualityInfo {
+  aqi: number;
+  aqiCategory: string;
+  dominantPollutant: PollutantId;
+  currentRecords: PollutantCurrentRecord[];
 }

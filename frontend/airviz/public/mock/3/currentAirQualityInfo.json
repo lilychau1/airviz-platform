@@ -1,0 +1,49 @@
+{
+    "aqi": 75, 
+    "aqiCategory": "Moderate Air Quality", 
+    "dominantPollutant": "pm25", 
+    "CurrentRecords": [
+        {
+            "pollutantId": "pm25", 
+            "timestamp": "2025-08-11T21:00:00Z", 
+            "value": 12.9, 
+            "unit": "microgram_per_cubic_meter", 
+            "level": 2
+        }, 
+        {
+            "pollutantId": "pm10", 
+            "timestamp": "2025-08-11T21:00:00Z",
+            "value": 24.5, 
+            "unit": "microgram_per_cubic_meter", 
+            "level": 2
+        }, 
+        {
+            "pollutantId": "no2", 
+            "timestamp": "2025-08-11T21:00:00Z",
+            "value": 18.4, 
+            "unit": "ppb", 
+            "level": 2
+        }, 
+        {
+            "pollutantId": "o3", 
+            "timestamp": "2025-08-11T21:00:00Z", 
+            "value": 14.8, 
+            "unit": "ppb", 
+            "level": 2
+        }, 
+        {
+            "pollutantId": "so2", 
+            "timestamp": "2025-08-11T21:00:00Z", 
+            "value": 0.01, 
+            "unit": "ppb", 
+            "level": 1
+        }, 
+        {
+            "pollutantId": "co", 
+            "timestamp": "2025-08-11T21:00:00Z", 
+            "value": 280.7, 
+            "unit": "ppb", 
+            "level": 2
+        }
+    ]
+}
