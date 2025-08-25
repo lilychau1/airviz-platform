@@ -389,6 +389,14 @@
           popup.remove();
         }
 
+        const tileDetailsLink = document.createElement('a');
+        tileDetailsLink.className = 'popup-tile-details-link'
+        tileDetailsLink.href = `/#/tile-details/${tileId}`;
+        tileDetailsLink.target = '_blank';
+        tileDetailsLink.rel = 'noopener noreferrer';
+        tileDetailsLink.textContent = 'See Tile Details';
+        popupContent.appendChild(tileDetailsLink);
+
         setTimeout(() => {
           const popupEl = document.querySelector('.maplibregl-popup');
           if (popupEl) {
