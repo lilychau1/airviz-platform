@@ -333,13 +333,11 @@ table {
   border-collapse: collapse;
 }
 
-th, td {
+.air-quality-info table th {
+  background-color: var(--color-primary-hover) !important;
+  color: var(--color-text-light) !important;
   padding: 0.3em 0.7em;
-  border-bottom: 1px solid #eee;
-}
-
-th {
-  background: #f3f3f3;
+  border-bottom: 1px solid var(--color-border);
 }
 
 .current-air-quality-cards {
