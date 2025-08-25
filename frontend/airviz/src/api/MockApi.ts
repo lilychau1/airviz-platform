@@ -1,4 +1,4 @@
-import { type PollutantId, type Coordinates, type PollutantRecord, type Tile, type TileInformation, type TileDetails, type CurrentAirQualityInfo, HealthImpacts, type PollutantCurrentRecord, type AqiRecord, type AqiTypeId } from "../lib/constants";
+import { type PollutantId, type Coordinates, type PollutantRecord, type Tile, type TileInformation, type TileDetails, type CurrentAirQualityInfo, HealthImpacts, type PollutantCurrentRecord, type AqiRecord, type AqiTypeId, type HealthRecommendationRecord } from "../lib/constants";
 
 // Fetch current location
 
@@ -56,7 +56,7 @@ export async function fetchPollutantData(
 ): Promise<PollutantRecord[]> {
     const resp = await fetch(`/mock/${tileId}/${pollutantId}.json`); 
     if (!resp.ok) {
-        throw new Error(`Failed to load ${pollutantId} data for point ${tileId}`); 
+        throw new Error(`Failed to load ${pollutantId} data for tile ${tileId}`); 
     }
 
     return resp.json() as Promise<PollutantRecord[]>;
@@ -132,8 +132,20 @@ export async function fetchAqiData(
 ): Promise<AqiRecord[]> {
     const resp = await fetch(`/mock/${tileId}/aqi_${aqiTypeId}.json`); 
     if (!resp.ok) {
-        throw new Error(`Failed to load AQI (${aqiTypeId}) data for point ${tileId}`); 
+        throw new Error(`Failed to load AQI (${aqiTypeId}) data for tile ${tileId}`); 
     }
 
     return resp.json() as Promise<AqiRecord[]>;
+}
+
+// Fetch health recommendations
+export async function fetchHealthRecommendations(
+    tileId: number
+): Promise<HealthRecommendationRecord[]> {
+    const resp = await fetch(`/mock/${tileId}/health_recommendations.json`); 
+    if (!resp.ok) {
+        throw new Error(`Failed to load health recommendation data for tile ${tileId}`); 
+    }
+
+    return resp.json() as Promise<HealthRecommendationRecord[]>;
 }

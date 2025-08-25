@@ -151,3 +151,9 @@ export interface AqiRecord {
     timestamp: string;
     value: number;
 }
+
+export interface HealthRecommendationRecord {
+    id: number;
+    demographic: string;
+    recommendation: string;
+}

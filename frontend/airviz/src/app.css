@@ -9,7 +9,8 @@
   --colour-background-dark: #1a1a1a;
   --colour-text-light: #ffffff;      
   --colour-primary: #646cff;         
-  --colour-primary-hover: #008C96;   
+  --colour-primary-light: #a9c2c4;         
+  --colour-primary-dark: #008C96;   
   --colour-table-header: #f3f3f3;
   --colour-border: #ddd;
 
@@ -334,7 +335,7 @@ table {
 }
 
 .air-quality-info table th {
-  background-color: var(--colour-primary-hover) !important;
+  background-color: var(--colour-primary-dark) !important;
   color: var(--colour-text-light) !important;
   padding: 0.3em 0.7em;
   border-bottom: 1px solid var(--colour-border);
@@ -355,7 +356,7 @@ table {
 .current-air-quality-card {
   flex: 0 0 150px; 
   aspect-ratio: 1 / 1;
-  background-color: var(--colour-primary-hover);
+  background-color: var(--colour-primary-dark);
   color: var(--colour-text-light);
   border-radius: 1rem;
   padding: 1rem;
@@ -413,7 +414,7 @@ table {
   cursor: pointer;
   padding: 0.5rem 1rem;
   background-color: var(--colour-text-light);
-  color: var(--colour-primary-hover);
+  color: var(--colour-primary-dark);
   border: 1px solid #ccc;
   border-radius: 6px;
   font-weight: 600;
@@ -423,7 +424,7 @@ table {
 
 /* Selected filter button */
 .details-chart-filter-button.selected {
-  background-color: var(--colour-primary-hover);
+  background-color: var(--colour-primary-dark);
   color: var(--colour-text-light);
 }
 
@@ -439,14 +440,83 @@ input[type="datetime-local"] {
   border: 1px solid #ccc;
   border-radius: 6px;
   background-color: var(--colour-primary-light);
-  color: var(--colour-primary-hover);
+  color: var(--colour-primary-dark);
   transition: background-color 0.3s ease, color 0.3s ease;
 }
 
 input[type="datetime-local"]:focus {
   outline: none;
-  background-color: var(--colour-primary-hover);
+  background-color: var(--colour-primary-dark);
   color: var(--colour-text-light);
-  border-color: var(--colour-primary-hover);
+  border-color: var(--colour-primary-dark);
   box-shadow: 0 0 0 2px var(--colour-primary-light);
+}
+
+/* Health recommendation section */
+
+.health-recommendations-container {
+  display: flex;
+  align-items: center;
+  gap: 1rem;
+}
+.arrow {
+  cursor: pointer;
+  font-size: 2rem;
+  color: var(--color-primary);
+  user-select: none;
+}
+.arrow.disabled {
+  cursor: default;
+  opacity: 0.4;
+}
+.health-recommendations-cards {
+  display: flex;
+  gap: 1rem;
+}
+.health-recommendations-card {
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  align-items: center;
+  text-align: center;
+  background: var(--color-background-light);
+  border-radius: 12px;
+  box-shadow: 0 2px 5px rgba(0,0,0,0.1);
+  width: 300px;
+  height: 250px;
+  padding: 1rem;
+  min-height: 150px; 
+}
+
+.health-recommendations-card-number {
+  font-weight: bold;
+  font-size: 1.5rem;
+  margin-bottom: 0.3rem;
+}
+.health-recommendations-card-demographic {
+  color: var(--color-primary);
+  font-weight: 600;
+  margin-bottom: 0.5rem;
+}
+.health-recommendations-card-text {
+  font-size: 1rem;
+  color: var(--color-text);
+}
+.page-indicator {
+  margin-top: 1rem;
+  display: flex;
+  justify-content: center;
+  gap: 0.5rem;
+}
+.dot {
+  width: 12px;
+  height: 12px;
+  border-radius: 50%;
+  background-color: var(--colour-primary-light); /* light blue for visibility test */
+  opacity: 0.7;
+  margin-bottom: 2rem;
+}
+.dot.active {
+  background-color: var(--colour-primary-dark); /* darker blue for active */
+  opacity: 1;
 }

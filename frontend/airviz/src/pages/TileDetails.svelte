@@ -1,54 +1,58 @@
 <script lang="ts">
-  import { params } from 'svelte-spa-router';
-  import TileDetailsSection from '../lib/components/tileDetails/TileDetailsSection.svelte';
-  import { fetchTileDetails } from '../api/MockApi';
-  import type { TileDetails } from '../lib/constants';
+    import { params } from 'svelte-spa-router';
+    import TileDetailsSection from '../lib/components/tileDetails/TileDetailsSection.svelte';
+    import { fetchTileDetails } from '../api/MockApi';
+    import type { TileDetails } from '../lib/constants';
     import CurrentAirQualityInfo from '../lib/components/tileDetails/CurrentAirQualityInfo.svelte';
     import PollutantTimeseriesChart from '../lib/components/tileDetails/PollutantTimeseriesChart.svelte';
     import AqiTimeseriesChart from '../lib/components/tileDetails/AQITimeseriesChart.svelte';
+    import HealthRecommendations from '../lib/components/tileDetails/HealthRecommendations.svelte';
 
   // Get ID from the route param (string -> number)
-$: tileId = Number($params?.id ?? 0);
+    $: tileId = Number($params?.id ?? 0);
 
-  let tileDetails: TileDetails;
-  let error: string | null = null;
-  let loading = true;
+    let tileDetails: TileDetails;
+    let error: string | null = null;
+    let loading = true;
 
-  $: if (tileId) {
-    // Reset states when tileId changes
-    loading = true;
-    error = null;
+    $: if (tileId) {
+        // Reset states when tileId changes
+        loading = true;
+        error = null;
 
-    fetchTileDetails(tileId)
-      .then(data => {
-        tileDetails = data;
-      })
-      .catch(e => {
-        error = `Failed to fetch tile details for tile ID ${tileId}`;
-        console.error(error, e);
-      })
-      .finally(() => {
-        loading = false;
-      });
-  }
+        fetchTileDetails(tileId)
+            .then(data => {
+                tileDetails = data;
+            })
+            .catch(e => {
+                error = `Failed to fetch tile details for tile ID ${tileId}`;
+                console.error(error, e);
+            })
+            .finally(() => {
+                loading = false;
+            });
+    }
 </script>
 
 {#if loading}
-  <p>Loading tile details for tile ID {tileId}...</p>
+    <p>Loading tile details for tile ID {tileId}...</p>
 {:else if error}
-  <p>{error}</p>
+    <p>{error}</p>
 {:else if tileDetails}
-  <!-- Tile details section -->
-  <TileDetailsSection tile={tileDetails} />
+    <!-- Tile details section -->
+    <TileDetailsSection tile={tileDetails} />
 
-  <!-- Current air quality section -->
-  <CurrentAirQualityInfo tileId={tileId} />
+    <!-- Current air quality section -->
+    <CurrentAirQualityInfo tileId={tileId} />
 
-  <!-- Pollutant time series chart -->
-  <PollutantTimeseriesChart {tileId} />
+    <!-- Pollutant time series chart -->
+    <PollutantTimeseriesChart {tileId} />
 
-  <!-- Pollutant time series chart -->
-  <AqiTimeseriesChart {tileId} />
+    <!-- AQI time series chart -->
+    <AqiTimeseriesChart {tileId} />
+
+    <!-- Pollutant time series chart -->
+    <HealthRecommendations {tileId} />
 {:else}
-  <p>No tile details found.</p>
+    <p>No tile details found.</p>
 {/if}
