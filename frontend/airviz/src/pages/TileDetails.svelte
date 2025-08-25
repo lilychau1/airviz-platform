@@ -5,6 +5,7 @@
   import type { TileDetails } from '../lib/constants';
     import CurrentAirQualityInfo from '../lib/components/tileDetails/CurrentAirQualityInfo.svelte';
     import PollutantTimeseriesChart from '../lib/components/tileDetails/PollutantTimeseriesChart.svelte';
+    import AqiTimeseriesChart from '../lib/components/tileDetails/AQITimeseriesChart.svelte';
 
   // Get ID from the route param (string -> number)
 $: tileId = Number($params?.id ?? 0);
@@ -45,6 +46,9 @@ $: tileId = Number($params?.id ?? 0);
 
   <!-- Pollutant time series chart -->
   <PollutantTimeseriesChart {tileId} />
+
+  <!-- Pollutant time series chart -->
+  <AqiTimeseriesChart {tileId} />
 {:else}
   <p>No tile details found.</p>
 {/if}

@@ -1,4 +1,4 @@
-import { type PollutantId, type Coordinates, type PollutantRecord, type Tile, type TileInformation, type TileDetails, type CurrentAirQualityInfo, HealthImpacts, type PollutantCurrentRecord } from "../lib/constants";
+import { type PollutantId, type Coordinates, type PollutantRecord, type Tile, type TileInformation, type TileDetails, type CurrentAirQualityInfo, HealthImpacts, type PollutantCurrentRecord, type AqiRecord, type AqiTypeId } from "../lib/constants";
 
 // Fetch current location
 
@@ -123,4 +123,17 @@ export async function fetchCurrentAirQualityInfo(
     dominantPollutant: raw.dominantPollutant,
     currentRecords
   };
+}
+
+// Fetch aqi records
+export async function fetchAqiData(
+    tileId: number, 
+    aqiTypeId: AqiTypeId
+): Promise<AqiRecord[]> {
+    const resp = await fetch(`/mock/${tileId}/aqi_${aqiTypeId}.json`); 
+    if (!resp.ok) {
+        throw new Error(`Failed to load AQI (${aqiTypeId}) data for point ${tileId}`); 
+    }
+
+    return resp.json() as Promise<AqiRecord[]>;
 }
