@@ -35,28 +35,30 @@
     }
 </script>
 
-{#if loading}
-    <p>Loading tile details for tile ID {tileId}...</p>
-{:else if error}
-    <p>{error}</p>
-{:else if tileDetails}
-    <!-- Tile details section -->
-    <TileDetailsSection tile={tileDetails} />
+<div class="tile-details-page-content">
+    {#if loading}
+        <p>Loading tile details for tile ID {tileId}...</p>
+    {:else if error}
+        <p>{error}</p>
+    {:else if tileDetails}
+        <!-- Tile details section -->
+        <TileDetailsSection tile={tileDetails} />
 
-    <!-- Current air quality section -->
-    <CurrentAirQualityInfo tileId={tileId} />
+        <!-- Current air quality section -->
+        <CurrentAirQualityInfo tileId={tileId} />
 
-    <!-- Pollutant time series chart -->
-    <PollutantTimeseriesChart {tileId} />
+        <!-- Pollutant time series chart -->
+        <PollutantTimeseriesChart {tileId} />
 
-    <!-- AQI time series chart -->
-    <AqiTimeseriesChart {tileId} />
+        <!-- AQI time series chart -->
+        <AqiTimeseriesChart {tileId} />
 
-    <!-- Health recommendations -->
-    <HealthRecommendations {tileId} />
+        <!-- Health recommendations -->
+        <HealthRecommendations {tileId} />
 
-    <!-- Metadata and source info -->
-    <MetadataSource {tileId} />
-{:else}
-    <p>No tile details found.</p>
-{/if}
+        <!-- Metadata and source info -->
+        <MetadataSource {tileId} />
+    {:else}
+        <p>No tile details found.</p>
+    {/if}
+</div> 
