@@ -4,6 +4,7 @@
   import { fetchTileDetails } from '../api/MockApi';
   import type { TileDetails } from '../lib/constants';
     import CurrentAirQualityInfo from '../lib/components/tileDetails/CurrentAirQualityInfo.svelte';
+    import PollutantTimeseriesChart from '../lib/components/tileDetails/PollutantTimeseriesChart.svelte';
 
   // Get ID from the route param (string -> number)
 $: tileId = Number($params?.id ?? 0);
@@ -41,6 +42,9 @@ $: tileId = Number($params?.id ?? 0);
 
   <!-- Current air quality section -->
   <CurrentAirQualityInfo tileId={tileId} />
+
+  <!-- Pollutant time series chart -->
+  <PollutantTimeseriesChart {tileId} />
 {:else}
   <p>No tile details found.</p>
 {/if}

@@ -86,7 +86,6 @@ export interface TileDetails {
 
 export const PollutantUnit = {
   MICROGRAM_PER_CUBIC_METER: { id: "microgram_per_cubic_meter", label: "µg/m³" },
-  PART_PER_MILLION: { id: "ppm", label: "ppm" },
   PART_PER_BILLION:  { id: "ppb",  label: "ppb" },
 } as const;
 

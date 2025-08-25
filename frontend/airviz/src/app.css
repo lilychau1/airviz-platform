@@ -4,18 +4,18 @@
   font-weight: 400;
 
   /* Light mode */
-  --color-text-dark: #213547;
-  --color-background-light: #ffffff;
-  --color-background-dark: #1a1a1a;
-  --color-text-light: #ffffff;      
-  --color-primary: #646cff;         
-  --color-primary-hover: #008C96;   
-  --color-table-header: #f3f3f3;
-  --color-border: #ddd;
+  --colour-text-dark: #213547;
+  --colour-background-light: #ffffff;
+  --colour-background-dark: #1a1a1a;
+  --colour-text-light: #ffffff;      
+  --colour-primary: #646cff;         
+  --colour-primary-hover: #008C96;   
+  --colour-table-header: #f3f3f3;
+  --colour-border: #ddd;
 
   color-scheme: light;
-  color: var(--color-text-dark);
-  background-color: var(--color-background-light);
+  color: var(--colour-text-dark);
+  background-color: var(--colour-background-light);
 
   font-synthesis: none;
   text-rendering: optimizeLegibility;
@@ -334,10 +334,10 @@ table {
 }
 
 .air-quality-info table th {
-  background-color: var(--color-primary-hover) !important;
-  color: var(--color-text-light) !important;
+  background-color: var(--colour-primary-hover) !important;
+  color: var(--colour-text-light) !important;
   padding: 0.3em 0.7em;
-  border-bottom: 1px solid var(--color-border);
+  border-bottom: 1px solid var(--colour-border);
 }
 
 .current-air-quality-cards {
@@ -355,8 +355,8 @@ table {
 .current-air-quality-card {
   flex: 0 0 150px; 
   aspect-ratio: 1 / 1;
-  background-color: var(--color-primary-hover);
-  color: var(--color-text-light);
+  background-color: var(--colour-primary-hover);
+  color: var(--colour-text-light);
   border-radius: 1rem;
   padding: 1rem;
   text-align: center;
@@ -365,13 +365,13 @@ table {
   flex-direction: column;
   justify-content: center;
   align-items: center;
-  border: 1px solid var(--color-border);
+  border: 1px solid var(--colour-border);
 }
 
 .current-air-quality-card-title,
 .current-air-quality-card-value,
 .current-air-quality-card-footer {
-  color: var(--color-text-light);
+  color: var(--colour-text-light);
 }
 
 
@@ -390,3 +390,63 @@ table {
   font-size: 0.85rem;
 }
 
+.details-chart-container {
+  width: 100%;
+  height: 300px;
+  position: relative;
+}
+
+.details-chart-container {
+  width: 100%;
+  height: 300px;
+  position: relative;
+}
+
+.details-chart-filter-buttons {
+  display: flex;
+  gap: 0.5rem;
+  margin-bottom: 1rem;
+}
+
+/* Filter button base styles */
+.details-chart-filter-button {
+  cursor: pointer;
+  padding: 0.5rem 1rem;
+  background-color: var(--colour-text-light);
+  color: var(--colour-primary-hover);
+  border: 1px solid #ccc;
+  border-radius: 6px;
+  font-weight: 600;
+  user-select: none;
+  transition: all 0.3s ease;
+}
+
+/* Selected filter button */
+.details-chart-filter-button.selected {
+  background-color: var(--colour-primary-hover);
+  color: var(--colour-text-light);
+}
+
+.date-pickers {
+  margin-bottom: 1rem;
+  display: flex;
+  gap: 1rem;
+}
+
+input[type="datetime-local"] {
+  padding: 0.3rem 0.5rem;
+  font-size: 1rem;
+  border: 1px solid #ccc;
+  border-radius: 6px;
+  background-color: var(--colour-primary-light);
+  color: var(--colour-primary-hover);
+  transition: background-color 0.3s ease, color 0.3s ease;
+}
+
+input[type="datetime-local"]:focus {
+  outline: none;
+  background-color: var(--colour-primary-hover);
+  color: var(--colour-text-light);
+  border-color: var(--colour-primary-hover);
+  box-shadow: 0 0 0 2px var(--colour-primary-light);
+}

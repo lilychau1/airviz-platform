@@ -13,6 +13,7 @@
     fetchTileInformation 
   } from '../../api/MockApi';
   import { Pollutants, type Tile, type Coordinates, LevelCategory } from '../constants';
+    import { filterByTimeRange } from '../utils/utils';
 
   const mapTilerAPIKey: string = import.meta.env.VITE_MAPTILER_API_KEY as string;
 
@@ -27,18 +28,6 @@
   const now = new Date("2025-08-11T20:00:00Z").getTime();
   let sliderHour = 0;
   let selectedTimestamp = now;
-
-  // Helper functions
-  function filterByTimeRange<T extends { timestamp: string }>(
-    data: T[], 
-    fromTimestamp: number, 
-    toTimestamp: number
-  ): T[] {
-    return data.filter(d => {
-      const t = new Date(d.timestamp).getTime();
-      return t >= fromTimestamp && t <= toTimestamp;
-    });
-  }
 
   function updateMapSourceData(tiles: Tile[]) {
     if (!map || !map.isStyleLoaded()) return;

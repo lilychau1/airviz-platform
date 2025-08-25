@@ -33,8 +33,8 @@
 </script>
 
 <section class="tile-details-container">
-  <h1 class="tile-name">{tile.name}</h1>
-  <h3 class="tile-subheader">Tile details</h3>
+  <h1>{tile.name}</h1>
+  <h3>Tile details</h3>
 
   <div class="content">
     <div class="details-card">
