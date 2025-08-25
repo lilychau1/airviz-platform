@@ -7,6 +7,7 @@
     import PollutantTimeseriesChart from '../lib/components/tileDetails/PollutantTimeseriesChart.svelte';
     import AqiTimeseriesChart from '../lib/components/tileDetails/AQITimeseriesChart.svelte';
     import HealthRecommendations from '../lib/components/tileDetails/HealthRecommendations.svelte';
+    import MetadataSource from '../lib/components/tileDetails/MetadataSource.svelte';
 
   // Get ID from the route param (string -> number)
     $: tileId = Number($params?.id ?? 0);
@@ -51,8 +52,11 @@
     <!-- AQI time series chart -->
     <AqiTimeseriesChart {tileId} />
 
-    <!-- Pollutant time series chart -->
+    <!-- Health recommendations -->
     <HealthRecommendations {tileId} />
+
+    <!-- Metadata and source info -->
+    <MetadataSource {tileId} />
 {:else}
     <p>No tile details found.</p>
 {/if}

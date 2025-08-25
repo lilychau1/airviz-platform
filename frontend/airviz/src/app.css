@@ -520,3 +520,26 @@ input[type="datetime-local"]:focus {
   background-color: var(--colour-primary-dark); /* darker blue for active */
   opacity: 1;
 }
+
+/* Metadata */
+.metadata-container {
+    background: var(--color-background-light);
+    padding: 1rem 1.5rem;
+    border-radius: 12px;
+    box-shadow: 0 2px 6px rgba(0,0,0,0.1);
+    margin-top: 2rem;
+    font-size: 0.95rem;
+    color: var(--color-text-primary);
+}
+.metadata-row {
+    margin-bottom: 0.5rem;
+}
+.metadata-label {
+    font-weight: 600;
+    color: var(--color-primary);
+    display: inline-block;
+    width: 190px;
+}
+.metadata-value {
+    display: inline-block;
+}

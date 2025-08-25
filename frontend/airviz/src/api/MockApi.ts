@@ -1,4 +1,4 @@
-import { type PollutantId, type Coordinates, type PollutantRecord, type Tile, type TileInformation, type TileDetails, type CurrentAirQualityInfo, HealthImpacts, type PollutantCurrentRecord, type AqiRecord, type AqiTypeId, type HealthRecommendationRecord } from "../lib/constants";
+import { type PollutantId, type Coordinates, type PollutantRecord, type Tile, type TileInformation, type TileDetails, type CurrentAirQualityInfo, HealthImpacts, type PollutantCurrentRecord, type AqiRecord, type AqiTypeId, type HealthRecommendationRecord, type TileMetadata } from "../lib/constants";
 
 // Fetch current location
 
@@ -148,4 +148,16 @@ export async function fetchHealthRecommendations(
     }
 
     return resp.json() as Promise<HealthRecommendationRecord[]>;
+}
+
+// Fetch metadata
+export async function fetchTileMetadata(
+    tileId: number
+): Promise<TileMetadata>{
+    const resp = await fetch(`/mock/${tileId}/metadata.json`); 
+    if (!resp.ok) {
+        throw new Error(`Failed to load metadata for tile ${tileId}`); 
+    }
+
+    return resp.json() as Promise<TileMetadata>;
 }

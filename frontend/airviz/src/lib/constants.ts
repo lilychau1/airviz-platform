@@ -157,3 +157,31 @@ export interface HealthRecommendationRecord {
     demographic: string;
     recommendation: string;
 }
+
+export const staticMetadata = {
+    dataSource: "Google Air Quality",
+    apiDataType: "Modeled estimate from multi-source fusion (satellite, ground sensors, meteorological data) providing 500 x 500 meter resolution hourly air quality data.",
+    apiVersion: "v1.0",
+    dataQualityConfidence: "High",
+    license: "Google Maps Platform Terms of Service",
+    additionalNotes: "Data updated hourly and interpolated for 500 × 500 meter resolution",
+};
+
+export interface TileMetadata {
+    location: string;
+    tileId: string;
+    longitude: number;
+    latitude: number;
+    latestMeasurementTimestamp: string;
+}
+
+export interface Metadata extends TileMetadata {
+    dataSource: string;
+    apiDataType: string;
+    apiVersion: string;
+    dataQualityConfidence: string;
+    license: string;
+    additionalNotes: string;
+}
+
+
