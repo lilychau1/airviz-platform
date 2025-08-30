@@ -7,19 +7,19 @@
 
     import { 
         fetchCurrentLocation, 
-        fetchAllTiles, 
+        fetchAllRegions, 
         fetchPollutantData, 
         fetchMapRadius, 
-        fetchTileInformation 
+        fetchPopupInformation 
     } from '../../api/MockApi';
-    import { Pollutants, type Tile, type Coordinates, LevelCategory } from '../constants';
+    import { Pollutants, type RegionUnit, type Coordinates, LevelCategory } from '../constants';
     import { filterByTimeRange } from '../utils/utils';
 
     const mapTilerAPIKey: string = import.meta.env.VITE_MAPTILER_API_KEY as string;
 
     let currentLocation: Coordinates;
     let mapRadius: number; 
-    let allTiles: Tile[];
+    let allTiles: RegionUnit[];
 
     let map: Map;
     let chart: Chart | null = null;
@@ -29,7 +29,7 @@
     let sliderHour = 0;
     let selectedTimestamp = now;
 
-    function updateMapSourceData(tiles: Tile[]) {
+    function updateMapSourceData(tiles: RegionUnit[]) {
         if (!map || !map.isStyleLoaded()) return;
 
         const geojson: GeoJSON.FeatureCollection = {
@@ -72,7 +72,8 @@
     async function refreshTiles() {
         if (!currentLocation || !mapRadius) return;
         try {
-            const tiles = await fetchAllTiles(
+            const tiles = await fetchAllRegions(
+                'tile', 
                 currentLocation.latitude,
                 currentLocation.longitude,
                 mapRadius,
@@ -90,13 +91,14 @@
         currentLocation = await fetchCurrentLocation();
         mapRadius = await fetchMapRadius();
         // Placeholder: Fetch all locations on map area with latitude, longitude and radius
-        allTiles = await fetchAllTiles(
+        allTiles = await fetchAllRegions(
+            'tile', 
             currentLocation.latitude, 
             currentLocation.longitude, 
             mapRadius, 
             selectedTimestamp
         );
-        initializeMap();
+        initialiseMap();
     });
 
     onDestroy(() => {
@@ -105,7 +107,7 @@
         }
     });
 
-    function initializeMap() {
+    function initialiseMap() {
         // Create GeoJSON with properties for popups
         const geojson: GeoJSON.FeatureCollection = {
             type: "FeatureCollection",
@@ -193,7 +195,7 @@
                 tileInformationDiv.className = 'popup-tile-information'; 
                 popupContent.appendChild(tileInformationDiv); 
 
-                fetchTileInformation(tileId).then((data) => {
+                fetchPopupInformation('tile', tileId).then((data) => {
                     tileInformationDiv.innerHTML = `
                         <strong>Name: ${data.name}</strong><br>
                         Region: ${data.region}<br>
@@ -231,12 +233,12 @@
                         o3Data, 
                         so2Data, 
                     ] = await Promise.all([
-                        fetchPollutantData(tileId, Pollutants.PM25.id), 
-                        fetchPollutantData(tileId, Pollutants.PM10.id), 
-                        fetchPollutantData(tileId, Pollutants.NO2.id), 
-                        fetchPollutantData(tileId, Pollutants.CO.id), 
-                        fetchPollutantData(tileId, Pollutants.O3.id), 
-                        fetchPollutantData(tileId, Pollutants.SO2.id), 
+                        fetchPollutantData('tile', tileId, Pollutants.PM25.id), 
+                        fetchPollutantData('tile', tileId, Pollutants.PM10.id), 
+                        fetchPollutantData('tile', tileId, Pollutants.NO2.id), 
+                        fetchPollutantData('tile', tileId, Pollutants.CO.id), 
+                        fetchPollutantData('tile', tileId, Pollutants.O3.id), 
+                        fetchPollutantData('tile', tileId, Pollutants.SO2.id), 
                     ]);
 
                     const showHours = 24;

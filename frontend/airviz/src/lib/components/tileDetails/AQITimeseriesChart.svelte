@@ -65,8 +65,8 @@
 
       // Fetch both AQI types in parallel
       const [universalData, usData] = await Promise.all([
-        fetchAqiData(tileId, AqiTypes.UNIVERSAL.id),
-        fetchAqiData(tileId, AqiTypes.US.id),
+        fetchAqiData('tile', tileId, AqiTypes.UNIVERSAL.id),
+        fetchAqiData('tile', tileId, AqiTypes.US.id),
       ]);
 
       const filteredUniversal = filterByTimeRange(universalData, cutoff, selectedTimestamp);

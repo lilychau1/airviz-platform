@@ -1,4 +1,5 @@
-import { type PollutantId, type Coordinates, type PollutantRecord, type Tile, type TileInformation, type TileDetails, type CurrentAirQualityInfo, HealthImpacts, type PollutantCurrentRecord, type AqiRecord, type AqiTypeId, type HealthRecommendationRecord, type TileMetadata } from "../lib/constants";
+import { type PollutantId, type Coordinates, type PollutantRecord, type RegionUnit, type TilePopupInformation, type TileDetails, type CurrentAirQualityInfo, HealthImpacts, type PollutantCurrentRecord, type AqiRecord, type AqiTypeId, type HealthRecommendationRecord, type TileMetadata, type RegionPopupInformation, type RegionLevel, type DetailsReturnTypeForRegionLevel, type PopupInfoReturnTypeForRegionLevel} from "../lib/constants";
+import type { FeatureCollection } from 'geojson';
 
 // Fetch current location
 
@@ -18,30 +19,32 @@ export async function fetchCurrentLocation(): Promise<Coordinates> {
 export async function fetchMapRadius(): Promise<number> {
     return 5
 }
+
 // Fetch all points
-export async function fetchAllTiles(
+export async function fetchAllRegions(
     // Params not used for now in mock
+    level: RegionLevel, 
     currentLongitude: number, 
     currentLatitude: number, 
     radius: number, 
-    timestamp: number,     
-): Promise<Tile[]> {
+    timestamp: number
+): Promise<RegionUnit[]> {
     const timestampDate = new Date(timestamp);
     timestampDate.setMinutes(0, 0, 0);
     const isoTimestampString = timestampDate.toISOString().replace(/\.\d{3}Z$/, 'Z');;
-
-    const resp = await fetch('/mock/tiles.json')
+    console.log(`/mock/${level}s.json`)
+    const resp = await fetch(`/mock/${level}s.json`)
     if (!resp.ok) throw new Error("Failed to fetch tiles");
     const data = await resp.json();
-    const tileDataForTimestamp = data[isoTimestampString];
+    const regionDataForTimestamp = data[isoTimestampString];
 
-    if (tileDataForTimestamp) {
-    console.log('Tiles for this hour:', tileDataForTimestamp);
+    if (regionDataForTimestamp) {
+        console.log('Tiles for this hour:', regionDataForTimestamp);
     } else {
-    console.log('No tile data found for timestamp:', isoTimestampString);
+        console.log('No tile data found for timestamp:', isoTimestampString);
     }
 
-    return tileDataForTimestamp.map((p: any) => ({
+    return regionDataForTimestamp.map((p: any) => ({
         id: p.id, 
         longitude: p.longitude, 
         latitude: p.latitude, 
@@ -51,56 +54,57 @@ export async function fetchAllTiles(
 
 // Fetch pollutant records
 export async function fetchPollutantData(
-    tileId: number, 
+    level: string, 
+    id: number, 
     pollutantId: PollutantId
 ): Promise<PollutantRecord[]> {
-    const resp = await fetch(`/mock/${tileId}/${pollutantId}.json`); 
+    const resp = await fetch(`/mock/${level}/${id}/${pollutantId}.json`); 
     if (!resp.ok) {
-        throw new Error(`Failed to load ${pollutantId} data for tile ${tileId}`); 
+        throw new Error(`Failed to load ${pollutantId} data for ${level} ${id}`); 
     }
 
     return resp.json() as Promise<PollutantRecord[]>;
 }
 
 // Fetch tile information
-export async function fetchTileInformation(
-    tileId: number
-): Promise<TileInformation> {
-    const resp = await fetch(`/mock/${tileId}/tile-information.json`); 
+export async function fetchPopupInformation<L extends RegionLevel>(
+    level: L, 
+    id: number
+): Promise<PopupInfoReturnTypeForRegionLevel<L>> {
+    const resp = await fetch(`/mock/${level}/${id}/information.json`); 
     if (!resp.ok) {
-        throw new Error(`Failed to load data for tile ID ${tileId}`); 
+        throw new Error(`Failed to load data for ${level} ID ${id}`); 
     }
-
-    return resp.json() as Promise<TileInformation>;
+    return resp.json() as Promise<PopupInfoReturnTypeForRegionLevel<L>>;
 }
 
-// Fetch tile details (on tile details page)
-export async function fetchTileDetails(
-    tileId: number
-): Promise<TileDetails> {
-    const resp = await fetch(`/mock/${tileId}/tile-details.json`); 
+// Fetch details (on tile/region details page)
+export async function fetchDetails<L extends RegionLevel>(
+    level: L, 
+    id: number
+): Promise<DetailsReturnTypeForRegionLevel<L>> {
+    const resp = await fetch(`/mock/${level}/${id}/details.json`); 
     if (!resp.ok) {
-        throw new Error(`Failed to load Tile details for tile ID ${tileId}`); 
+        throw new Error(`Failed to load Tile details for ${level} ID ${id}`); 
     }
-
-    return resp.json() as Promise<TileDetails>;
+    return resp.json() as Promise<DetailsReturnTypeForRegionLevel<L>>;
 }
-
 
 export function getHealthImpact(
-  pollutantId: PollutantId,
-  level: number
+    pollutantId: PollutantId,
+    level: number
 ): string {
-  return HealthImpacts[pollutantId]?.[level as 1 | 2 | 3] ?? "Unknown health impact";
+    return HealthImpacts[pollutantId]?.[level as 1 | 2 | 3] ?? "Unknown health impact";
 }
 
 
 export async function fetchCurrentAirQualityInfo(
-  tileId: number
+    level: RegionLevel, 
+    id: number
 ): Promise<CurrentAirQualityInfo> {
-  const resp = await fetch(`/mock/${tileId}/currentAirQualityInfo.json`);
+  const resp = await fetch(`/mock/${level}/${id}/current-air-quality-info.json`);
   if (!resp.ok) {
-    throw new Error(`Failed to load air quality info for tile ID ${tileId}`);
+    throw new Error(`Failed to load air quality info for tile ID ${id}`);
   }
 
   const raw = await resp.json();
@@ -127,22 +131,23 @@ export async function fetchCurrentAirQualityInfo(
 
 // Fetch aqi records
 export async function fetchAqiData(
-    tileId: number, 
+    level: string, 
+    id: number, 
     aqiTypeId: AqiTypeId
 ): Promise<AqiRecord[]> {
-    const resp = await fetch(`/mock/${tileId}/aqi_${aqiTypeId}.json`); 
+    const resp = await fetch(`/mock/${level}/${id}/aqi-${aqiTypeId}.json`); 
     if (!resp.ok) {
-        throw new Error(`Failed to load AQI (${aqiTypeId}) data for tile ${tileId}`); 
+        throw new Error(`Failed to load AQI (${aqiTypeId}) data for ${level} ${id}`); 
     }
 
     return resp.json() as Promise<AqiRecord[]>;
 }
 
 // Fetch health recommendations
-export async function fetchHealthRecommendations(
+export async function fetchTileHealthRecommendations(
     tileId: number
 ): Promise<HealthRecommendationRecord[]> {
-    const resp = await fetch(`/mock/${tileId}/health_recommendations.json`); 
+    const resp = await fetch(`/mock/tile/${tileId}/health-recommendations.json`); 
     if (!resp.ok) {
         throw new Error(`Failed to load health recommendation data for tile ${tileId}`); 
     }
@@ -154,10 +159,55 @@ export async function fetchHealthRecommendations(
 export async function fetchTileMetadata(
     tileId: number
 ): Promise<TileMetadata>{
-    const resp = await fetch(`/mock/${tileId}/metadata.json`); 
+    const resp = await fetch(`/mock/tile/${tileId}/metadata.json`); 
     if (!resp.ok) {
         throw new Error(`Failed to load metadata for tile ${tileId}`); 
     }
 
     return resp.json() as Promise<TileMetadata>;
+}
+
+// Fetch area aggregation data
+export const boroughNames = [
+    "Barking and Dagenham",
+    "Barnet",
+    "Bexley",
+    "Brent",
+    "Bromley",
+    "Camden",
+    "City of London",
+    "Croydon",
+    "Ealing",
+    "Enfield",
+    "Greenwich",
+    "Hackney",
+    "Hammersmith and Fulham",
+    "Haringey",
+    "Harrow",
+    "Havering",
+    "Hillingdon",
+    "Hounslow",
+    "Islington",
+    "Kensington and Chelsea",
+    "Kingston upon Thames",
+    "Lambeth",
+    "Lewisham",
+    "Merton",
+    "Newham",
+    "Redbridge",
+    "Richmond upon Thames",
+    "Southwark",
+    "Sutton",
+    "Tower Hamlets",
+    "Waltham Forest",
+    "Wandsworth",
+    "Westminster",
+];
+
+export async function loadRegionalGeoJSON(level: string): Promise<FeatureCollection> {
+    const resp = await fetch(`/data/map-region-boundrary-json/${level}.geojson`); 
+    if (!resp.ok) {
+        throw new Error(`Failed to load ${level} GeoJSON data`); 
+    }
+    return resp.json() as Promise<FeatureCollection>;
 }

@@ -1,0 +1,11 @@
+{ 
+    "id": 3, 
+    "name": "Point 3", 
+    "longitude": -0.109721,
+    "latitude": 51.50427,
+    "region": "Greater London", 
+    "boroughRegion": "Lambeth", 
+    "zoneRegion": 1, 
+    "postcodeArea": "SE1", 
+    "description": "Tile includes Waterloo East area; transport-focused land use with major rail infrastructure, offices, and high pedestrian flows."
+}

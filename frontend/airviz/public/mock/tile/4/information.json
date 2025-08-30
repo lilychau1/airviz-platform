@@ -1,0 +1,13 @@
+{ 
+    "name": "Point 4", 
+    "region": "Greater London", 
+    "boroughRegion": "Lambeth", 
+    "currentAqi": 38, 
+    "currentAqiCategoryLevel": 2, 
+    "currentPm25Level": 2, 
+    "currentPm10Level": 2, 
+    "currentNo2Level": 2, 
+    "currentO3Level": 3, 
+    "currentSo2Level": 2, 
+    "currentCoLevel": 2
+}

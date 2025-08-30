@@ -1,7 +1,7 @@
 <script lang="ts">
     import { onMount } from "svelte";
     import type { HealthRecommendationRecord } from "../../constants";
-    import { fetchHealthRecommendations } from "../../../api/MockApi";
+    import { fetchTileHealthRecommendations } from "../../../api/MockApi";
 
     export let tileId: number;
 
@@ -20,7 +20,7 @@
 
     async function loadRecommendations() {
         try {
-        recommendations = await fetchHealthRecommendations(tileId);
+        recommendations = await fetchTileHealthRecommendations(tileId);
         } catch (error) {
         console.error("Error loading health recommendations:", error);
         }

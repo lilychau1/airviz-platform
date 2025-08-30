@@ -1,7 +1,7 @@
 <script lang="ts">
     import { params } from 'svelte-spa-router';
     import TileDetailsSection from '../lib/components/tileDetails/TileDetailsSection.svelte';
-    import { fetchTileDetails } from '../api/MockApi';
+    import { fetchDetails } from '../api/MockApi';
     import type { TileDetails } from '../lib/constants';
     import CurrentAirQualityInfo from '../lib/components/tileDetails/CurrentAirQualityInfo.svelte';
     import PollutantTimeseriesChart from '../lib/components/tileDetails/PollutantTimeseriesChart.svelte';
@@ -21,7 +21,7 @@
         loading = true;
         error = null;
 
-        fetchTileDetails(tileId)
+        fetchDetails('tile', tileId)
             .then(data => {
                 tileDetails = data;
             })
