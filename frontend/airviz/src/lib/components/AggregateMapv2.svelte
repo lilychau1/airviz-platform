@@ -75,9 +75,11 @@
                         ...feature.properties,
                         longitude: extraData.longitude,
                         latitude: extraData.latitude,
-                        currentAqiColourRed: extraData.currentAqiColour.red,
-                        currentAqiColourGreen: extraData.currentAqiColour.green,
-                        currentAqiColourBlue: extraData.currentAqiColour.blue,
+                        currentAqiColour: extraData.currentAqiColour,
+                        // Method 2: flatten initially when expanding feature properties
+                        // currentAqiColourRed: extraData.currentAqiColour.red,
+                        // currentAqiColourGreen: extraData.currentAqiColour.green,
+                        // currentAqiColourBlue: extraData.currentAqiColour.blue,
                     };
                 }
             }
@@ -112,9 +114,11 @@
                 paint: {
                     'fill-color': [
                     'rgb',
-                        ["*", ["coalesce", ["get", "currentAqiColourRed"], 0], 255],
-                        ["*", ["coalesce", ["get", "currentAqiColourGreen"], 0], 255],
-                        ["*", ["coalesce", ["get", "currentAqiColourBlue"], 0], 255],
+                        ["*", ["coalesce", ["get", "red", ["get", "currentAqiColour"]], 0], 255],
+                        // method 2
+                        // ["*", ["coalesce", ["get", "red"], 0], 255],
+                        ["*", ["coalesce", ["get", "green", ["get", "currentAqiColour"]], 0], 255],
+                        ["*", ["coalesce", ["get", "blue", ["get", "currentAqiColour"]], 0], 255],
                     ],
                     'fill-opacity': 0.5,
                 },
