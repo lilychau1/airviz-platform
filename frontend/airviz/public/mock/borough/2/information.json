@@ -1,7 +1,6 @@
 { 
-    "name": "Point 2", 
+    "name": "Barnet", 
     "region": "Greater London", 
-    "boroughRegion": "Southwark", 
     "currentAqi": 24, 
     "currentAqiCategoryLevel": 3, 
     "currentPm25Level": 3, 

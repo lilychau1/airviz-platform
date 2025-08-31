@@ -1,7 +1,6 @@
 { 
-    "name": "Point 1", 
+    "name": "Barking and Dagenham", 
     "region": "Greater London", 
-    "boroughRegion": "Southwark", 
     "currentAqi": 82, 
     "currentAqiCategoryLevel": 1, 
     "currentPm25Level": 1, 

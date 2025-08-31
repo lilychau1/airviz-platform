@@ -72,6 +72,7 @@ export async function fetchPopupInformation<L extends RegionLevel>(
     id: number
 ): Promise<PopupInfoReturnTypeForRegionLevel<L>> {
     const resp = await fetch(`/mock/${level}/${id}/information.json`); 
+    console.log(`/mock/${level}/${id}/information.json`)
     if (!resp.ok) {
         throw new Error(`Failed to load data for ${level} ID ${id}`); 
     }

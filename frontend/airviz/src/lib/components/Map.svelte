@@ -16,7 +16,7 @@
     import { filterByTimeRange } from '../utils/utils';
 
     const mapTilerAPIKey: string = import.meta.env.VITE_MAPTILER_API_KEY as string;
-
+    console.log(mapTilerAPIKey)
     let currentLocation: Coordinates;
     let mapRadius: number; 
     let allTiles: RegionUnit[];
@@ -192,7 +192,7 @@
                 // Popup tile information
                 const tileInformationDiv = document.createElement('div'); 
                 tileInformationDiv.innerHTML = 'Loading tile details...'; 
-                tileInformationDiv.className = 'popup-tile-information'; 
+                tileInformationDiv.className = 'popup-information'; 
                 popupContent.appendChild(tileInformationDiv); 
 
                 fetchPopupInformation('tile', tileId).then((data) => {

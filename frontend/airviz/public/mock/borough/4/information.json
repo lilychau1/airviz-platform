@@ -1,7 +1,6 @@
 { 
-    "name": "Point 4", 
+    "name": "Brent", 
     "region": "Greater London", 
-    "boroughRegion": "Lambeth", 
     "currentAqi": 38, 
     "currentAqiCategoryLevel": 2, 
     "currentPm25Level": 2, 

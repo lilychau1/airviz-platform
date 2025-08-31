@@ -2,8 +2,8 @@
   "2025-08-11T20:00:00Z": [
     {
       "id": 1,
-      "longitude": -0.09,
-      "latitude": 51.505,
+      "longitude": 0.129455,
+      "latitude": 51.547740,
       "currentAqiColour": {
         "red": 0.310,
         "green": 0.733,
@@ -12,8 +12,8 @@
     },
     {
       "id": 2,
-      "longitude": -0.096432,
-      "latitude": 51.499646,
+      "longitude": -0.202317,
+      "latitude": 51.622088,
       "currentAqiColour": {
         "red": 1,
         "green": 0.165
@@ -21,8 +21,8 @@
     },
     {
       "id": 3,
-      "longitude": -0.109721,
-      "latitude": 51.50427,
+      "longitude": 0.139154,
+      "latitude": 51.451946,
       "currentAqiColour": {
         "red": 1,
         "green": 0.773
@@ -30,8 +30,8 @@
     },
     {
       "id": 4,
-      "longitude": -0.108662,
-      "latitude": 51.498403,
+      "longitude": -0.263912,
+      "latitude": 51.552622,
       "currentAqiColour": {
         "red": 1,
         "green": 0.412
@@ -41,8 +41,8 @@
   "2025-08-11T19:00:00Z": [
     {
       "id": 1,
-      "longitude": -0.09,
-      "latitude": 51.505,
+      "longitude": 0.129455,
+      "latitude": 51.547740,
       "currentAqiColour": {
         "red": 1,
         "green": 0.165,
@@ -51,8 +51,8 @@
     },
     {
       "id": 2,
-      "longitude": -0.096432,
-      "latitude": 51.499646,
+      "longitude": -0.202317,
+      "latitude": 51.622088,
       "currentAqiColour": {
         "red": 0.310,
         "green": 0.733
@@ -60,8 +60,8 @@
     },
     {
       "id": 3,
-      "longitude": -0.109721,
-      "latitude": 51.50427,
+      "longitude": 0.139154,
+      "latitude": 51.451946,
       "currentAqiColour": {
         "red": 1,
         "green": 0.412
@@ -69,8 +69,8 @@
     },
     {
       "id": 4,
-      "longitude": -0.108662,
-      "latitude": 51.498403,
+      "longitude": -0.263912,
+      "latitude": 51.552622,
       "currentAqiColour": {
         "red": 1,
         "green": 0.773
@@ -80,8 +80,8 @@
   "2025-08-11T18:00:00Z": [
     {
       "id": 1,
-      "longitude": -0.09,
-      "latitude": 51.505,
+      "longitude": 0.129455,
+      "latitude": 51.547740,
       "currentAqiColour": {
         "red": 1,
         "green": 0.773,
@@ -90,8 +90,8 @@
     },
     {
       "id": 2,
-      "longitude": -0.096432,
-      "latitude": 51.499646,
+      "longitude": -0.202317,
+      "latitude": 51.622088,
       "currentAqiColour": {
         "red": 1,
         "green": 0.412
@@ -99,8 +99,8 @@
     },
     {
       "id": 3,
-      "longitude": -0.109721,
-      "latitude": 51.50427,
+      "longitude": 0.139154,
+      "latitude": 51.451946,
       "currentAqiColour": {
         "red": 0.310,
         "green": 0.733
@@ -108,8 +108,8 @@
     },
     {
       "id": 4,
-      "longitude": -0.108662,
-      "latitude": 51.498403,
+      "longitude": -0.263912,
+      "latitude": 51.552622,
       "currentAqiColour": {
         "red": 1,
         "green": 0.165
@@ -119,8 +119,8 @@
   "2025-08-11T17:00:00Z": [
     {
       "id": 1,
-      "longitude": -0.09,
-      "latitude": 51.505,
+      "longitude": 0.129455,
+      "latitude": 51.547740,
       "currentAqiColour": {
         "red": 1,
         "green": 0.412,
@@ -129,8 +129,8 @@
     },
     {
       "id": 2,
-      "longitude": -0.096432,
-      "latitude": 51.499646,
+      "longitude": -0.202317,
+      "latitude": 51.622088,
       "currentAqiColour": {
         "red": 1,
         "green": 0.773
@@ -138,8 +138,8 @@
     },
     {
       "id": 3,
-      "longitude": -0.109721,
-      "latitude": 51.50427,
+      "longitude": 0.139154,
+      "latitude": 51.451946,
       "currentAqiColour": {
         "red": 1,
         "green": 0.165
@@ -147,8 +147,8 @@
     },
     {
       "id": 4,
-      "longitude": -0.108662,
-      "latitude": 51.498403,
+      "longitude": -0.263912,
+      "latitude": 51.552622,
       "currentAqiColour": {
         "red": 0.310,
         "green": 0.733
@@ -158,8 +158,8 @@
   "2025-08-11T16:00:00Z": [
     {
       "id": 1,
-      "longitude": -0.09,
-      "latitude": 51.505,
+      "longitude": 0.129455,
+      "latitude": 51.547740,
       "currentAqiColour": {
         "red": 0.310,
         "green": 0.733,
@@ -168,8 +168,8 @@
     },
     {
       "id": 2,
-      "longitude": -0.096432,
-      "latitude": 51.499646,
+      "longitude": -0.202317,
+      "latitude": 51.622088,
       "currentAqiColour": {
         "red": 1,
         "green": 0.165
@@ -177,8 +177,8 @@
     },
     {
       "id": 3,
-      "longitude": -0.109721,
-      "latitude": 51.50427,
+      "longitude": 0.139154,
+      "latitude": 51.451946,
       "currentAqiColour": {
         "red": 1,
         "green": 0.773
@@ -186,8 +186,8 @@
     },
     {
       "id": 4,
-      "longitude": -0.108662,
-      "latitude": 51.498403,
+      "longitude": -0.263912,
+      "latitude": 51.552622,
       "currentAqiColour": {
         "red": 1,
         "green": 0.412
@@ -197,8 +197,8 @@
   "2025-08-11T15:00:00Z": [
     {
       "id": 1,
-      "longitude": -0.09,
-      "latitude": 51.505,
+      "longitude": 0.129455,
+      "latitude": 51.547740,
       "currentAqiColour": {
         "red": 1,
         "green": 0.165,
@@ -207,8 +207,8 @@
     },
     {
       "id": 2,
-      "longitude": -0.096432,
-      "latitude": 51.499646,
+      "longitude": -0.202317,
+      "latitude": 51.622088,
       "currentAqiColour": {
         "red": 0.310,
         "green": 0.733
@@ -216,8 +216,8 @@
     },
     {
       "id": 3,
-      "longitude": -0.109721,
-      "latitude": 51.50427,
+      "longitude": 0.139154,
+      "latitude": 51.451946,
       "currentAqiColour": {
         "red": 1,
         "green": 0.412
@@ -225,8 +225,8 @@
     },
     {
       "id": 4,
-      "longitude": -0.108662,
-      "latitude": 51.498403,
+      "longitude": -0.263912,
+      "latitude": 51.552622,
       "currentAqiColour": {
         "red": 1,
         "green": 0.773
@@ -236,8 +236,8 @@
   "2025-08-11T14:00:00Z": [
     {
       "id": 1,
-      "longitude": -0.09,
-      "latitude": 51.505,
+      "longitude": 0.129455,
+      "latitude": 51.547740,
       "currentAqiColour": {
         "red": 1,
         "green": 0.773,
@@ -246,8 +246,8 @@
     },
     {
       "id": 2,
-      "longitude": -0.096432,
-      "latitude": 51.499646,
+      "longitude": -0.202317,
+      "latitude": 51.622088,
       "currentAqiColour": {
         "red": 1,
         "green": 0.412
@@ -255,8 +255,8 @@
     },
     {
       "id": 3,
-      "longitude": -0.109721,
-      "latitude": 51.50427,
+      "longitude": 0.139154,
+      "latitude": 51.451946,
       "currentAqiColour": {
         "red": 0.310,
         "green": 0.733
@@ -264,8 +264,8 @@
     },
     {
       "id": 4,
-      "longitude": -0.108662,
-      "latitude": 51.498403,
+      "longitude": -0.263912,
+      "latitude": 51.552622,
       "currentAqiColour": {
         "red": 1,
         "green": 0.165
@@ -275,8 +275,8 @@
   "2025-08-11T13:00:00Z": [
     {
       "id": 1,
-      "longitude": -0.09,
-      "latitude": 51.505,
+      "longitude": 0.129455,
+      "latitude": 51.547740,
       "currentAqiColour": {
         "red": 1,
         "green": 0.412,
@@ -285,8 +285,8 @@
     },
     {
       "id": 2,
-      "longitude": -0.096432,
-      "latitude": 51.499646,
+      "longitude": -0.202317,
+      "latitude": 51.622088,
       "currentAqiColour": {
         "red": 1,
         "green": 0.773
@@ -294,8 +294,8 @@
     },
     {
       "id": 3,
-      "longitude": -0.109721,
-      "latitude": 51.50427,
+      "longitude": 0.139154,
+      "latitude": 51.451946,
       "currentAqiColour": {
         "red": 1,
         "green": 0.165
@@ -303,8 +303,8 @@
     },
     {
       "id": 4,
-      "longitude": -0.108662,
-      "latitude": 51.498403,
+      "longitude": -0.263912,
+      "latitude": 51.552622,
       "currentAqiColour": {
         "red": 0.310,
         "green": 0.733
@@ -314,8 +314,8 @@
   "2025-08-11T12:00:00Z": [
     {
       "id": 1,
-      "longitude": -0.09,
-      "latitude": 51.505,
+      "longitude": 0.129455,
+      "latitude": 51.547740,
       "currentAqiColour": {
         "red": 0.310,
         "green": 0.733,
@@ -324,8 +324,8 @@
     },
     {
       "id": 2,
-      "longitude": -0.096432,
-      "latitude": 51.499646,
+      "longitude": -0.202317,
+      "latitude": 51.622088,
       "currentAqiColour": {
         "red": 1,
         "green": 0.165
@@ -333,8 +333,8 @@
     },
     {
       "id": 3,
-      "longitude": -0.109721,
-      "latitude": 51.50427,
+      "longitude": 0.139154,
+      "latitude": 51.451946,
       "currentAqiColour": {
         "red": 1,
         "green": 0.773
@@ -342,8 +342,8 @@
     },
     {
       "id": 4,
-      "longitude": -0.108662,
-      "latitude": 51.498403,
+      "longitude": -0.263912,
+      "latitude": 51.552622,
       "currentAqiColour": {
         "red": 1,
         "green": 0.412
@@ -353,8 +353,8 @@
   "2025-08-11T11:00:00Z": [
     {
       "id": 1,
-      "longitude": -0.09,
-      "latitude": 51.505,
+      "longitude": 0.129455,
+      "latitude": 51.547740,
       "currentAqiColour": {
         "red": 1,
         "green": 0.165,
@@ -363,8 +363,8 @@
     },
     {
       "id": 2,
-      "longitude": -0.096432,
-      "latitude": 51.499646,
+      "longitude": -0.202317,
+      "latitude": 51.622088,
       "currentAqiColour": {
         "red": 0.310,
         "green": 0.733
@@ -372,8 +372,8 @@
     },
     {
       "id": 3,
-      "longitude": -0.109721,
-      "latitude": 51.50427,
+      "longitude": 0.139154,
+      "latitude": 51.451946,
       "currentAqiColour": {
         "red": 1,
         "green": 0.412
@@ -381,8 +381,8 @@
     },
     {
       "id": 4,
-      "longitude": -0.108662,
-      "latitude": 51.498403,
+      "longitude": -0.263912,
+      "latitude": 51.552622,
       "currentAqiColour": {
         "red": 1,
         "green": 0.773
@@ -392,8 +392,8 @@
   "2025-08-11T10:00:00Z": [
     {
       "id": 1,
-      "longitude": -0.09,
-      "latitude": 51.505,
+      "longitude": 0.129455,
+      "latitude": 51.547740,
       "currentAqiColour": {
         "red": 1,
         "green": 0.773,
@@ -402,8 +402,8 @@
     },
     {
       "id": 2,
-      "longitude": -0.096432,
-      "latitude": 51.499646,
+      "longitude": -0.202317,
+      "latitude": 51.622088,
       "currentAqiColour": {
         "red": 1,
         "green": 0.412
@@ -411,8 +411,8 @@
     },
     {
       "id": 3,
-      "longitude": -0.109721,
-      "latitude": 51.50427,
+      "longitude": 0.139154,
+      "latitude": 51.451946,
       "currentAqiColour": {
         "red": 0.310,
         "green": 0.733
@@ -420,8 +420,8 @@
     },
     {
       "id": 4,
-      "longitude": -0.108662,
-      "latitude": 51.498403,
+      "longitude": -0.263912,
+      "latitude": 51.552622,
       "currentAqiColour": {
         "red": 1,
         "green": 0.165
@@ -431,8 +431,8 @@
   "2025-08-11T09:00:00Z": [
     {
       "id": 1,
-      "longitude": -0.09,
-      "latitude": 51.505,
+      "longitude": 0.129455,
+      "latitude": 51.547740,
       "currentAqiColour": {
         "red": 1,
         "green": 0.412,
@@ -441,8 +441,8 @@
     },
     {
       "id": 2,
-      "longitude": -0.096432,
-      "latitude": 51.499646,
+      "longitude": -0.202317,
+      "latitude": 51.622088,
       "currentAqiColour": {
         "red": 1,
         "green": 0.773
@@ -450,8 +450,8 @@
     },
     {
       "id": 3,
-      "longitude": -0.109721,
-      "latitude": 51.50427,
+      "longitude": 0.139154,
+      "latitude": 51.451946,
       "currentAqiColour": {
         "red": 1,
         "green": 0.165
@@ -459,8 +459,8 @@
     },
     {
       "id": 4,
-      "longitude": -0.108662,
-      "latitude": 51.498403,
+      "longitude": -0.263912,
+      "latitude": 51.552622,
       "currentAqiColour": {
         "red": 0.310,
         "green": 0.733
@@ -470,8 +470,8 @@
   "2025-08-11T08:00:00Z": [
     {
       "id": 1,
-      "longitude": -0.09,
-      "latitude": 51.505,
+      "longitude": 0.129455,
+      "latitude": 51.547740,
       "currentAqiColour": {
         "red": 0.310,
         "green": 0.733,
@@ -480,8 +480,8 @@
     },
     {
       "id": 2,
-      "longitude": -0.096432,
-      "latitude": 51.499646,
+      "longitude": -0.202317,
+      "latitude": 51.622088,
       "currentAqiColour": {
         "red": 1,
         "green": 0.165
@@ -489,8 +489,8 @@
     },
     {
       "id": 3,
-      "longitude": -0.109721,
-      "latitude": 51.50427,
+      "longitude": 0.139154,
+      "latitude": 51.451946,
       "currentAqiColour": {
         "red": 1,
         "green": 0.773
@@ -498,8 +498,8 @@
     },
     {
       "id": 4,
-      "longitude": -0.108662,
-      "latitude": 51.498403,
+      "longitude": -0.263912,
+      "latitude": 51.552622,
       "currentAqiColour": {
         "red": 1,
         "green": 0.412
@@ -509,8 +509,8 @@
   "2025-08-11T07:00:00Z": [
     {
       "id": 1,
-      "longitude": -0.09,
-      "latitude": 51.505,
+      "longitude": 0.129455,
+      "latitude": 51.547740,
       "currentAqiColour": {
         "red": 1,
         "green": 0.165,
@@ -519,8 +519,8 @@
     },
     {
       "id": 2,
-      "longitude": -0.096432,
-      "latitude": 51.499646,
+      "longitude": -0.202317,
+      "latitude": 51.622088,
       "currentAqiColour": {
         "red": 0.310,
         "green": 0.733
@@ -528,8 +528,8 @@
     },
     {
       "id": 3,
-      "longitude": -0.109721,
-      "latitude": 51.50427,
+      "longitude": 0.139154,
+      "latitude": 51.451946,
       "currentAqiColour": {
         "red": 1,
         "green": 0.412
@@ -537,8 +537,8 @@
     },
     {
       "id": 4,
-      "longitude": -0.108662,
-      "latitude": 51.498403,
+      "longitude": -0.263912,
+      "latitude": 51.552622,
       "currentAqiColour": {
         "red": 1,
         "green": 0.773
@@ -548,8 +548,8 @@
   "2025-08-11T06:00:00Z": [
     {
       "id": 1,
-      "longitude": -0.09,
-      "latitude": 51.505,
+      "longitude": 0.129455,
+      "latitude": 51.547740,
       "currentAqiColour": {
         "red": 1,
         "green": 0.773,
@@ -558,8 +558,8 @@
     },
     {
       "id": 2,
-      "longitude": -0.096432,
-      "latitude": 51.499646,
+      "longitude": -0.202317,
+      "latitude": 51.622088,
       "currentAqiColour": {
         "red": 1,
         "green": 0.412
@@ -567,8 +567,8 @@
     },
     {
       "id": 3,
-      "longitude": -0.109721,
-      "latitude": 51.50427,
+      "longitude": 0.139154,
+      "latitude": 51.451946,
       "currentAqiColour": {
         "red": 0.310,
         "green": 0.733
@@ -576,8 +576,8 @@
     },
     {
       "id": 4,
-      "longitude": -0.108662,
-      "latitude": 51.498403,
+      "longitude": -0.263912,
+      "latitude": 51.552622,
       "currentAqiColour": {
         "red": 1,
         "green": 0.165
@@ -587,8 +587,8 @@
   "2025-08-11T05:00:00Z": [
     {
       "id": 1,
-      "longitude": -0.09,
-      "latitude": 51.505,
+      "longitude": 0.129455,
+      "latitude": 51.547740,
       "currentAqiColour": {
         "red": 0.310,
         "green": 0.733,
@@ -597,8 +597,8 @@
     },
     {
       "id": 2,
-      "longitude": -0.096432,
-      "latitude": 51.499646,
+      "longitude": -0.202317,
+      "latitude": 51.622088,
       "currentAqiColour": {
         "red": 1,
         "green": 0.165
@@ -606,8 +606,8 @@
     },
     {
       "id": 3,
-      "longitude": -0.109721,
-      "latitude": 51.50427,
+      "longitude": 0.139154,
+      "latitude": 51.451946,
       "currentAqiColour": {
         "red": 1,
         "green": 0.773
@@ -615,8 +615,8 @@
     },
     {
       "id": 4,
-      "longitude": -0.108662,
-      "latitude": 51.498403,
+      "longitude": -0.263912,
+      "latitude": 51.552622,
       "currentAqiColour": {
         "red": 1,
         "green": 0.412
@@ -626,8 +626,8 @@
   "2025-08-11T04:00:00Z": [
     {
       "id": 1,
-      "longitude": -0.09,
-      "latitude": 51.505,
+      "longitude": 0.129455,
+      "latitude": 51.547740,
       "currentAqiColour": {
         "red": 1,
         "green": 0.165,
@@ -636,8 +636,8 @@
     },
     {
       "id": 2,
-      "longitude": -0.096432,
-      "latitude": 51.499646,
+      "longitude": -0.202317,
+      "latitude": 51.622088,
       "currentAqiColour": {
         "red": 0.310,
         "green": 0.733
@@ -645,8 +645,8 @@
     },
     {
       "id": 3,
-      "longitude": -0.109721,
-      "latitude": 51.50427,
+      "longitude": 0.139154,
+      "latitude": 51.451946,
       "currentAqiColour": {
         "red": 1,
         "green": 0.412
@@ -654,8 +654,8 @@
     },
     {
       "id": 4,
-      "longitude": -0.108662,
-      "latitude": 51.498403,
+      "longitude": -0.263912,
+      "latitude": 51.552622,
       "currentAqiColour": {
         "red": 1,
         "green": 0.773
@@ -665,8 +665,8 @@
   "2025-08-11T03:00:00Z": [
     {
       "id": 1,
-      "longitude": -0.09,
-      "latitude": 51.505,
+      "longitude": 0.129455,
+      "latitude": 51.547740,
       "currentAqiColour": {
         "red": 0.310,
         "green": 0.733,
@@ -675,8 +675,8 @@
     },
     {
       "id": 2,
-      "longitude": -0.096432,
-      "latitude": 51.499646,
+      "longitude": -0.202317,
+      "latitude": 51.622088,
       "currentAqiColour": {
         "red": 1,
         "green": 0.165
@@ -684,8 +684,8 @@
     },
     {
       "id": 3,
-      "longitude": -0.109721,
-      "latitude": 51.50427,
+      "longitude": 0.139154,
+      "latitude": 51.451946,
       "currentAqiColour": {
         "red": 1,
         "green": 0.773
@@ -693,8 +693,8 @@
     },
     {
       "id": 4,
-      "longitude": -0.108662,
-      "latitude": 51.498403,
+      "longitude": -0.263912,
+      "latitude": 51.552622,
       "currentAqiColour": {
         "red": 1,
         "green": 0.412
@@ -704,8 +704,8 @@
   "2025-08-11T02:00:00Z": [
     {
       "id": 1,
-      "longitude": -0.09,
-      "latitude": 51.505,
+      "longitude": 0.129455,
+      "latitude": 51.547740,
       "currentAqiColour": {
         "red": 1,
         "green": 0.165,
@@ -714,8 +714,8 @@
     },
     {
       "id": 2,
-      "longitude": -0.096432,
-      "latitude": 51.499646,
+      "longitude": -0.202317,
+      "latitude": 51.622088,
       "currentAqiColour": {
         "red": 0.310,
         "green": 0.733
@@ -723,8 +723,8 @@
     },
     {
       "id": 3,
-      "longitude": -0.109721,
-      "latitude": 51.50427,
+      "longitude": 0.139154,
+      "latitude": 51.451946,
       "currentAqiColour": {
         "red": 1,
         "green": 0.412
@@ -732,8 +732,8 @@
     },
     {
       "id": 4,
-      "longitude": -0.108662,
-      "latitude": 51.498403,
+      "longitude": -0.263912,
+      "latitude": 51.552622,
       "currentAqiColour": {
         "red": 1,
         "green": 0.773
@@ -743,8 +743,8 @@
   "2025-08-11T01:00:00Z": [
     {
       "id": 1,
-      "longitude": -0.09,
-      "latitude": 51.505,
+      "longitude": 0.129455,
+      "latitude": 51.547740,
       "currentAqiColour": {
         "red": 1,
         "green": 0.165,
@@ -753,8 +753,8 @@
     },
     {
       "id": 2,
-      "longitude": -0.096432,
-      "latitude": 51.499646,
+      "longitude": -0.202317,
+      "latitude": 51.622088,
       "currentAqiColour": {
         "red": 0.310,
         "green": 0.733
@@ -762,8 +762,8 @@
     },
     {
       "id": 3,
-      "longitude": -0.109721,
-      "latitude": 51.50427,
+      "longitude": 0.139154,
+      "latitude": 51.451946,
       "currentAqiColour": {
         "red": 1,
         "green": 0.412
@@ -771,8 +771,8 @@
     },
     {
       "id": 4,
-      "longitude": -0.108662,
-      "latitude": 51.498403,
+      "longitude": -0.263912,
+      "latitude": 51.552622,
       "currentAqiColour": {
         "red": 1,
         "green": 0.773
@@ -782,8 +782,8 @@
   "2025-08-11T00:00:00Z": [
     {
       "id": 1,
-      "longitude": -0.09,
-      "latitude": 51.505,
+      "longitude": 0.129455,
+      "latitude": 51.547740,
       "currentAqiColour": {
         "red": 1,
         "green": 0.165,
@@ -792,8 +792,8 @@
     },
     {
       "id": 2,
-      "longitude": -0.096432,
-      "latitude": 51.499646,
+      "longitude": -0.202317,
+      "latitude": 51.622088,
       "currentAqiColour": {
         "red": 0.310,
         "green": 0.733
@@ -801,8 +801,8 @@
     },
     {
       "id": 3,
-      "longitude": -0.109721,
-      "latitude": 51.50427,
+      "longitude": 0.139154,
+      "latitude": 51.451946,
       "currentAqiColour": {
         "red": 1,
         "green": 0.412
@@ -810,8 +810,8 @@
     },
     {
       "id": 4,
-      "longitude": -0.108662,
-      "latitude": 51.498403,
+      "longitude": -0.263912,
+      "latitude": 51.552622,
       "currentAqiColour": {
         "red": 1,
         "green": 0.773
