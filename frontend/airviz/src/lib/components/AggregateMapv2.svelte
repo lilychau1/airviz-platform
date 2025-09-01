@@ -12,7 +12,6 @@
         fetchMapRadius, 
         fetchPopupInformation, 
         loadRegionalGeoJSON
-
     } from '../../api/MockApi';
     import { Pollutants, type RegionUnit, type Coordinates, LevelCategory, type RegionLevel } from '../constants';
     import { filterByTimeRange } from '../utils/utils';
@@ -22,6 +21,7 @@
     let currentLocation: Coordinates;
     let mapRadius: number; 
     let allRegions: RegionUnit[];
+    let geojsonRegion: GeoJSON.FeatureCollection;
 
     let map: MapLibreMap;
     let chart: Chart | null = null;
@@ -32,6 +32,47 @@
     const now = new Date("2025-08-11T20:00:00Z").getTime();
     let sliderHour = 0;
     let selectedTimestamp = now;
+
+    async function refreshRegions() {
+        // Only update if all necessary info is present. Otherwise do nothing
+        if (!regionLevel || !currentLocation || !mapRadius) return;
+
+        allRegions = await fetchAllRegions(
+            regionLevel,
+            currentLocation.latitude,
+            currentLocation.longitude,
+            mapRadius,
+            selectedTimestamp
+        );
+        geojsonRegion = await loadRegionalGeoJSON(regionLevel);
+
+        const extraRegionDataMap = new Map<number, RegionUnit>();
+        for (const region of allRegions) {
+            extraRegionDataMap.set(region.id, region);
+        }
+        geojsonRegion.features.forEach(feature => {
+            const id = feature.properties?.fid;
+            if (id !== undefined) {
+                const numericId = typeof id === 'string' ? Number(id) : id;
+                if (extraRegionDataMap.has(numericId)) {
+                    const extraData = extraRegionDataMap.get(numericId);
+                    if (extraData !== undefined) {
+                        feature.properties = {
+                            ...feature.properties,
+                            longitude: extraData.longitude,
+                            latitude: extraData.latitude,
+                            currentAqiColour: extraData.currentAqiColour,
+                        };
+                    }
+                }
+            }
+        });
+
+        // If map and source exist, refresh geojson on the map
+        if (map && map.getSource(regionLevel)) {
+            (map.getSource(regionLevel) as maplibregl.GeoJSONSource).setData(geojsonRegion);
+        }
+    }
 
     onMount(async () => {
         // Placeholder: Fetch current locations with coordinates
@@ -48,6 +89,12 @@
         const geojsonRegion = await loadRegionalGeoJSON(regionLevel);
 
         initialiseMap(geojsonRegion);
+
+        map.on('load', async () => {
+            if (map.getSource(regionLevel)) {
+                (map.getSource(regionLevel) as maplibregl.GeoJSONSource).setData(geojsonRegion);
+            }
+        });
     });
 
     onDestroy(() => {
@@ -388,8 +435,27 @@
     $: if (sliderHour !== undefined) {
         selectedTimestamp = now - sliderHour * 3600 * 1000;
     }
+    $: if (map && selectedTimestamp !== undefined) {
+        refreshRegions();
+    }
 </script>
 
 
+<div class="map-wrapper">
+    <div id="map" class="map-landing-container"></div>
 
-<div id="map" style="width: 100vw; height: 100vh;"></div>
+    <div class="time-slider-container">
+        <label for="timeSlider">Show Hour: {24 - sliderHour}h ago</label>
+        <input 
+            id="timeSlider" 
+            type="range" 
+            min="0" 
+            max="23" 
+            bind:value={sliderHour} 
+            step="1" 
+        />
+        <div class="time-slider-timestamp">
+            {new Date(selectedTimestamp).toLocaleString()}
+        </div>
+    </div>
+</div>
