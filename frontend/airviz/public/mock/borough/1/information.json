@@ -8,5 +8,9 @@
     "currentNo2Level": 1, 
     "currentO3Level": 1, 
     "currentSo2Level": 1, 
-    "currentCoLevel": 1
+    "currentCoLevel": 1, 
+    "last30dUnhealthyAQIDays": 0, 
+    "last30dAQIMean": 81, 
+    "last30dAQIMax": 88, 
+    "last30dAQIMin": 79 
 }

@@ -59,7 +59,10 @@ export interface TilePopupInformation extends popupInformation{
     boroughRegion: string; 
 }
 export interface RegionPopupInformation extends popupInformation{
-    
+    last30dUnhealthyAQIDays: number;
+    last30dAQIMean: number;
+    last30dAQIMax: number;
+    last30dAQIMin: number;
 }
 
 // Define allowed keys as a union type
