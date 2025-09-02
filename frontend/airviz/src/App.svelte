@@ -5,7 +5,6 @@
 
 <Header />
 
-<!-- Main app content goes here -->
 <main>
   <Router />
 </main>

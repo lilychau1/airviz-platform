@@ -1,5 +1,6 @@
 <script lang="ts">
-  import AggregateMapv2 from '../lib/components/AggregateMapv2.svelte';
+    import AggregateMap from '../lib/components/AggregateMap.svelte';
+    import MapSwitcher from '../lib/components/MapSwitcher.svelte';
 </script>
-
-<AggregateMapv2 />
+<MapSwitcher />
+<AggregateMap />

@@ -24,6 +24,12 @@
   -moz-osx-font-smoothing: grayscale;
 }
 
+main {
+  margin-top: 60px; 
+  position: relative;
+  z-index: 1; 
+}
+
 a {
   font-weight: 500;
   color: #646cff;
@@ -191,10 +197,13 @@ nav a {
 
 /* Map */
 .map-landing-container {
-  width: 100vw;
-  height: calc(100vh - 64px);
+  flex: 1 1 auto; 
+  margin-top: 0; 
+  padding: 0;
   position: relative;
-  margin-top: 64px;
+  width: 100vw;
+  height: auto;
+  overflow: hidden;
 }
 
 .maplibregl-popup.map-popup {
@@ -238,10 +247,11 @@ nav a {
 }
 
 .map-wrapper {
-  position: relative;
-  width: 100vw;
-  height: calc(100vh - 64px);
-  margin-top: 64px;
+  margin: 0;
+  padding: 0;
+  height: 100vh; /* Fill viewport */
+  display: flex;
+  flex-direction: column;
 }
 
 .time-slider-container {
@@ -662,4 +672,66 @@ input[type="datetime-local"]:focus {
 .compare-equal {
     background-color: #fff3cd; 
     color: #856404;
+}
+
+.map-switch-toggle-container {
+  position: absolute; 
+  top: 10px; 
+  right: 10px; 
+  z-index: 1000; 
+  background: rgba(255, 255, 255, 0.8); 
+  padding: 6px 12px;
+  border-radius: 6px;
+  box-shadow: 0 0 5px rgba(0,0,0,0.3);
+  user-select: none;
+  display: flex;
+  align-items: center;
+}
+
+.map-switch-toggle-label {
+  font-size: 14px;
+  color: #333;
+  font-weight: 600;
+}
+
+.map-switch {
+  position: relative;
+  display: inline-block;
+  width: 46px;
+  height: 24px;
+}
+
+.map-switch input {
+  opacity: 0;
+  width: 0;
+  height: 0;
+}
+
+.map-switch-slider {
+  position: absolute;
+  cursor: pointer;
+  top: 0; left: 0; right: 0; bottom: 0;
+  background-color: #ccc;
+  border-radius: 24px;
+  transition: background-color 0.3s;
+}
+
+.map-switch-slider::before {
+  position: absolute;
+  content: "";
+  height: 20px;
+  width: 20px;
+  left: 2px;
+  bottom: 2px;
+  background-color: white;
+  border-radius: 50%;
+  transition: transform 0.3s;
+}
+
+input:checked + .map-switch-slider {
+  background-color: #4caf50;
+}
+
+input:checked + .map-switch-slider::before {
+  transform: translateX(22px);
 }
