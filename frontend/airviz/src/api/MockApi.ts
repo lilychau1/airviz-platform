@@ -212,3 +212,7 @@ export async function loadRegionalGeoJSON(level: string): Promise<FeatureCollect
     }
     return resp.json() as Promise<FeatureCollection>;
 }
+
+export async function submitForm(name: string, email: string, message: string): Promise<void> {
+    
+}

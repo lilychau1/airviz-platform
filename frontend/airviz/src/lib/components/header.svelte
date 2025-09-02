@@ -9,17 +9,17 @@
     <nav>
       <ul>
         <li><a href="/">Home</a></li>
-        <li><a href="/about">About</a></li>
+        <li><a href="/#/about">About</a></li>
         <li class="dropdown">
           <a href="/data">
             Data <DropdownIcon class="dropdown-icon" />
           </a>
           <ul class="dropdown-content">
-            <li><a href="/data/overview">Overview</a></li>
-            <li><a href="/data/map">Map</a></li>
+            <li><a href="/#/map">Map</a></li>
+            <li><a href="/#/aggregate-map">Aggregate Map</a></li>
           </ul>
         </li>
-        <li><a href="/contact">Contact</a></li>
+        <li><a href="/#/contact">Contact</a></li>
       </ul>
     </nav>
   </div>
