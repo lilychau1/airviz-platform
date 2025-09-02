@@ -24,7 +24,7 @@ export interface Colour {
     blue: number;
 }
 
-export interface Tile {
+export interface RegionUnit {
     id: number;
     longitude: number; 
     latitude: number;
@@ -43,10 +43,9 @@ export interface PollutantCurrentRecord extends PollutantRecord {
     healthImpact: string;
 }
 
-export interface TileInformation {
+export interface popupInformation{
     name: string; 
     region: string; 
-    boroughRegion: string; 
     currentAqi: number; 
     currentAqiCategoryLevel: number;
     currentPm25Level: number; 
@@ -55,6 +54,15 @@ export interface TileInformation {
     currentO3Level: number; 
     currentSo2Level: number; 
     currentCoLevel: number; 
+}
+export interface TilePopupInformation extends popupInformation{
+    boroughRegion: string; 
+}
+export interface RegionPopupInformation extends popupInformation{
+    last30dUnhealthyAQIDays: number;
+    last30dAQIMean: number;
+    last30dAQIMax: number;
+    last30dAQIMin: number;
 }
 
 // Define allowed keys as a union type
@@ -72,17 +80,33 @@ export const LevelCategory: { readonly [key in LevelKey]: LevelInfo } = {
     3: {category: "Poor", colour: "crimson"}, 
 } as const; 
 
-export interface TileDetails {
+
+export interface RegionDetails {
     id: number; 
     name: string;
     longitude: number;
     latitude: number; 
     region: string; 
+    description: string;
+}
+
+export interface TileDetails extends RegionDetails{
     boroughRegion: string;
     zoneRegion: number;
     postcodeArea: string;
-    Description: string;
 }
+
+export type RegionLevel = 'tile' | 'borough'; 
+
+export type DetailsReturnTypeForRegionLevel<L extends RegionLevel> = 
+    L extends 'tile' ? TileDetails: 
+    L extends 'borough' ? RegionDetails: 
+    never; 
+
+export type PopupInfoReturnTypeForRegionLevel<L extends RegionLevel> = 
+    L extends 'tile' ? TilePopupInformation: 
+    L extends 'borough' ? RegionPopupInformation: 
+    never; 
 
 export const PollutantUnit = {
     MICROGRAM_PER_CUBIC_METER: { id: "microgram_per_cubic_meter", label: "µg/m³" },
@@ -183,5 +207,3 @@ export interface Metadata extends TileMetadata {
     license: string;
     additionalNotes: string;
 }
-
-

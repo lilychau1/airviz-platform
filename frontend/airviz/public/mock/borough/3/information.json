@@ -1,0 +1,16 @@
+{ 
+    "name": "Bexley", 
+    "region": "Greater London", 
+    "currentAqi": 46, 
+    "currentAqiCategoryLevel": 2, 
+    "currentPm25Level": 2, 
+    "currentPm10Level": 2, 
+    "currentNo2Level": 2, 
+    "currentO3Level": 2, 
+    "currentSo2Level": 2, 
+    "currentCoLevel": 2, 
+    "last30dUnhealthyAQIDays": 12, 
+    "last30dAQIMean": 39, 
+    "last30dAQIMax": 47, 
+    "last30dAQIMin": 36 
+}

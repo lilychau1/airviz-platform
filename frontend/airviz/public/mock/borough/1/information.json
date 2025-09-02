@@ -1,0 +1,16 @@
+{ 
+    "name": "Barking and Dagenham", 
+    "region": "Greater London", 
+    "currentAqi": 82, 
+    "currentAqiCategoryLevel": 1, 
+    "currentPm25Level": 1, 
+    "currentPm10Level": 1, 
+    "currentNo2Level": 1, 
+    "currentO3Level": 1, 
+    "currentSo2Level": 1, 
+    "currentCoLevel": 1, 
+    "last30dUnhealthyAQIDays": 0, 
+    "last30dAQIMean": 81, 
+    "last30dAQIMax": 88, 
+    "last30dAQIMin": 79 
+}

@@ -74,12 +74,12 @@
         o3Data,
         so2Data,
       ] = await Promise.all([
-        fetchPollutantData(tileId, Pollutants.PM25.id),
-        fetchPollutantData(tileId, Pollutants.PM10.id),
-        fetchPollutantData(tileId, Pollutants.NO2.id),
-        fetchPollutantData(tileId, Pollutants.CO.id),
-        fetchPollutantData(tileId, Pollutants.O3.id),
-        fetchPollutantData(tileId, Pollutants.SO2.id),
+        fetchPollutantData('tile', tileId, Pollutants.PM25.id),
+        fetchPollutantData('tile', tileId, Pollutants.PM10.id),
+        fetchPollutantData('tile', tileId, Pollutants.NO2.id),
+        fetchPollutantData('tile', tileId, Pollutants.CO.id),
+        fetchPollutantData('tile', tileId, Pollutants.O3.id),
+        fetchPollutantData('tile', tileId, Pollutants.SO2.id),
       ]);
 
       const filteredPm25 = filterByTimeRange(pm25Data, cutoff, selectedTimestamp);

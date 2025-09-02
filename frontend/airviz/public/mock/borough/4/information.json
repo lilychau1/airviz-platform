@@ -1,0 +1,16 @@
+{ 
+    "name": "Brent", 
+    "region": "Greater London", 
+    "currentAqi": 38, 
+    "currentAqiCategoryLevel": 2, 
+    "currentPm25Level": 2, 
+    "currentPm10Level": 2, 
+    "currentNo2Level": 2, 
+    "currentO3Level": 3, 
+    "currentSo2Level": 2, 
+    "currentCoLevel": 2, 
+    "last30dUnhealthyAQIDays": 6, 
+    "last30dAQIMean": 38, 
+    "last30dAQIMax": 44, 
+    "last30dAQIMin": 37 
+}
