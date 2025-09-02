@@ -1,24 +1,29 @@
 <script lang="ts">
-  import { submitForm } from '../api/MockApi'; 
+    import { submitForm } from '../api/MockApi'; 
 
-  let name = '';
-  let email = '';
-  let message = '';
-  let success = false;
-  let error = '';
+    let name = '';
+    let email = '';
+    let message = '';
+    let success = false;
+    let error = '';
 
-  async function handleSubmit(event: Event) {
-    event.preventDefault(); 
+    async function handleSubmit(event: Event) {
+        event.preventDefault(); 
 
-    try {
-      await submitForm(name, email, message);
-      success = true;
-      error = '';
-    } catch (e) {
-      error = 'Failed to submit the form. Please try again.';
-      success = false;
+        try {
+            await submitForm(name, email, message);
+            success = true;
+            error = '';
+
+            // Clear all the fields after successful submission
+            name = '';
+            email = '';
+            message = '';
+        } catch (e) {
+            error = 'Failed to submit the form. Please try again.';
+            success = false;
+        }
     }
-  }
 </script>
 
 <main>
