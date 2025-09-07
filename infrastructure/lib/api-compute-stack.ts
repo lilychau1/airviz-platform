@@ -2,31 +2,55 @@ import * as cdk from 'aws-cdk-lib';
 import * as lambda from 'aws-cdk-lib/aws-lambda';
 import * as apigatewayv2 from 'aws-cdk-lib/aws-apigatewayv2';
 import * as integrations from 'aws-cdk-lib/aws-apigatewayv2-integrations';
+import * as iam from 'aws-cdk-lib/aws-iam';
+import { Secret } from 'aws-cdk-lib/aws-secretsmanager';
+import * as ec2 from 'aws-cdk-lib/aws-ec2';
 
+interface ApiComputeStackProps extends cdk.StackProps {
+    dbSecret: Secret;
+}
 export class ApiComputeStack extends cdk.Stack {
-    constructor(scope: cdk.App, id:string, props?: cdk.StackProps) {
+    constructor(scope: cdk.App, id:string, props?: ApiComputeStackProps) {
         super(scope, id, props); 
 
         // Add Lambda function resources
-        // (1) Ingest data
-        const ingestDataFunction = new lambda.Function(
+        // (0) Create Database Schema on RDS
+        const CreateDbSchemaFunction = new lambda.Function(
             this, 
-            'IngestDataFunction', {
-                runtime: lambda.Runtime.NODEJS_18_X, 
-                handler: 'index.handler', 
-                code: lambda.Code.fromAsset('../backend/lambda/ingestData'), 
+            'CreateDbSchemaFunction', {
+                runtime: lambda.Runtime.NODEJS_18_X,
+                handler: 'index.handler',
+                code: lambda.Code.fromAsset('../backend/lambda/createDbSchema'),
+                timeout: cdk.Duration.minutes(5), 
+                memorySize: 512, 
+                environment: {
+                    DB_SECRET_ARN: props!.dbSecret.secretArn,
+                    // DB_ENDPOINT: props!.dbEndpoint,
+                },
             }
         );
 
-        // (2) Retrieves data
-        const retrieveDataFunction = new lambda.Function(
-            this, 
-            'retrieveDataFunction', {
-                runtime: lambda.Runtime.NODEJS_18_X, 
-                handler: 'index.handler', 
-                code: lambda.Code.fromAsset('../backend/lambda/retrieveData'), 
-            }
-        );
+        props!.dbSecret.grantRead(CreateDbSchemaFunction);
+        
+        // // (1) Ingest data
+        // const ingestBatchDataFunction = new lambda.Function(
+        //     this, 
+        //     'ingestBatchDataFunction', {
+        //         runtime: lambda.Runtime.NODEJS_18_X, 
+        //         handler: 'index.handler', 
+        //         code: lambda.Code.fromAsset('../backend/lambda/ingestBatchData'), 
+        //     }
+        // );
+
+        // // (2) Retrieves data
+        // const retrieveDataFunction = new lambda.Function(
+        //     this, 
+        //     'retrieveDataFunction', {
+        //         runtime: lambda.Runtime.NODEJS_18_X, 
+        //         handler: 'index.handler', 
+        //         code: lambda.Code.fromAsset('../backend/lambda/retrieveData'), 
+        //     }
+        // );
 
         // Add API Gateway
         const httpApi = new apigatewayv2.HttpApi(
@@ -46,22 +70,22 @@ export class ApiComputeStack extends cdk.Stack {
 
         // Add API Gateway route for each lambda function
         httpApi.addRoutes({
-            path: '/ingestData', 
-            methods: [apigatewayv2.HttpMethod.ANY],  // Allow all HTTP methods (GET, POST, DELETE, ...)
+            path: '/CreateDbSchema', 
+            methods: [apigatewayv2.HttpMethod.POST],  // Allow all HTTP methods (GET, POST, DELETE, ...)
             integration: new integrations.HttpLambdaIntegration(
-                'ingestDataFunction', 
-                ingestDataFunction, 
+                'CreateDbSchemaFunction', 
+                CreateDbSchemaFunction, 
             ), 
         });
 
-        httpApi.addRoutes({
-            path: '/retrieveData', 
-            methods: [apigatewayv2.HttpMethod.ANY],  // Allow all HTTP methods (GET, POST, DELETE, ...)
-            integration: new integrations.HttpLambdaIntegration(
-                'ingestDataFunction', 
-                ingestDataFunction, 
-            ), 
-        });
+        // httpApi.addRoutes({
+        //     path: '/retrieveData', 
+        //     methods: [apigatewayv2.HttpMethod.ANY],  // Allow all HTTP methods (GET, POST, DELETE, ...)
+        //     integration: new integrations.HttpLambdaIntegration(
+        //         'ingestDataFunction', 
+        //         ingestBatchDataFunction, 
+        //     ), 
+        // });
     }
 }
 
