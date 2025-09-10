@@ -11,6 +11,7 @@ export class DataStorageStack extends cdk.Stack {
     public readonly secret: secretsmanager.Secret;
     public readonly vpc: ec2.Vpc;
     public readonly rdsSecurityGroup: ec2.ISecurityGroup;
+    public readonly databaseName: string;
 
     constructor(scope: Construct, id: string, props?: cdk.StackProps) {
         super(scope, id, props);
@@ -29,57 +30,66 @@ export class DataStorageStack extends cdk.Stack {
           natGateways: 0, // No NAT gateway to keep costs low
         });
 
-      // // S3 bucket fully public for test only
-      // this.bucket = new s3.Bucket(this, 'AIrVizWebContentBucket', {
-      //   removalPolicy: cdk.RemovalPolicy.DESTROY,
-      //   autoDeleteObjects: true,
-      //   versioned: false,
-      //   publicReadAccess: true, // For test only
-      //   websiteIndexDocument: 'index.html',
-      //   blockPublicAccess: new s3.BlockPublicAccess({
-      //     blockPublicPolicy: false,
-      //     blockPublicAcls: false,
-      //     ignorePublicAcls: false,
-      //     restrictPublicBuckets: false,
-      //   }),
-      // });
+        // // S3 bucket fully public for test only
+        // this.bucket = new s3.Bucket(this, 'AIrVizWebContentBucket', {
+        //   removalPolicy: cdk.RemovalPolicy.DESTROY,
+        //   autoDeleteObjects: true,
+        //   versioned: false,
+        //   publicReadAccess: true, // For test only
+        //   websiteIndexDocument: 'index.html',
+        //   blockPublicAccess: new s3.BlockPublicAccess({
+        //     blockPublicPolicy: false,
+        //     blockPublicAcls: false,
+        //     ignorePublicAcls: false,
+        //     restrictPublicBuckets: false,
+        //   }),
+        // });
 
-      // Secret for RDS credentials
-      this.secret = new secretsmanager.Secret(this, 'AirvizRdsSecret', {
-          generateSecretString: {
-              secretStringTemplate: JSON.stringify({ username: 'airvizAdmin' }),
-              generateStringKey: 'password',
-              excludePunctuation: true,
-          },
-      });
+        // Secret for RDS credentials
+        this.secret = new secretsmanager.Secret(this, 'AirvizRdsSecret', {
+            generateSecretString: {
+                secretStringTemplate: JSON.stringify({ username: 'airvizAdmin' }),
+                generateStringKey: 'password',
+                excludePunctuation: true,
+            },
+        });
 
-      // RDS PostgreSQL instance in the minimal VPC, publicly accessible in public subnets
-      this.database = new rds.DatabaseInstance(this, 'AirvizRds', {
-          engine: rds.DatabaseInstanceEngine.postgres({
-              version: rds.PostgresEngineVersion.VER_17_5,
-          }),
-          credentials: rds.Credentials.fromSecret(this.secret),
-          vpc: this.vpc,
-          vpcSubnets: {
-              subnetType: ec2.SubnetType.PUBLIC,
-          },
-          publiclyAccessible: true,
-          allocatedStorage: 10,
-          maxAllocatedStorage: 20,
-          removalPolicy: cdk.RemovalPolicy.DESTROY,
-          deletionProtection: false,
-          instanceType: ec2.InstanceType.of(ec2.InstanceClass.BURSTABLE3, ec2.InstanceSize.MICRO),
-          backupRetention: cdk.Duration.days(0),
-          multiAz: false,
-          autoMinorVersionUpgrade: true,
-          deleteAutomatedBackups: true,
-      });
+        this.databaseName = 'airviz'
 
-      this.rdsSecurityGroup = this.database.connections.securityGroups[0];
+        // RDS PostgreSQL instance in the minimal VPC, publicly accessible in public subnets
+        this.database = new rds.DatabaseInstance(this, 'AirvizRds', {
+            engine: rds.DatabaseInstanceEngine.postgres({
+                version: rds.PostgresEngineVersion.VER_17_5,
+            }),
+            credentials: rds.Credentials.fromSecret(this.secret),
+            vpc: this.vpc,
+            vpcSubnets: {
+                subnetType: ec2.SubnetType.PUBLIC,
+            },
+            publiclyAccessible: true,
+            allocatedStorage: 10,
+            maxAllocatedStorage: 20,
+            removalPolicy: cdk.RemovalPolicy.DESTROY,
+            deletionProtection: false,
+            instanceType: ec2.InstanceType.of(ec2.InstanceClass.BURSTABLE3, ec2.InstanceSize.MICRO),
+            backupRetention: cdk.Duration.days(0),
+            multiAz: false,
+            autoMinorVersionUpgrade: true,
+            deleteAutomatedBackups: true,
+            databaseName: this.databaseName, 
+        });
 
-      // new cdk.CfnOutput(this, 'BucketName', { value: this.bucket.bucketName });
-      new cdk.CfnOutput(this, 'DatabaseEndpoint', { value: this.database.dbInstanceEndpointAddress });
-      new cdk.CfnOutput(this, 'DatabaseSecretArn', { value: this.secret.secretArn });
+        this.rdsSecurityGroup = this.database.connections.securityGroups[0];
+        // Allow all public access to the database - ONLY FOR TESTING!
+        this.rdsSecurityGroup.addIngressRule(
+          ec2.Peer.anyIpv4(),
+          ec2.Port.tcp(5432),
+          'Allow all IPv4 to PostgreSQL'
+        );
+
+        // new cdk.CfnOutput(this, 'BucketName', { value: this.bucket.bucketName });
+        new cdk.CfnOutput(this, 'DatabaseEndpoint', { value: this.database.dbInstanceEndpointAddress });
+        new cdk.CfnOutput(this, 'DatabaseSecretArn', { value: this.secret.secretArn });
 
   }
 }

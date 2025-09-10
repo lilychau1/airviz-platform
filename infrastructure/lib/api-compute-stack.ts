@@ -8,6 +8,7 @@ import * as ec2 from 'aws-cdk-lib/aws-ec2';
 
 interface ApiComputeStackProps extends cdk.StackProps {
     dbSecret: Secret;
+    databaseName: string;
 }
 export class ApiComputeStack extends cdk.Stack {
     constructor(scope: cdk.App, id:string, props?: ApiComputeStackProps) {
@@ -26,6 +27,7 @@ export class ApiComputeStack extends cdk.Stack {
                 environment: {
                     DB_SECRET_ARN: props!.dbSecret.secretArn,
                     // DB_ENDPOINT: props!.dbEndpoint,
+                    DB_NAME: props!.databaseName, 
                 },
             }
         );

@@ -18,6 +18,7 @@ new ApiComputeStack(app, 'ApiComputeStack', {
   env,
   dbSecret: dataStorageStack.secret,
   // dbEndpoint: dataStorageStack.database.dbInstanceEndpointAddress,
+  databaseName: dataStorageStack.databaseName, 
 });
 
 

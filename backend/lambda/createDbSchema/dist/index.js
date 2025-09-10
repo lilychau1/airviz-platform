@@ -17,7 +17,7 @@ const handler = async () => {
             host: dbCreds.host,
             user: dbCreds.username,
             password: dbCreds.password,
-            database: 'airquality',
+            database: process.env.DB_NAME,
             port: parseInt(dbCreds.port, 10),
             ssl: { rejectUnauthorized: false },
         });
