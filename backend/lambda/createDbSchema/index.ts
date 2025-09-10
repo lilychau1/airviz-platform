@@ -26,10 +26,58 @@ export const handler = async () => {
     await client.connect();
 
     // Schema creation: tables based on your design
+
+    await client.query(`
+      CREATE TABLE IF NOT EXISTS Boroughs (
+        id SERIAL PRIMARY KEY,
+        name VARCHAR(255) NOT NULL, 
+        location POINT NOT NULL, 
+        insertedAt TIMESTAMP NOT NULL, 
+        updatedAt TIMESTAMP NOT NULL, 
+        description TEXT
+      );
+    `);
+
+    await client.query(`
+      CREATE TABLE IF NOT EXISTS Zones (
+        id SERIAL PRIMARY KEY,
+        name VARCHAR(255) NOT NULL, 
+        location POINT NOT NULL, 
+        insertedAt TIMESTAMP NOT NULL, 
+        updatedAt TIMESTAMP NOT NULL, 
+        description TEXT
+      );
+    `);
+
+    await client.query(`
+      CREATE TABLE IF NOT EXISTS PostcodeAreas (
+        id SERIAL PRIMARY KEY,
+        name VARCHAR(255) NOT NULL, 
+        location POINT NOT NULL, 
+        insertedAt TIMESTAMP NOT NULL, 
+        updatedAt TIMESTAMP NOT NULL, 
+        description TEXT
+      );
+    `);
+
+    await client.query(`
+      CREATE TABLE IF NOT EXISTS Tiles (
+        id SERIAL PRIMARY KEY,
+        boroughId INT REFERENCES Boroughs(id), 
+        zoneId INT REFERENCES Zones(id), 
+        postcodeAreaId INT REFERENCES postcodeAreas(id), 
+        name VARCHAR(255) NOT NULL, 
+        location POINT NOT NULL, 
+        insertedAt TIMESTAMP NOT NULL, 
+        updatedAt TIMESTAMP NOT NULL, 
+        description TEXT
+      );
+    `);
+    
     await client.query(`
       CREATE TABLE IF NOT EXISTS AqiRecords (
         id SERIAL PRIMARY KEY,
-        tileId VARCHAR(255) NOT NULL,
+        tileId INT NOT NULL,
         timestamp TIMESTAMP NOT NULL,
         ingestionTimestamp TIMESTAMP NOT NULL
       );
@@ -39,7 +87,7 @@ export const handler = async () => {
       CREATE TABLE IF NOT EXISTS PollutantConcentration (
         id SERIAL PRIMARY KEY,
         recordId INT REFERENCES AqiRecords(id),
-        tileId VARCHAR(255) NOT NULL,
+        tileId INT REFERENCES Tiles(id),
         timestamp TIMESTAMP NOT NULL,
         ingestionTimestamp TIMESTAMP NOT NULL,
         pm25Value DOUBLE PRECISION,
@@ -55,11 +103,11 @@ export const handler = async () => {
       CREATE TABLE IF NOT EXISTS AirQualityIndex (
         id SERIAL PRIMARY KEY,
         recordId INT REFERENCES AqiRecords(id),
-        tileId VARCHAR(255) NOT NULL,
-        indexType VARCHAR(20),
-        category TEXT,
-        colourCode JSONB,
-        dominantPollutant VARCHAR(50),
+        tileId INT REFERENCES Tiles(id),
+        indexType VARCHAR(20) NOT NULL,
+        category TEXT NOT NULL,
+        colourCode JSONB NOT NULL,
+        dominantPollutant VARCHAR(50) NOT NULL,
         timestamp TIMESTAMP NOT NULL,
         ingestionTimestamp TIMESTAMP NOT NULL,
         value INT
@@ -70,7 +118,7 @@ export const handler = async () => {
       CREATE TABLE IF NOT EXISTS HealthRecommendation (
         id SERIAL PRIMARY KEY,
         recordId INT REFERENCES AqiRecords(id),
-        tileId VARCHAR(255) NOT NULL,
+        tileId INT REFERENCES Tiles(id),
         timestamp TIMESTAMP NOT NULL,
         ingestionTimestamp TIMESTAMP NOT NULL,
         populationGroup VARCHAR(50),
