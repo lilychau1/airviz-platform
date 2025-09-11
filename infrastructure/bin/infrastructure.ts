@@ -19,6 +19,8 @@ new ApiComputeStack(app, 'ApiComputeStack', {
   dbSecret: dataStorageStack.secret,
   // dbEndpoint: dataStorageStack.database.dbInstanceEndpointAddress,
   databaseName: dataStorageStack.databaseName, 
+  tileCoordsBucket: dataStorageStack.airVizBucket, 
+  tileCoordsKey: dataStorageStack.tileCoordsKey, 
 });
 
 
