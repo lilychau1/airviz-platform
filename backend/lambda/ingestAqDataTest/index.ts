@@ -68,7 +68,8 @@ interface HealthRecommendationRecord {
   tileId: number;
   timestamp: string;
   ingestionTimestamp: string;
-  recommendations: Record<string, string>;
+  populationGroup: string;
+  value: string;
 }
 
 interface coordsRecord {
@@ -164,7 +165,7 @@ async function bulkInsertAqRecords(
     const params = AqRecords.flatMap((r) => [r.tileId, r.timestamp, r.ingestionTimestamp]); 
 
     const result = await client.query(
-        `INSERT INTO aq_records (tile_id, timestamp, ingestion_timestamp) VALUES ${valuesClause} RETURNING id, tile_id AS "tileId"`
+        `INSERT INTO AqRecords (tileId, timestamp, ingestionTimestamp) VALUES ${valuesClause} RETURNING id, tileid AS "tileId"`
         , params);
     return result.rows;
 }; 
@@ -174,9 +175,9 @@ async function bulkInsertPollutants(client: Client, pollutantData: any[]) {
     if (pollutantData.length === 0) return;
 
     console.log("Bulk inserting pollutant records:");
-    // pollutantData.forEach((record, index) => {
-    //     console.log(`Record ${index + 1}:`, record);
-    // });
+    pollutantData.forEach((record, index) => {
+        console.log(`Record ${index + 1}:`, record);
+    });
     
     const valuesClause = pollutantData
         .map(
@@ -199,8 +200,8 @@ async function bulkInsertPollutants(client: Client, pollutantData: any[]) {
     ]);
 
     await client.query(
-        `INSERT INTO pollutant_concentration
-            (record_id, tile_id, timestamp, ingestion_timestamp, pm25_value, pm10_value, no2_value, so2_value, o3_value, co_value)
+        `INSERT INTO PollutantConcentration
+            (recordId, tileId, timestamp, ingestionTimestamp, pm25Value, pm10Value, no2Value, so2Value, o3Value, coValue)
         VALUES ${valuesClause} ON CONFLICT DO NOTHING`,
         params
     );
@@ -230,8 +231,8 @@ async function bulkInsertAirQualityIndex(client: Client, indexData: any[]) {
     ]);
 
     await client.query(
-        `INSERT INTO air_quality_index
-            (record_id, tile_id, index_type, category, colour_code, dominant_pollutant, timestamp, ingestion_timestamp, value)
+        `INSERT INTO AirQualityIndex
+            (recordId, tileId, indexType, category, colourCode, dominantPollutant, timestamp, ingestionTimestamp, value)
         VALUES ${valuesClause} ON CONFLICT DO NOTHING`,
         params
     );
@@ -240,25 +241,27 @@ async function bulkInsertAirQualityIndex(client: Client, indexData: any[]) {
 // Batch insert function for HealthRecommendations
 async function bulkInsertHealthRecommendations(client: Client, healthData: any[]) {
     if (healthData.length === 0) return;
-
+    
     const valuesClause = healthData
-        .map((_, i) =>
-            `($${i * 5 + 1}, $${i * 5 + 2}, $${i * 5 + 3}, $${i * 5 + 4}, $${i * 5 + 5})`
+        .map(
+            (_, i) =>
+            `($${i * 6 + 1}, $${i * 6 + 2}, $${i * 6 + 3}, $${i * 6 + 4}, $${i * 6 + 5}, $${i * 6 + 6})`
         )
         .join(',');
 
-    const params = healthData.flatMap(r => [
+    const params = healthData.flatMap((r) => [
         r.recordId,
         r.tileId,
         r.timestamp,
         r.ingestionTimestamp,
-        JSON.stringify(r.recommendations),
+        r.populationGroup,
+        r.value,
     ]);
 
     await client.query(
-        `INSERT INTO health_recommendation
-         (record_id, tile_id, timestamp, ingestion_timestamp, recommendations)
-         VALUES ${valuesClause} ON CONFLICT DO NOTHING`,
+        `INSERT INTO HealthRecommendation
+            (recordId, tileId, timestamp, ingestionTimestamp, populationGroup, value)
+        VALUES ${valuesClause} ON CONFLICT DO NOTHING`,
         params
     );
 }
@@ -354,7 +357,9 @@ export const handler = async () => {
 
         await client.connect();
 
-        const coords = await getCoordsFromS3(bucket, key);
+        const fullCoords = await getCoordsFromS3(bucket, key);
+        const coords = fullCoords.slice(0, 50);
+
 
         // Configs for how much records to batch and insert into the RDS+pg database 
         const batchSize = 1000;
@@ -382,14 +387,14 @@ export const handler = async () => {
 
             const insertedAqRecords = await bulkInsertAqRecords(client, aqRecordsToInsert);
 
-            // console.log("Inserted AqRecords:");
-            // if (insertedAqRecords.length === 0) {
-            //     console.log("No rows were inserted. Check for conflicts or duplicates.");
-            // } else {
-            //     insertedAqRecords.forEach((rec, index) => {
-            //         console.log(`Row ${index + 1}: id=${rec.id}, tileId=${rec.tileId}`);
-            //     });
-            // }
+            console.log("Inserted AqRecords:");
+            if (insertedAqRecords.length === 0) {
+                console.log("No rows were inserted. Check for conflicts or duplicates.");
+            } else {
+                insertedAqRecords.forEach((rec, index) => {
+                    console.log(`Row ${index + 1}: id=${rec.id}, tileId=${rec.tileId}`);
+                });
+            }
 
             // Draw relationship between recordId and tileId
             const recordIdMap = new Map<number, number>();
@@ -405,8 +410,7 @@ export const handler = async () => {
             const healthRecommendationData: HealthRecommendationRecord[] = []; 
 
             for (const { tile, aqData } of batchedAqData) {
-                const recordId = recordIdMap.get(Number(tile.id));
-                // console.log(`recordId: ${recordId}`)
+                const recordId = recordIdMap.get(tile.id);
 
                 if (!recordId) {
                     console.warn(`No record ID found for tile ${tile.id}, skipping child inserts`);
@@ -472,21 +476,17 @@ export const handler = async () => {
                 });
 
                 // Prepare HealthRecommendation rows
-                const recommendations: Record<string, string> = {};
-
                 Object.entries(aqData.healthRecommendations)
+                    .filter(([_, val]) => typeof val === 'string' && val.trim().length > 0)
                     .forEach(([popGroup, val]) => {
-                        if (typeof val === 'string' && val.trim().length > 0) {
-                            recommendations[popGroup] = val;
-                        }
+                    healthRecommendationData.push({
+                        recordId,
+                        tileId: tile.id,
+                        timestamp,
+                        ingestionTimestamp,
+                        populationGroup: popGroup,
+                        value: val as string,
                     });
-
-                healthRecommendationData.push({
-                    recordId,
-                    tileId: tile.id,
-                    timestamp,
-                    ingestionTimestamp,
-                    recommendations,
                 });
 
             }
@@ -494,13 +494,13 @@ export const handler = async () => {
             console.log(`Inserting ${pollutantData.length} pollutant records`);
             await bulkInsertPollutants(client, pollutantData);
 
-            console.log(`Inserting ${aqiData.length} air quality index records`);
-            await bulkInsertAirQualityIndex(client, aqiData);
+            // console.log(`Inserting ${aqiData.length} air quality index records`);
+            // await bulkInsertAirQualityIndex(client, aqiData);
 
-            console.log(`Inserting ${healthRecommendationData.length} health recommendation records`);
-            await bulkInsertHealthRecommendations(client, healthRecommendationData);
+            // console.log(`Inserting ${healthRecommendationData.length} health recommendation records`);
+            // await bulkInsertHealthRecommendations(client, healthRecommendationData);
 
-            console.log(`Completed ingestion of records from index ${i} to ${Math.min(i + batchSize - 1, coords.length - 1)}`);
+            // console.log(`Completed ingestion of records from index ${i} to ${Math.min(i + batchSize - 1, coords.length - 1)}`);
 
         }
 

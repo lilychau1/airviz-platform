@@ -24,7 +24,7 @@ const handler = async () => {
         await client.connect();
         // Schema creation: tables based on your design
         await client.query(`
-      CREATE TABLE IF NOT EXISTS AqiRecords (
+      CREATE TABLE IF NOT EXISTS AqRecords (
         id SERIAL PRIMARY KEY,
         tileId VARCHAR(255) NOT NULL,
         timestamp TIMESTAMP NOT NULL,
@@ -34,7 +34,7 @@ const handler = async () => {
         await client.query(`
       CREATE TABLE IF NOT EXISTS PollutantConcentration (
         id SERIAL PRIMARY KEY,
-        recordId INT REFERENCES AqiRecords(id),
+        recordId INT REFERENCES AqRecords(id),
         tileId VARCHAR(255) NOT NULL,
         timestamp TIMESTAMP NOT NULL,
         ingestionTimestamp TIMESTAMP NOT NULL,
@@ -49,7 +49,7 @@ const handler = async () => {
         await client.query(`
       CREATE TABLE IF NOT EXISTS AirQualityIndex (
         id SERIAL PRIMARY KEY,
-        recordId INT REFERENCES AqiRecords(id),
+        recordId INT REFERENCES AqRecords(id),
         tileId VARCHAR(255) NOT NULL,
         indexType VARCHAR(20),
         category TEXT,
@@ -63,7 +63,7 @@ const handler = async () => {
         await client.query(`
       CREATE TABLE IF NOT EXISTS HealthRecommendation (
         id SERIAL PRIMARY KEY,
-        recordId INT REFERENCES AqiRecords(id),
+        recordId INT REFERENCES AqRecords(id),
         tileId VARCHAR(255) NOT NULL,
         timestamp TIMESTAMP NOT NULL,
         ingestionTimestamp TIMESTAMP NOT NULL,

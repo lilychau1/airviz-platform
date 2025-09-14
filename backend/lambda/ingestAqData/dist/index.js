@@ -9,8 +9,16 @@ const secretsClient = new client_secrets_manager_1.SecretsManagerClient({});
 const s3Client = new client_s3_1.S3Client({});
 async function getSecret(secretId) {
     const data = await secretsClient.send(new client_secrets_manager_1.GetSecretValueCommand({ SecretId: secretId }));
-    return JSON.parse(data.SecretString || '{}');
+    try {
+        // Try parsing as JSON (for DB secret or any structured secret)
+        return JSON.parse(data.SecretString || '{}');
+    }
+    catch {
+        // If parsing fails, treat as plain text (for your Google API key)
+        return data.SecretString;
+    }
 }
+;
 async function getCoordsFromS3(bucket, key) {
     const rows = [];
     const command = new client_s3_1.GetObjectCommand({ Bucket: bucket, Key: key });
@@ -28,11 +36,21 @@ async function getCoordsFromS3(bucket, key) {
     });
     return rows;
 }
-async function fetchAirQuality(apiKey, lat, lng) {
-    const url = `https://airquality.googleapis.com/v1/currentConditions?location=${lat},${lng}&key=${apiKey}`;
-    const resp = await fetch(url);
-    if (!resp.ok)
+async function fetchAirQuality(apiKey, latitude, longitude) {
+    const url = `https://airquality.googleapis.com/v1/currentConditions:lookup?key=${apiKey}`;
+    const body = JSON.stringify({
+        location: { latitude: Number(latitude), longitude: Number(longitude) }
+    });
+    const resp = await fetch(url, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body,
+    });
+    if (!resp.ok) {
+        const errorText = await resp.text();
+        console.error('Air Quality API Error details:', errorText); // Add this line
         throw new Error('Air Quality API error');
+    }
     return resp.json();
 }
 const handler = async () => {
@@ -54,8 +72,9 @@ const handler = async () => {
         });
         await client.connect();
         const coords = await getCoordsFromS3(bucket, key);
-        for (const { lat, lng } of coords) {
-            const apiData = await fetchAirQuality(apiSecret.apiKey, lat, lng);
+        for (const { latitude, longitude } of coords) {
+            console.log(latitude, longitude);
+            const apiData = await fetchAirQuality(apiSecret.apiKey, latitude, longitude);
             // Insert data using your ingestion logic...
         }
         await client.end();

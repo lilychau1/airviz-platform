@@ -158,7 +158,7 @@ function bulkInsertAqRecords(client, AqRecords) {
                         .map(function (_, i) { return "($".concat(i * 3 + 1, ", $").concat(i * 3 + 2, ", $").concat(i * 3 + 3, ")"); }) // Parameter position fpr tileId, timestamp and ingestionTimestamp
                         .join(',');
                     params = AqRecords.flatMap(function (r) { return [r.tileId, r.timestamp, r.ingestionTimestamp]; });
-                    return [4 /*yield*/, client.query("INSERT INTO aq_records (tile_id, timestamp, ingestion_timestamp) VALUES ".concat(valuesClause, " RETURNING id, tile_id AS \"tileId\""), params)];
+                    return [4 /*yield*/, client.query("INSERT INTO AqRecords (tileId, timestamp, ingestionTimestamp) VALUES ".concat(valuesClause, " RETURNING id, tileid AS \"tileId\""), params)];
                 case 1:
                     result = _a.sent();
                     return [2 /*return*/, result.rows];
@@ -177,6 +177,9 @@ function bulkInsertPollutants(client, pollutantData) {
                     if (pollutantData.length === 0)
                         return [2 /*return*/];
                     console.log("Bulk inserting pollutant records:");
+                    pollutantData.forEach(function (record, index) {
+                        console.log("Record ".concat(index + 1, ":"), record);
+                    });
                     valuesClause = pollutantData
                         .map(function (_, i) {
                         return "($".concat(i * 10 + 1, ", $").concat(i * 10 + 2, ", $").concat(i * 10 + 3, ", $").concat(i * 10 + 4, ", $").concat(i * 10 + 5, ", $").concat(i * 10 + 6, ", $").concat(i * 10 + 7, ", $").concat(i * 10 + 8, ", $").concat(i * 10 + 9, ", $").concat(i * 10 + 10, ")");
@@ -194,7 +197,7 @@ function bulkInsertPollutants(client, pollutantData) {
                         r.o3Value,
                         r.coValue,
                     ]; });
-                    return [4 /*yield*/, client.query("INSERT INTO pollutant_concentration\n            (record_id, tile_id, timestamp, ingestion_timestamp, pm25_value, pm10_value, no2_value, so2_value, o3_value, co_value)\n        VALUES ".concat(valuesClause, " ON CONFLICT DO NOTHING"), params)];
+                    return [4 /*yield*/, client.query("INSERT INTO PollutantConcentration\n            (recordId, tileId, timestamp, ingestionTimestamp, pm25Value, pm10Value, no2Value, so2Value, o3Value, coValue)\n        VALUES ".concat(valuesClause, " ON CONFLICT DO NOTHING"), params)];
                 case 1:
                     _a.sent();
                     return [2 /*return*/];
@@ -227,7 +230,7 @@ function bulkInsertAirQualityIndex(client, indexData) {
                         r.ingestionTimestamp,
                         r.value,
                     ]; });
-                    return [4 /*yield*/, client.query("INSERT INTO air_quality_index\n            (record_id, tile_id, index_type, category, colour_code, dominant_pollutant, timestamp, ingestion_timestamp, value)\n        VALUES ".concat(valuesClause, " ON CONFLICT DO NOTHING"), params)];
+                    return [4 /*yield*/, client.query("INSERT INTO AirQualityIndex\n            (recordId, tileId, indexType, category, colourCode, dominantPollutant, timestamp, ingestionTimestamp, value)\n        VALUES ".concat(valuesClause, " ON CONFLICT DO NOTHING"), params)];
                 case 1:
                     _a.sent();
                     return [2 /*return*/];
@@ -246,7 +249,7 @@ function bulkInsertHealthRecommendations(client, healthData) {
                         return [2 /*return*/];
                     valuesClause = healthData
                         .map(function (_, i) {
-                        return "($".concat(i * 5 + 1, ", $").concat(i * 5 + 2, ", $").concat(i * 5 + 3, ", $").concat(i * 5 + 4, ", $").concat(i * 5 + 5, ")");
+                        return "($".concat(i * 6 + 1, ", $").concat(i * 6 + 2, ", $").concat(i * 6 + 3, ", $").concat(i * 6 + 4, ", $").concat(i * 6 + 5, ", $").concat(i * 6 + 6, ")");
                     })
                         .join(',');
                     params = healthData.flatMap(function (r) { return [
@@ -254,9 +257,10 @@ function bulkInsertHealthRecommendations(client, healthData) {
                         r.tileId,
                         r.timestamp,
                         r.ingestionTimestamp,
-                        JSON.stringify(r.recommendations),
+                        r.populationGroup,
+                        r.value,
                     ]; });
-                    return [4 /*yield*/, client.query("INSERT INTO health_recommendation\n         (record_id, tile_id, timestamp, ingestion_timestamp, recommendations)\n         VALUES ".concat(valuesClause, " ON CONFLICT DO NOTHING"), params)];
+                    return [4 /*yield*/, client.query("INSERT INTO HealthRecommendation\n            (recordId, tileId, timestamp, ingestionTimestamp, populationGroup, value)\n        VALUES ".concat(valuesClause, " ON CONFLICT DO NOTHING"), params)];
                 case 1:
                     _a.sent();
                     return [2 /*return*/];
@@ -366,7 +370,7 @@ function rateLimitedBatchFetch(batch, apiSecret) {
     });
 }
 var handler = function () { return __awaiter(void 0, void 0, void 0, function () {
-    var client, secretId, apiSecretId, bucket, key, dbCreds, apiSecret, coords, batchSize, _loop_1, i, error_2;
+    var client, secretId, apiSecretId, bucket, key, dbCreds, apiSecret, fullCoords, coords, batchSize, _loop_1, i, error_2;
     return __generator(this, function (_a) {
         switch (_a.label) {
             case 0:
@@ -394,7 +398,8 @@ var handler = function () { return __awaiter(void 0, void 0, void 0, function ()
                 _a.sent();
                 return [4 /*yield*/, getCoordsFromS3(bucket, key)];
             case 4:
-                coords = _a.sent();
+                fullCoords = _a.sent();
+                coords = fullCoords.slice(0, 50);
                 batchSize = 1000;
                 _loop_1 = function (i) {
                     var batch, batchedAqData, aqRecordsToInsert, insertedAqRecords, recordIdMap, pollutantData, aqiData, healthRecommendationData, _loop_2, _i, batchedAqData_1, _b, tile, aqData;
@@ -423,6 +428,15 @@ var handler = function () { return __awaiter(void 0, void 0, void 0, function ()
                                 return [4 /*yield*/, bulkInsertAqRecords(client, aqRecordsToInsert)];
                             case 2:
                                 insertedAqRecords = _c.sent();
+                                console.log("Inserted AqRecords:");
+                                if (insertedAqRecords.length === 0) {
+                                    console.log("No rows were inserted. Check for conflicts or duplicates.");
+                                }
+                                else {
+                                    insertedAqRecords.forEach(function (rec, index) {
+                                        console.log("Row ".concat(index + 1, ": id=").concat(rec.id, ", tileId=").concat(rec.tileId));
+                                    });
+                                }
                                 recordIdMap = new Map();
                                 insertedAqRecords.forEach(function (_a) {
                                     var id = _a.id, tileId = _a.tileId;
@@ -437,8 +451,7 @@ var handler = function () { return __awaiter(void 0, void 0, void 0, function ()
                                 aqiData = [];
                                 healthRecommendationData = [];
                                 _loop_2 = function (tile, aqData) {
-                                    var recordId = recordIdMap.get(Number(tile.id));
-                                    // console.log(`recordId: ${recordId}`)
+                                    var recordId = recordIdMap.get(tile.id);
                                     if (!recordId) {
                                         console.warn("No record ID found for tile ".concat(tile.id, ", skipping child inserts"));
                                         return "continue";
@@ -486,20 +499,21 @@ var handler = function () { return __awaiter(void 0, void 0, void 0, function ()
                                         });
                                     });
                                     // Prepare HealthRecommendation rows
-                                    var recommendations = {};
                                     Object.entries(aqData.healthRecommendations)
+                                        .filter(function (_a) {
+                                        var _ = _a[0], val = _a[1];
+                                        return typeof val === 'string' && val.trim().length > 0;
+                                    })
                                         .forEach(function (_a) {
                                         var popGroup = _a[0], val = _a[1];
-                                        if (typeof val === 'string' && val.trim().length > 0) {
-                                            recommendations[popGroup] = val;
-                                        }
-                                    });
-                                    healthRecommendationData.push({
-                                        recordId: recordId,
-                                        tileId: tile.id,
-                                        timestamp: timestamp,
-                                        ingestionTimestamp: ingestionTimestamp,
-                                        recommendations: recommendations,
+                                        healthRecommendationData.push({
+                                            recordId: recordId,
+                                            tileId: tile.id,
+                                            timestamp: timestamp,
+                                            ingestionTimestamp: ingestionTimestamp,
+                                            populationGroup: popGroup,
+                                            value: val,
+                                        });
                                     });
                                 };
                                 for (_i = 0, batchedAqData_1 = batchedAqData; _i < batchedAqData_1.length; _i++) {
@@ -511,15 +525,6 @@ var handler = function () { return __awaiter(void 0, void 0, void 0, function ()
                                 return [4 /*yield*/, bulkInsertPollutants(client, pollutantData)];
                             case 3:
                                 _c.sent();
-                                console.log("Inserting ".concat(aqiData.length, " air quality index records"));
-                                return [4 /*yield*/, bulkInsertAirQualityIndex(client, aqiData)];
-                            case 4:
-                                _c.sent();
-                                console.log("Inserting ".concat(healthRecommendationData.length, " health recommendation records"));
-                                return [4 /*yield*/, bulkInsertHealthRecommendations(client, healthRecommendationData)];
-                            case 5:
-                                _c.sent();
-                                console.log("Completed ingestion of records from index ".concat(i, " to ").concat(Math.min(i + batchSize - 1, coords.length - 1)));
                                 return [2 /*return*/];
                         }
                     });

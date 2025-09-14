@@ -1,5 +1,6 @@
 import * as cdk from 'aws-cdk-lib';
 import * as lambda from 'aws-cdk-lib/aws-lambda';
+import * as triggers from 'aws-cdk-lib/triggers';
 import * as apigatewayv2 from 'aws-cdk-lib/aws-apigatewayv2';
 import * as integrations from 'aws-cdk-lib/aws-apigatewayv2-integrations';
 import { Secret } from 'aws-cdk-lib/aws-secretsmanager';
@@ -38,6 +39,12 @@ export class ApiComputeStack extends cdk.Stack {
 
         props!.dbSecret.grantRead(CreateDbSchemaFunction);
 
+        // Create trigger to run the CreateDbSchemaFunction Lambda after stack deployment
+        new triggers.Trigger(this, 'DeployRunCreateDbSchemaTrigger', {
+            handler: CreateDbSchemaFunction,
+            timeout: cdk.Duration.minutes(10),
+            invocationType: triggers.InvocationType.EVENT, 
+        });
 
         // Google API key secret
         const googleAqApiKeySecret = new Secret(this, 'GoogleApiAqKeySecret', {
@@ -66,6 +73,28 @@ export class ApiComputeStack extends cdk.Stack {
         
         props!.tileCoordsBucket.grantRead(ingestAqDataFunction);
 
+        const ingestAqDataFunctionTest = new lambda.Function(
+            this, 
+            'ingestAqDataFunctionTest', {
+                code: lambda.Code.fromAsset('../backend/lambda/ingestAqDataTest'), 
+                runtime: lambda.Runtime.NODEJS_18_X,
+                handler: 'index.handler',
+                timeout: cdk.Duration.minutes(10),
+                memorySize: 512,
+                environment: {
+                    DB_SECRET_ARN: props!.dbSecret.secretArn,
+                    DB_NAME: props!.databaseName,
+                    GOOGLE_API_SECRET_ARN: googleAqApiKeySecret.secretArn,
+                    TILE_COORDS_BUCKET: props!.tileCoordsBucket.bucketName,
+                    TILE_COORDS_FILENAME: props!.tileCoordsKey,
+                },
+            }
+        );
+        props!.dbSecret.grantRead(ingestAqDataFunctionTest);
+        googleAqApiKeySecret.grantRead(ingestAqDataFunctionTest);
+        
+        props!.tileCoordsBucket.grantRead(ingestAqDataFunctionTest);
+
         // Add API Gateway
         const httpApi = new apigatewayv2.HttpApi(
             this, 
@@ -84,7 +113,7 @@ export class ApiComputeStack extends cdk.Stack {
 
         // Add API Gateway route for each lambda function
         httpApi.addRoutes({
-            path: '/CreateDbSchema', 
+            path: '/createDbSchema', 
             methods: [apigatewayv2.HttpMethod.POST], 
             integration: new integrations.HttpLambdaIntegration(
                 'CreateDbSchemaFunction', 
@@ -102,6 +131,15 @@ export class ApiComputeStack extends cdk.Stack {
             ), 
         });
 
+        // Test: Add API Gateway route for each lambda function
+        httpApi.addRoutes({
+            path: '/ingestAqDataTest', 
+            methods: [apigatewayv2.HttpMethod.POST], 
+            integration: new integrations.HttpLambdaIntegration(
+                'ingestAqDataFunctionTest', 
+                ingestAqDataFunctionTest, 
+            ), 
+        });
 
         // httpApi.addRoutes({
         //     path: '/retrieveData', 
