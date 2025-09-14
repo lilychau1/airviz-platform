@@ -54,11 +54,11 @@ function getSecret(secretId) {
     });
 }
 var handler = function () { return __awaiter(void 0, void 0, void 0, function () {
-    var client, secretId, dbCreds, tablesToDrop, _i, tablesToDrop_1, table, error_1;
+    var client, secretId, dbCreds, res, tablesToDrop, _i, tablesToDrop_1, table, error_1;
     return __generator(this, function (_a) {
         switch (_a.label) {
             case 0:
-                _a.trys.push([0, 15, 18, 21]);
+                _a.trys.push([0, 16, 19, 22]);
                 secretId = process.env.DB_SECRET_ARN;
                 return [4 /*yield*/, getSecret(secretId)];
             case 1:
@@ -74,6 +74,10 @@ var handler = function () { return __awaiter(void 0, void 0, void 0, function ()
                 return [4 /*yield*/, client.connect()];
             case 2:
                 _a.sent();
+                return [4 /*yield*/, client.query("\n            SELECT table_schema, table_name \n            FROM information_schema.tables \n            WHERE table_schema = 'public';\n        ")];
+            case 3:
+                res = _a.sent();
+                console.log('Existing tables:', res.rows);
                 tablesToDrop = [
                     'health_recommendation',
                     'air_quality_index',
@@ -84,72 +88,71 @@ var handler = function () { return __awaiter(void 0, void 0, void 0, function ()
                     'zones',
                     'boroughs',
                 ];
-                console.log('Dropping tables if they exist...');
                 _i = 0, tablesToDrop_1 = tablesToDrop;
-                _a.label = 3;
-            case 3:
-                if (!(_i < tablesToDrop_1.length)) return [3 /*break*/, 6];
-                table = tablesToDrop_1[_i];
-                return [4 /*yield*/, client.query("DROP TABLE IF EXISTS ".concat(table, " CASCADE;"))];
+                _a.label = 4;
             case 4:
+                if (!(_i < tablesToDrop_1.length)) return [3 /*break*/, 7];
+                table = tablesToDrop_1[_i];
+                return [4 /*yield*/, client.query("DROP TABLE IF EXISTS public.".concat(table, " CASCADE;"))];
+            case 5:
                 _a.sent();
                 console.log("Table ".concat(table, " dropped (if it existed)."));
-                _a.label = 5;
-            case 5:
-                _i++;
-                return [3 /*break*/, 3];
+                _a.label = 6;
             case 6:
+                _i++;
+                return [3 /*break*/, 4];
+            case 7:
                 // Create schema
                 console.log('Creating new tables...');
-                return [4 /*yield*/, client.query("\n      CREATE TABLE IF NOT EXISTS boroughs (\n        id SERIAL PRIMARY KEY,\n        name VARCHAR(255) NOT NULL, \n        location POINT NOT NULL, \n        inserted_at TIMESTAMP NOT NULL, \n        updated_at TIMESTAMP NOT NULL, \n        description TEXT\n      );\n    ")];
-            case 7:
-                _a.sent();
-                return [4 /*yield*/, client.query("\n      CREATE TABLE IF NOT EXISTS zones (\n        id SERIAL PRIMARY KEY,\n        name VARCHAR(255) NOT NULL, \n        location POINT NOT NULL, \n        inserted_at TIMESTAMP NOT NULL, \n        updated_at TIMESTAMP NOT NULL, \n        description TEXT\n      );\n    ")];
+                return [4 /*yield*/, client.query("\n            CREATE TABLE IF NOT EXISTS boroughs (\n                id SERIAL PRIMARY KEY,\n                name VARCHAR(255) NOT NULL, \n                location POINT NOT NULL, \n                inserted_at TIMESTAMP NOT NULL, \n                updated_at TIMESTAMP NOT NULL, \n                description TEXT\n            );\n        ")];
             case 8:
                 _a.sent();
-                return [4 /*yield*/, client.query("\n      CREATE TABLE IF NOT EXISTS postcode_areas (\n        id SERIAL PRIMARY KEY,\n        name VARCHAR(255) NOT NULL, \n        location POINT NOT NULL, \n        inserted_at TIMESTAMP NOT NULL, \n        updated_at TIMESTAMP NOT NULL, \n        description TEXT\n      );\n    ")];
+                return [4 /*yield*/, client.query("\n            CREATE TABLE IF NOT EXISTS zones (\n                id SERIAL PRIMARY KEY,\n                name VARCHAR(255) NOT NULL, \n                location POINT NOT NULL, \n                inserted_at TIMESTAMP NOT NULL, \n                updated_at TIMESTAMP NOT NULL, \n                description TEXT\n            );\n        ")];
             case 9:
                 _a.sent();
-                return [4 /*yield*/, client.query("\n      CREATE TABLE IF NOT EXISTS tiles (\n        id SERIAL PRIMARY KEY,\n        borough_id INT REFERENCES boroughs(id), \n        zone_id INT REFERENCES zones(id), \n        postcode_area_id INT REFERENCES postcode_areas(id), \n        name VARCHAR(255) NOT NULL, \n        location POINT NOT NULL, \n        inserted_at TIMESTAMP NOT NULL, \n        updated_at TIMESTAMP NOT NULL, \n        description TEXT\n      );\n    ")];
+                return [4 /*yield*/, client.query("\n            CREATE TABLE IF NOT EXISTS postcode_areas (\n                id SERIAL PRIMARY KEY,\n                name VARCHAR(255) NOT NULL, \n                location POINT NOT NULL, \n                inserted_at TIMESTAMP NOT NULL, \n                updated_at TIMESTAMP NOT NULL, \n                description TEXT\n            );\n        ")];
             case 10:
                 _a.sent();
-                return [4 /*yield*/, client.query("\n      CREATE TABLE IF NOT EXISTS aq_records (\n        id SERIAL PRIMARY KEY,\n        tile_id INT NOT NULL,\n        timestamp TIMESTAMP NOT NULL,\n        ingestion_timestamp TIMESTAMP NOT NULL\n      );\n    ")];
+                return [4 /*yield*/, client.query("\n            CREATE TABLE IF NOT EXISTS tiles (\n                id SERIAL PRIMARY KEY,\n                borough_id INT REFERENCES boroughs(id), \n                zone_id INT REFERENCES zones(id), \n                postcode_area_id INT REFERENCES postcode_areas(id), \n                name VARCHAR(255) NOT NULL, \n                location POINT NOT NULL, \n                inserted_at TIMESTAMP NOT NULL, \n                updated_at TIMESTAMP NOT NULL, \n                description TEXT\n            );\n        ")];
             case 11:
                 _a.sent();
-                return [4 /*yield*/, client.query("\n      CREATE TABLE IF NOT EXISTS pollutant_concentration (\n        id SERIAL PRIMARY KEY,\n        record_id INT REFERENCES aq_records(id),\n        /* tile_id INT REFERENCES Tiles(id), */\n        tile_id INT NOT NULL,\n        timestamp TIMESTAMP NOT NULL,\n        ingestion_timestamp TIMESTAMP NOT NULL,\n        pm25_value DOUBLE PRECISION,\n        pm10_value DOUBLE PRECISION,\n        no2_value DOUBLE PRECISION,\n        so2_value DOUBLE PRECISION,\n        o3_value DOUBLE PRECISION,\n        co_value DOUBLE PRECISION\n      );\n    ")];
+                return [4 /*yield*/, client.query("\n            CREATE TABLE IF NOT EXISTS aq_records (\n                id SERIAL PRIMARY KEY,\n                tile_id INT NOT NULL,\n                timestamp TIMESTAMP NOT NULL,\n                ingestion_timestamp TIMESTAMP NOT NULL\n            );\n        ")];
             case 12:
                 _a.sent();
-                return [4 /*yield*/, client.query("\n      CREATE TABLE IF NOT EXISTS air_quality_index (\n        id SERIAL PRIMARY KEY,\n        record_id INT REFERENCES aq_records(id),\n        /* tile_id INT REFERENCES Tiles(id), */\n        tile_id INT NOT NULL,\n        index_type VARCHAR(20) NOT NULL,\n        category TEXT NOT NULL,\n        colour_code JSONB NOT NULL,\n        dominant_pollutant VARCHAR(50) NOT NULL,\n        timestamp TIMESTAMP NOT NULL,\n        ingestion_timestamp TIMESTAMP NOT NULL,\n        value INT\n      );\n    ")];
+                return [4 /*yield*/, client.query("\n            CREATE TABLE IF NOT EXISTS pollutant_concentration (\n                id SERIAL PRIMARY KEY,\n                record_id INT REFERENCES aq_records(id),\n                /* tile_id INT REFERENCES Tiles(id), */\n                tile_id INT NOT NULL,\n                timestamp TIMESTAMP NOT NULL,\n                ingestion_timestamp TIMESTAMP NOT NULL,\n                pm25_value DOUBLE PRECISION,\n                pm10_value DOUBLE PRECISION,\n                no2_value DOUBLE PRECISION,\n                so2_value DOUBLE PRECISION,\n                o3_value DOUBLE PRECISION,\n                co_value DOUBLE PRECISION\n            );\n        ")];
             case 13:
                 _a.sent();
-                return [4 /*yield*/, client.query("\n      CREATE TABLE IF NOT EXISTS health_recommendation (\n        id SERIAL PRIMARY KEY,\n        record_id INT REFERENCES aq_records(id),\n        /* tile_id INT REFERENCES Tiles(id), */\n        tile_id INT NOT NULL,\n        timestamp TIMESTAMP NOT NULL,\n        ingestion_timestamp TIMESTAMP NOT NULL,\n        recommendations JSONB NOT NULL\n      );\n    ")];
+                return [4 /*yield*/, client.query("\n            CREATE TABLE IF NOT EXISTS air_quality_index (\n                id SERIAL PRIMARY KEY,\n                record_id INT REFERENCES aq_records(id),\n                /* tile_id INT REFERENCES Tiles(id), */\n                tile_id INT NOT NULL,\n                index_type VARCHAR(20) NOT NULL,\n                category TEXT NOT NULL,\n                colour_code JSONB NOT NULL,\n                dominant_pollutant VARCHAR(50) NOT NULL,\n                timestamp TIMESTAMP NOT NULL,\n                ingestion_timestamp TIMESTAMP NOT NULL,\n                value INT\n            );\n        ")];
             case 14:
+                _a.sent();
+                return [4 /*yield*/, client.query("\n            CREATE TABLE IF NOT EXISTS health_recommendation (\n                id SERIAL PRIMARY KEY,\n                record_id INT REFERENCES aq_records(id),\n                /* tile_id INT REFERENCES Tiles(id), */\n                tile_id INT NOT NULL,\n                timestamp TIMESTAMP NOT NULL,\n                ingestion_timestamp TIMESTAMP NOT NULL,\n                recommendations JSONB NOT NULL\n            );\n        ")];
+            case 15:
                 _a.sent();
                 return [2 /*return*/, {
                         statusCode: 200,
                         body: JSON.stringify({ message: 'Schema setup completed successfully' }),
                     }];
-            case 15:
-                error_1 = _a.sent();
-                if (!client) return [3 /*break*/, 17];
-                return [4 /*yield*/, client.end()];
             case 16:
-                _a.sent();
-                _a.label = 17;
+                error_1 = _a.sent();
+                if (!client) return [3 /*break*/, 18];
+                return [4 /*yield*/, client.end()];
             case 17:
+                _a.sent();
+                _a.label = 18;
+            case 18:
                 console.error('Schema migration failed', error_1);
                 return [2 /*return*/, {
                         statusCode: 500,
                         body: JSON.stringify({ error: error_1.message }),
                     }];
-            case 18:
-                if (!client) return [3 /*break*/, 20];
-                return [4 /*yield*/, client.end()];
             case 19:
+                if (!client) return [3 /*break*/, 21];
+                return [4 /*yield*/, client.end()];
+            case 20:
                 _a.sent();
-                _a.label = 20;
-            case 20: return [7 /*endfinally*/];
-            case 21: return [2 /*return*/];
+                _a.label = 21;
+            case 21: return [7 /*endfinally*/];
+            case 22: return [2 /*return*/];
         }
     });
 }); };
