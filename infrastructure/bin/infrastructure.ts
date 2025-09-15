@@ -12,10 +12,17 @@ const env = {
   region: process.env.CDK_DEFAULT_REGION,
 };
 
-new ApiComputeStack(app, 'ApiComputeStack', { env });
-new AuthStack(app, 'AuthStack', { env });
-new DataStorageStack(app, 'DataStorageStack', { env });
-new MonitoringStack(app, 'MonitoringStack', { env });
+const dataStorageStack = new DataStorageStack(app, 'DataStorageStack', { env });
+
+new ApiComputeStack(app, 'ApiComputeStack', {
+  env,
+  dbSecret: dataStorageStack.secret,
+  // dbEndpoint: dataStorageStack.database.dbInstanceEndpointAddress,
+  databaseName: dataStorageStack.databaseName, 
+  tileCoordsBucket: dataStorageStack.airVizBucket, 
+  tileCoordsKey: dataStorageStack.tileCoordsKey, 
+});
+
 
 // new InfrastructureStack(app, 'InfrastructureStack', {
   /* If you don't specify 'env', this stack will be environment-agnostic.
