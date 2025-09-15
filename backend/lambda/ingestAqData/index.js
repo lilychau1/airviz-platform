@@ -324,49 +324,70 @@ function fetchAqDataWithRetry(apiKey_1, latitude_1, longitude_1) {
     });
 }
 // Concurrency scheduler for batch (tiles)
+// Concurrency scheduler for batch (tiles)
 function rateLimitedBatchFetch(batch, apiSecret) {
     return __awaiter(this, void 0, void 0, function () {
-        var results, i, chunk, chunkResults;
+        var results, _loop_1, i;
         var _this = this;
         return __generator(this, function (_a) {
             switch (_a.label) {
                 case 0:
                     results = [];
+                    _loop_1 = function (i) {
+                        var chunk, chunkResults;
+                        return __generator(this, function (_b) {
+                            switch (_b.label) {
+                                case 0:
+                                    chunk = batch.slice(i, i + BATCH_CONCURRENCY);
+                                    return [4 /*yield*/, Promise.allSettled(chunk.map(function (tile) { return __awaiter(_this, void 0, void 0, function () {
+                                            var aqData;
+                                            return __generator(this, function (_a) {
+                                                switch (_a.label) {
+                                                    case 0: return [4 /*yield*/, fetchAqDataWithRetry(apiSecret, tile.latitude, tile.longitude)];
+                                                    case 1:
+                                                        aqData = _a.sent();
+                                                        return [2 /*return*/, { tile: tile, aqData: aqData }];
+                                                }
+                                            });
+                                        }); }))];
+                                case 1:
+                                    chunkResults = _b.sent();
+                                    // Keep only fulfilled results
+                                    chunkResults.forEach(function (res, idx) {
+                                        if (res.status === "fulfilled") {
+                                            results.push(res.value);
+                                        }
+                                        else {
+                                            console.error("Failed to fetch AQ data for tile ".concat(chunk[idx].id, " (").concat(chunk[idx].latitude, ", ").concat(chunk[idx].longitude, "):"), res.reason);
+                                        }
+                                    });
+                                    // Add a small delay between chunks to further reduce burst load
+                                    return [4 /*yield*/, sleep(500)];
+                                case 2:
+                                    // Add a small delay between chunks to further reduce burst load
+                                    _b.sent();
+                                    return [2 /*return*/];
+                            }
+                        });
+                    };
                     i = 0;
                     _a.label = 1;
                 case 1:
-                    if (!(i < batch.length)) return [3 /*break*/, 5];
-                    chunk = batch.slice(i, i + BATCH_CONCURRENCY);
-                    return [4 /*yield*/, Promise.all(chunk.map(function (tile) { return __awaiter(_this, void 0, void 0, function () {
-                            var aqData;
-                            return __generator(this, function (_a) {
-                                switch (_a.label) {
-                                    case 0: return [4 /*yield*/, fetchAqDataWithRetry(apiSecret, tile.latitude, tile.longitude)];
-                                    case 1:
-                                        aqData = _a.sent();
-                                        return [2 /*return*/, { tile: tile, aqData: aqData }];
-                                }
-                            });
-                        }); }))];
+                    if (!(i < batch.length)) return [3 /*break*/, 4];
+                    return [5 /*yield**/, _loop_1(i)];
                 case 2:
-                    chunkResults = _a.sent();
-                    results.push.apply(results, chunkResults);
-                    // Add a small delay between chunks to further reduce burst load
-                    return [4 /*yield*/, sleep(500)];
-                case 3:
-                    // Add a small delay between chunks to further reduce burst load
                     _a.sent();
-                    _a.label = 4;
-                case 4:
+                    _a.label = 3;
+                case 3:
                     i += BATCH_CONCURRENCY;
                     return [3 /*break*/, 1];
-                case 5: return [2 /*return*/, results];
+                case 4: return [2 /*return*/, results];
             }
         });
     });
 }
 var handler = function () { return __awaiter(void 0, void 0, void 0, function () {
-    var client, secretId, apiSecretId, bucket, key, dbCreds, apiSecret, coords, batchSize, _loop_1, i, error_2;
+    var client, secretId, apiSecretId, bucket, key, dbCreds, apiSecret, coords, batchSize, _loop_2, i, error_2;
     return __generator(this, function (_a) {
         switch (_a.label) {
             case 0:
@@ -396,8 +417,8 @@ var handler = function () { return __awaiter(void 0, void 0, void 0, function ()
             case 4:
                 coords = _a.sent();
                 batchSize = 1000;
-                _loop_1 = function (i) {
-                    var batch, batchedAqData, aqRecordsToInsert, insertedAqRecords, recordIdMap, pollutantData, aqiData, healthRecommendationData, _loop_2, _i, batchedAqData_1, _b, tile, aqData;
+                _loop_2 = function (i) {
+                    var batch, batchedAqData, aqRecordsToInsert, insertedAqRecords, recordIdMap, pollutantData, aqiData, healthRecommendationData, _loop_3, _i, batchedAqData_1, _b, tile, aqData;
                     return __generator(this, function (_c) {
                         switch (_c.label) {
                             case 0:
@@ -436,7 +457,7 @@ var handler = function () { return __awaiter(void 0, void 0, void 0, function ()
                                 pollutantData = [];
                                 aqiData = [];
                                 healthRecommendationData = [];
-                                _loop_2 = function (tile, aqData) {
+                                _loop_3 = function (tile, aqData) {
                                     var recordId = recordIdMap.get(Number(tile.id));
                                     // console.log(`recordId: ${recordId}`)
                                     if (!recordId) {
@@ -504,7 +525,7 @@ var handler = function () { return __awaiter(void 0, void 0, void 0, function ()
                                 };
                                 for (_i = 0, batchedAqData_1 = batchedAqData; _i < batchedAqData_1.length; _i++) {
                                     _b = batchedAqData_1[_i], tile = _b.tile, aqData = _b.aqData;
-                                    _loop_2(tile, aqData);
+                                    _loop_3(tile, aqData);
                                 }
                                 // Call bulk insert functions with typed arrays
                                 console.log("Inserting ".concat(pollutantData.length, " pollutant records"));
@@ -528,7 +549,7 @@ var handler = function () { return __awaiter(void 0, void 0, void 0, function ()
                 _a.label = 5;
             case 5:
                 if (!(i < coords.length)) return [3 /*break*/, 8];
-                return [5 /*yield**/, _loop_1(i)];
+                return [5 /*yield**/, _loop_2(i)];
             case 6:
                 _a.sent();
                 _a.label = 7;

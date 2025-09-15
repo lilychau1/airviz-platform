@@ -288,7 +288,7 @@ async function fetchAqDataWithRetry(
             }
             
             const aqData = await fetchAirQuality(apiKey, latitude, longitude);
-            console.log(`Fetched AQ data for (${latitude}, ${longitude}):`, JSON.stringify(aqData, null, 2));
+            // console.log(`Fetched AQ data for (${latitude}, ${longitude}):`, JSON.stringify(aqData, null, 2));
 
             return aqData;
 
@@ -316,16 +316,33 @@ async function fetchAqDataWithRetry(
 }
 
 // Concurrency scheduler for batch (tiles)
+// Concurrency scheduler for batch (tiles)
 async function rateLimitedBatchFetch(batch: coordsRecord[], apiSecret: string) {
     let results: { tile: coordsRecord, aqData: FetchAirQualityResponse }[] = [];
 
     for (let i = 0; i < batch.length; i += BATCH_CONCURRENCY) {
         const chunk = batch.slice(i, i + BATCH_CONCURRENCY);
-        const chunkResults = await Promise.all(chunk.map(async (tile) => {
-            const aqData = await fetchAqDataWithRetry(apiSecret, tile.latitude, tile.longitude);
-            return { tile, aqData };
-        }));
-        results.push(...chunkResults);
+
+        // Use Promise.allSettled instead of Promise.all
+        const chunkResults = await Promise.allSettled(
+            chunk.map(async (tile) => {
+                const aqData = await fetchAqDataWithRetry(apiSecret, tile.latitude, tile.longitude);
+                return { tile, aqData };
+            })
+        );
+
+        // Keep only fulfilled results
+        chunkResults.forEach((res, idx) => {
+            if (res.status === "fulfilled") {
+                results.push(res.value);
+            } else {
+                console.error(
+                    `Failed to fetch AQ data for tile ${chunk[idx].id} (${chunk[idx].latitude}, ${chunk[idx].longitude}):`,
+                    res.reason
+                );
+            }
+        });
+
         // Add a small delay between chunks to further reduce burst load
         await sleep(500);
     }
