@@ -1,0 +1,194 @@
+[
+  {
+    "name": "Barking and Dagenham",
+    "latitude": 51.540807,
+    "longitude": 0.130455,
+    "description": ""
+  },
+  {
+    "name": "Barnet",
+    "latitude": 51.661417, 
+    "longitude": -0.186680,
+    "description": ""
+  },
+  {
+    "name": "Bexley",
+    "latitude": 51.460870, 
+    "longitude": 0.138846,
+    "description": ""
+  },
+  {
+    "name": "Brent",
+    "latitude": 51.556003,
+    "longitude": -0.266705, 
+    "description": ""
+  },
+  {
+    "name": "Bromley",
+    "latitude": 51.375151, 
+    "longitude": 0.061260,
+    "description": ""
+  },
+  {
+    "name": "Camden",
+    "latitude": 51.546378, 
+    "longitude": -0.147057,
+    "description": ""
+  },
+  {
+    "name": "Croydon",
+    "latitude": 51.356671, 
+    "longitude": -0.082233,
+    "description": ""
+  },
+  {
+    "name": "Ealing",
+    "latitude": 51.518179, 
+    "longitude": -0.325844,
+    "description": ""
+  },
+  {
+    "name": "Enfield",
+    "latitude": 51.650175, 
+    "longitude": -0.081622,
+    "description": ""
+  },
+  {
+    "name": "Greenwich",
+    "latitude": 51.473088, 
+    "longitude": 0.056438,
+    "description": ""
+  },
+  {
+    "name": "Hackney",
+    "latitude": 51.552665, 
+    "longitude": -0.059535,
+    "description": ""
+  },
+  {
+    "name": "Hammersmith and Fulham",
+    "latitude": 51.493568, 
+    "longitude": -0.221174,
+    "description": ""
+  },
+  {
+    "name": "Haringey",
+    "latitude": 51.589787, 
+    "longitude": -0.107050,
+    "description": ""
+  },
+  {
+    "name": "Harrow",
+    "latitude": 51.593542, 
+    "longitude": -0.339054,
+    "description": ""
+  },
+  {
+    "name": "Havering",
+    "latitude": 51.558689, 
+    "longitude": 0.225186,
+    "description": ""
+  },
+  {
+    "name": "Hillingdon",
+    "latitude": 51.537577, 
+    "longitude": -0.449352,
+    "description": ""
+  },
+  {
+    "name": "Hounslow",
+    "latitude": 51.475157, 
+    "longitude": -0.362574,
+    "description": ""
+  },
+  {
+    "name": "Islington",
+    "latitude": 51.547311, 
+    "longitude": -0.107359,
+    "description": ""
+  },
+  {
+    "name": "Kensington and Chelsea",
+    "latitude": 51.500034, 
+    "longitude": -0.193581,
+    "description": ""
+  },
+  {
+    "name": "Kingston upon Thames",
+    "latitude": 51.385862, 
+    "longitude": -0.285972,
+    "description": ""
+  },
+  {
+    "name": "Lambeth",
+    "latitude": 51.453958, 
+    "longitude": -0.118214,
+    "description": ""
+  },
+  {
+    "name": "Lewisham",
+    "latitude": 51.452431, 
+    "longitude": -0.021117,
+    "description": ""
+  },
+  {
+    "name": "Merton",
+    "latitude": 51.410118, 
+    "longitude": -0.197785,
+    "description": ""
+  },
+  {
+    "name": "Newham",
+    "latitude": 51.524389, 
+    "longitude": 0.032733,
+    "description": ""
+  },
+  {
+    "name": "Redbridge",
+    "latitude": 51.586847, 
+    "longitude": 0.074958,
+    "description": ""
+  },
+  {
+    "name": "Richmond upon Thames",
+    "latitude": 51.449524, 
+    "longitude": -0.303033,
+    "description": ""
+  },
+  {
+    "name": "Southwark",
+    "latitude": 51.474402, 
+    "longitude": -0.075199,
+    "description": ""
+  },
+  {
+    "name": "Sutton",
+    "latitude": 51.362551, 
+    "longitude": -0.179792,
+    "description": ""
+  },
+  {
+    "name": "Tower Hamlets",
+    "latitude": 51.521166, 
+    "longitude": -0.043737,
+    "description": ""
+  },
+  {
+    "name": "Waltham Forest",
+    "latitude": 51.601319, 
+    "longitude": -0.015516,
+    "description": ""
+  },
+  {
+    "name": "Wandsworth",
+    "latitude": 51.451977, 
+    "longitude": -0.190335,
+    "description": ""
+  },
+  {
+    "name": "Westminster",
+    "latitude": 51.514078, 
+    "longitude": -0.163398,
+    "description": ""
+  }
+]

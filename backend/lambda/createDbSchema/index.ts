@@ -86,9 +86,12 @@ export const handler = async () => {
         await client.query(`
             CREATE TABLE IF NOT EXISTS tiles (
                 id SERIAL PRIMARY KEY,
-                borough_id INT REFERENCES boroughs(id), 
-                zone_id INT REFERENCES zones(id), 
-                postcode_area_id INT REFERENCES postcode_areas(id), 
+                /* borough_id INT REFERENCES boroughs(id), */
+                borough_id INT, 
+                /* zone_id INT REFERENCES zones(id), */ 
+                zone_id INT, 
+                /* postcode_area_id INT REFERENCES postcode_areas(id), */
+                postcode_area_id INT, 
                 name VARCHAR(255) NOT NULL, 
                 location POINT NOT NULL, 
                 inserted_at TIMESTAMP NOT NULL, 
