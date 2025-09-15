@@ -297,7 +297,7 @@ function fetchAqDataWithRetry(apiKey_1, latitude_1, longitude_1) {
                     return [4 /*yield*/, fetchAirQuality(apiKey, latitude, longitude)];
                 case 3:
                     aqData = _d.sent();
-                    console.log("Fetched AQ data for (".concat(latitude, ", ").concat(longitude, "):"), JSON.stringify(aqData, null, 2));
+                    // console.log(`Fetched AQ data for (${latitude}, ${longitude}):`, JSON.stringify(aqData, null, 2));
                     return [2 /*return*/, aqData];
                 case 4:
                     error_1 = _d.sent();

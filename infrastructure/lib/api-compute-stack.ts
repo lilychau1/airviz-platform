@@ -73,28 +73,6 @@ export class ApiComputeStack extends cdk.Stack {
         
         props!.tileCoordsBucket.grantRead(ingestAqDataFunction);
 
-        const ingestAqDataFunctionTest = new lambda.Function(
-            this, 
-            'ingestAqDataFunctionTest', {
-                code: lambda.Code.fromAsset('../backend/lambda/ingestAqDataTest'), 
-                runtime: lambda.Runtime.NODEJS_18_X,
-                handler: 'index.handler',
-                timeout: cdk.Duration.minutes(10),
-                memorySize: 512,
-                environment: {
-                    DB_SECRET_ARN: props!.dbSecret.secretArn,
-                    DB_NAME: props!.databaseName,
-                    GOOGLE_API_SECRET_ARN: googleAqApiKeySecret.secretArn,
-                    TILE_COORDS_BUCKET: props!.tileCoordsBucket.bucketName,
-                    TILE_COORDS_FILENAME: props!.tileCoordsKey,
-                },
-            }
-        );
-        props!.dbSecret.grantRead(ingestAqDataFunctionTest);
-        googleAqApiKeySecret.grantRead(ingestAqDataFunctionTest);
-        
-        props!.tileCoordsBucket.grantRead(ingestAqDataFunctionTest);
-
         // Add API Gateway
         const httpApi = new apigatewayv2.HttpApi(
             this, 
@@ -130,25 +108,6 @@ export class ApiComputeStack extends cdk.Stack {
                 ingestAqDataFunction, 
             ), 
         });
-
-        // Test: Add API Gateway route for each lambda function
-        httpApi.addRoutes({
-            path: '/ingestAqDataTest', 
-            methods: [apigatewayv2.HttpMethod.POST], 
-            integration: new integrations.HttpLambdaIntegration(
-                'ingestAqDataFunctionTest', 
-                ingestAqDataFunctionTest, 
-            ), 
-        });
-
-        // httpApi.addRoutes({
-        //     path: '/retrieveData', 
-        //     methods: [apigatewayv2.HttpMethod.ANY],  // Allow all HTTP methods (GET, POST, DELETE, ...)
-        //     integration: new integrations.HttpLambdaIntegration(
-        //         'ingestDataFunction', 
-        //         ingestBatchDataFunction, 
-        //     ), 
-        // });
     }
 }
 
