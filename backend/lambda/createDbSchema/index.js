@@ -39,7 +39,10 @@ Object.defineProperty(exports, "__esModule", { value: true });
 exports.handler = void 0;
 var pg_1 = require("pg");
 var client_secrets_manager_1 = require("@aws-sdk/client-secrets-manager");
+var client_s3_1 = require("@aws-sdk/client-s3");
 var secretsClient = new client_secrets_manager_1.SecretsManagerClient({});
+var s3Client = new client_s3_1.S3Client({});
+// Helper functions
 function getSecret(secretId) {
     return __awaiter(this, void 0, void 0, function () {
         var data;
@@ -53,12 +56,25 @@ function getSecret(secretId) {
         });
     });
 }
+function streamToString(stream) {
+    return __awaiter(this, void 0, void 0, function () {
+        var chunks;
+        return __generator(this, function (_a) {
+            chunks = [];
+            return [2 /*return*/, new Promise(function (resolve, reject) {
+                    stream.on('data', function (chunk) { return chunks.push(chunk); });
+                    stream.on('error', reject);
+                    stream.on('end', function () { return resolve(Buffer.concat(chunks).toString('utf-8')); });
+                })];
+        });
+    });
+}
 var handler = function () { return __awaiter(void 0, void 0, void 0, function () {
-    var client, secretId, dbCreds, res, tablesToDrop, _i, tablesToDrop_1, table, error_1;
+    var client, secretId, dbCreds, res, tablesToDrop, _i, tablesToDrop_1, table, bucket, key, s3Resp, jsonString, boroughs, now_1, valuesClause, params, error_1;
     return __generator(this, function (_a) {
         switch (_a.label) {
             case 0:
-                _a.trys.push([0, 16, 19, 22]);
+                _a.trys.push([0, 20, 23, 26]);
                 secretId = process.env.DB_SECRET_ARN;
                 return [4 /*yield*/, getSecret(secretId)];
             case 1:
@@ -113,7 +129,7 @@ var handler = function () { return __awaiter(void 0, void 0, void 0, function ()
                 return [4 /*yield*/, client.query("\n            CREATE TABLE IF NOT EXISTS postcode_areas (\n                id SERIAL PRIMARY KEY,\n                name VARCHAR(255) NOT NULL, \n                location POINT NOT NULL, \n                inserted_at TIMESTAMP NOT NULL, \n                updated_at TIMESTAMP NOT NULL, \n                description TEXT\n            );\n        ")];
             case 10:
                 _a.sent();
-                return [4 /*yield*/, client.query("\n            CREATE TABLE IF NOT EXISTS tiles (\n                id SERIAL PRIMARY KEY,\n                borough_id INT REFERENCES boroughs(id), \n                zone_id INT REFERENCES zones(id), \n                postcode_area_id INT REFERENCES postcode_areas(id), \n                name VARCHAR(255) NOT NULL, \n                location POINT NOT NULL, \n                inserted_at TIMESTAMP NOT NULL, \n                updated_at TIMESTAMP NOT NULL, \n                description TEXT\n            );\n        ")];
+                return [4 /*yield*/, client.query("\n            CREATE TABLE IF NOT EXISTS tiles (\n                id SERIAL PRIMARY KEY,\n                /* borough_id INT REFERENCES boroughs(id), */\n                borough_id INT, \n                /* zone_id INT REFERENCES zones(id), */ \n                zone_id INT, \n                /* postcode_area_id INT REFERENCES postcode_areas(id), */\n                postcode_area_id INT, \n                name VARCHAR(255) NOT NULL, \n                location POINT NOT NULL, \n                inserted_at TIMESTAMP NOT NULL, \n                updated_at TIMESTAMP NOT NULL, \n                description TEXT\n            );\n        ")];
             case 11:
                 _a.sent();
                 return [4 /*yield*/, client.query("\n            CREATE TABLE IF NOT EXISTS aq_records (\n                id SERIAL PRIMARY KEY,\n                tile_id INT NOT NULL,\n                timestamp TIMESTAMP NOT NULL,\n                ingestion_timestamp TIMESTAMP NOT NULL\n            );\n        ")];
@@ -128,31 +144,64 @@ var handler = function () { return __awaiter(void 0, void 0, void 0, function ()
                 return [4 /*yield*/, client.query("\n            CREATE TABLE IF NOT EXISTS health_recommendation (\n                id SERIAL PRIMARY KEY,\n                record_id INT REFERENCES aq_records(id),\n                /* tile_id INT REFERENCES Tiles(id), */\n                tile_id INT NOT NULL,\n                timestamp TIMESTAMP NOT NULL,\n                ingestion_timestamp TIMESTAMP NOT NULL,\n                recommendations JSONB NOT NULL\n            );\n        ")];
             case 15:
                 _a.sent();
-                return [2 /*return*/, {
-                        statusCode: 200,
-                        body: JSON.stringify({ message: 'Schema setup completed successfully' }),
-                    }];
+                bucket = process.env.BOROUGH_COORDS_BUCKET;
+                key = process.env.BOROUGH_COORDS_FILENAME;
+                return [4 /*yield*/, s3Client.send(new client_s3_1.GetObjectCommand({ Bucket: bucket, Key: key }))];
             case 16:
-                error_1 = _a.sent();
-                if (!client) return [3 /*break*/, 18];
-                return [4 /*yield*/, client.end()];
+                s3Resp = _a.sent();
+                return [4 /*yield*/, streamToString(s3Resp.Body)];
             case 17:
-                _a.sent();
-                _a.label = 18;
+                jsonString = _a.sent();
+                boroughs = JSON.parse(jsonString);
+                console.log("Loaded ".concat(boroughs.length, " boroughs from S3"));
+                if (!(boroughs.length > 0)) return [3 /*break*/, 19];
+                now_1 = new Date().toISOString();
+                valuesClause = boroughs
+                    .map(function (_, i) {
+                    return "($".concat(i * 7 + 1, ", $").concat(i * 7 + 2, ", POINT($").concat(i * 7 + 3, ", $").concat(i * 7 + 4, "), $").concat(i * 7 + 5, ", $").concat(i * 7 + 6, ", $").concat(i * 7 + 7, ")");
+                })
+                    .join(', ');
+                params = boroughs.flatMap(function (borough, i) { return [
+                    i + 1,
+                    borough.name,
+                    borough.longitude,
+                    borough.latitude,
+                    now_1,
+                    now_1,
+                    borough.description || ''
+                ]; });
+                // Run query
+                return [4 /*yield*/, client.query("INSERT INTO boroughs (id, name, location, inserted_at, updated_at, description) VALUES ".concat(valuesClause), params)];
             case 18:
+                // Run query
+                _a.sent();
+                console.log("Inserted ".concat(boroughs.length, " boroughs successfully."));
+                _a.label = 19;
+            case 19: return [2 /*return*/, {
+                    statusCode: 200,
+                    body: JSON.stringify({ message: 'Schema setup completed successfully' }),
+                }];
+            case 20:
+                error_1 = _a.sent();
+                if (!client) return [3 /*break*/, 22];
+                return [4 /*yield*/, client.end()];
+            case 21:
+                _a.sent();
+                _a.label = 22;
+            case 22:
                 console.error('Schema migration failed', error_1);
                 return [2 /*return*/, {
                         statusCode: 500,
                         body: JSON.stringify({ error: error_1.message }),
                     }];
-            case 19:
-                if (!client) return [3 /*break*/, 21];
+            case 23:
+                if (!client) return [3 /*break*/, 25];
                 return [4 /*yield*/, client.end()];
-            case 20:
+            case 24:
                 _a.sent();
-                _a.label = 21;
-            case 21: return [7 /*endfinally*/];
-            case 22: return [2 /*return*/];
+                _a.label = 25;
+            case 25: return [7 /*endfinally*/];
+            case 26: return [2 /*return*/];
         }
     });
 }); };

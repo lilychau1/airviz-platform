@@ -14,6 +14,7 @@ export class DataStorageStack extends cdk.Stack {
     public readonly databaseName: string;
     public readonly airVizBucket: s3.Bucket;
     public readonly tileCoordsKey: string;
+    public readonly boroughCoordsKey: string;
 
     constructor(scope: Construct, id: string, props?: cdk.StackProps) {
         super(scope, id, props);
@@ -85,14 +86,26 @@ export class DataStorageStack extends cdk.Stack {
         });
 
         const tileCoordsFilename = 'tile-coordinates.csv'
-        const tileCoordsKeyPrefix = 'data/'
+        const tileCoordsKeyPrefix = 'data/tile-coordinates/'
 
         this.tileCoordsKey = tileCoordsKeyPrefix + tileCoordsFilename
         
         new s3deploy.BucketDeployment(this, 'DeployTileCoordinatesCsv', {
             sources: [s3deploy.Source.asset(`../backend/data/tile-coordinates/`)], 
             destinationBucket: this.airVizBucket,
-            destinationKeyPrefix: 'data/', 
+            destinationKeyPrefix: tileCoordsKeyPrefix, 
+        });
+
+
+        const boroughCoordsFilename = 'borough-coordinates.json'
+        const boroughCoordsKeyPrefix = 'data/borough-coordinates/'
+
+        this.boroughCoordsKey = boroughCoordsKeyPrefix + boroughCoordsFilename
+        
+        new s3deploy.BucketDeployment(this, 'DeployBoroughCoordinatesJson', {
+            sources: [s3deploy.Source.asset(`../backend/data/borough-coordinates/`)], 
+            destinationBucket: this.airVizBucket,
+            destinationKeyPrefix: boroughCoordsKeyPrefix, 
         });
   }
 }
