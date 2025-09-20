@@ -85,7 +85,7 @@ export class DataStorageStack extends cdk.Stack {
             autoDeleteObjects: true,
         });
 
-        const tileCoordsFilename = 'tile-coordinates.csv'
+        const tileCoordsFilename = 'tile-coordinates-with-boroughid.csv'
         const tileCoordsKeyPrefix = 'data/tile-coordinates/'
 
         this.tileCoordsKey = tileCoordsKeyPrefix + tileCoordsFilename

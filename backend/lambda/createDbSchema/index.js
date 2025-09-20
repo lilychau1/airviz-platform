@@ -144,7 +144,7 @@ var handler = function () { return __awaiter(void 0, void 0, void 0, function ()
                 return [4 /*yield*/, client.query("\n            CREATE TABLE IF NOT EXISTS health_recommendation (\n                id SERIAL PRIMARY KEY,\n                record_id INT REFERENCES aq_records(id),\n                /* tile_id INT REFERENCES Tiles(id), */\n                tile_id INT NOT NULL,\n                timestamp TIMESTAMP NOT NULL,\n                ingestion_timestamp TIMESTAMP NOT NULL,\n                recommendations JSONB NOT NULL\n            );\n        ")];
             case 15:
                 _a.sent();
-                bucket = process.env.BOROUGH_COORDS_BUCKET;
+                bucket = process.env.BUCKET;
                 key = process.env.BOROUGH_COORDS_FILENAME;
                 return [4 /*yield*/, s3Client.send(new client_s3_1.GetObjectCommand({ Bucket: bucket, Key: key }))];
             case 16:

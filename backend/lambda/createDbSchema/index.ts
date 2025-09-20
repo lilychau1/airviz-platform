@@ -29,6 +29,13 @@ interface Borough {
   description?: string;
 }
 
+interface TileCsvRecord {
+    id: number; 
+    latitude: number; 
+    longitude: number; 
+    boroughId: number;
+}
+
 export const handler = async () => {
     let client: Client | undefined;
     try {
@@ -176,24 +183,25 @@ export const handler = async () => {
             );
         `);
 
+        // Initialise borough table contents
         // Read borough JSON from S3
-        const bucket = process.env.BOROUGH_COORDS_BUCKET!;
+        const bucket = process.env.BUCKET!;
         const key = process.env.BOROUGH_COORDS_FILENAME!;
 
         const s3Resp: GetObjectCommandOutput = await s3Client.send(new GetObjectCommand({ Bucket: bucket, Key: key }));
         const jsonString: string = await streamToString(s3Resp.Body as Readable);
         const boroughs: Borough[] = JSON.parse(jsonString);
+        const now = new Date().toISOString();
 
         console.log(`Loaded ${boroughs.length} boroughs from S3`);
 
         // Insert boroughs into DB
         if (boroughs.length > 0) {
-            const now = new Date().toISOString();
 
             // Create inserting SQL clause for borough information
             const valuesClause = boroughs
                 .map((_: Borough, i: number) => 
-                    `($${i*7 + 1}, $${i*7 + 2}, POINT($${i*7 + 3}, $${i*7 + 4}), $${i*7 + 5}, $${i*7 + 6}, $${i*7 + 7})`
+                    `($${i * 7 + 1}, $${i * 7 + 2}, POINT($${i * 7 + 3}, $${i * 7 + 4}), $${i * 7 + 5}, $${i * 7 + 6}, $${i * 7 + 7})`
                 )
                 .join(', ');
 
@@ -216,6 +224,62 @@ export const handler = async () => {
 
             console.log(`Inserted ${boroughs.length} boroughs successfully.`);
         }
+
+        // Initialise tile table content from tile coordinates with boroughId csv
+        const tileKey = process.env.TILE_COORDS_FILENAME!;
+        const tileResp: GetObjectCommandOutput = await s3Client.send(new GetObjectCommand({ Bucket: bucket, Key: tileKey }));
+        const csvString: string = await streamToString(tileResp.Body as Readable);
+
+        // Parse the CSV file to fit the data to paramters
+        const tileLines = csvString.trim().split('\n');
+        const tileHeader = tileLines.shift()?.split(','); // Split the header to obtain ["id","latitude","longitude","boroughId"]
+
+        // Catch missing tileHeader
+        if (!tileHeader) throw new Error('Tile CSV header missing');
+
+        const tiles: TileCsvRecord[] = tileLines.map(line => {
+            const cols: string[] = line.split(',');
+
+            return {
+                id: Number(cols[0]),
+                latitude: Number(cols[1]),
+                longitude: Number(cols[2]),
+                boroughId: Number(cols[3])
+            };
+        });
+
+        console.log(`Loaded ${tiles.length} tiles from CSV`);
+
+        // Insert tiles records into tiles table
+        if (tiles.length > 0) {
+        const valuesClause = tiles
+            .map((tile: TileCsvRecord, i: number) =>
+                `($${i * 10 + 1}, $${i * 10 + 2}, $${i * 10 + 3}, $${i * 10 + 4}, $${i * 10 + 5}, POINT($${i * 10 + 6}, $${i * 10 + 7}), $${i * 10 + 8}, $${i * 10 + 9}, $${i * 10 + 10})`
+            )
+            .join(', ');
+
+            const params = tiles.flatMap(tile => [
+                tile.id, // id
+                tile.boroughId || null, //borough_id
+                null, // zone_id placeholder
+                null, // postcode_area_id placeholder
+                `Tile ${tile.id}`,  // name
+                tile.longitude, // POINT X
+                tile.latitude, // POINT Y
+                now, // inserted_at
+                now, // updated_at
+                null, // description
+            ]);
+
+            await client.query(
+                `INSERT INTO tiles (id, borough_id, zone_id, postcode_area_id, name, location, inserted_at, updated_at, description) VALUES ${valuesClause}`,
+                params
+            );
+
+            console.log(`Inserted ${tiles.length} tiles successfully.`);
+        }
+
+
         return {
             statusCode: 200,
             body: JSON.stringify({ message: 'Schema setup completed successfully' }),

@@ -34,8 +34,9 @@ export class ApiComputeStack extends cdk.Stack {
                     DB_SECRET_ARN: props!.dbSecret.secretArn,
                     // DB_ENDPOINT: props!.dbEndpoint,
                     DB_NAME: props!.databaseName, 
-                    BOROUGH_COORDS_BUCKET: props!.bucket.bucketName, 
+                    BUCKET: props!.bucket.bucketName, 
                     BOROUGH_COORDS_FILENAME: props!.boroughCoordsKey,
+                    TILE_COORDS_FILENAME: props!.tileCoordsKey,
                 },
             }
         );
