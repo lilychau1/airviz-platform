@@ -70,15 +70,16 @@ function streamToString(stream) {
     });
 }
 var handler = function () { return __awaiter(void 0, void 0, void 0, function () {
-    var client, secretId, dbCreds, res, tablesToDrop, _i, tablesToDrop_1, table, bucket, key, s3Resp, jsonString, boroughs, now_1, valuesClause, params, error_1;
-    return __generator(this, function (_a) {
-        switch (_a.label) {
+    var client, secretId, dbCreds, res, tablesToDrop, _i, tablesToDrop_1, table, bucket, key, s3Resp, jsonString, boroughs, now_1, valuesClause, params, tileKey, tileResp, csvString, tileLines, tileHeader, tiles, valuesClause, params, error_1;
+    var _a;
+    return __generator(this, function (_b) {
+        switch (_b.label) {
             case 0:
-                _a.trys.push([0, 20, 23, 26]);
+                _b.trys.push([0, 24, 27, 30]);
                 secretId = process.env.DB_SECRET_ARN;
                 return [4 /*yield*/, getSecret(secretId)];
             case 1:
-                dbCreds = _a.sent();
+                dbCreds = _b.sent();
                 client = new pg_1.Client({
                     host: dbCreds.host,
                     user: dbCreds.username,
@@ -89,10 +90,10 @@ var handler = function () { return __awaiter(void 0, void 0, void 0, function ()
                 });
                 return [4 /*yield*/, client.connect()];
             case 2:
-                _a.sent();
+                _b.sent();
                 return [4 /*yield*/, client.query("\n            SELECT table_schema, table_name \n            FROM information_schema.tables \n            WHERE table_schema = 'public';\n        ")];
             case 3:
-                res = _a.sent();
+                res = _b.sent();
                 console.log('Existing tables:', res.rows);
                 tablesToDrop = [
                     'health_recommendation',
@@ -105,15 +106,15 @@ var handler = function () { return __awaiter(void 0, void 0, void 0, function ()
                     'boroughs',
                 ];
                 _i = 0, tablesToDrop_1 = tablesToDrop;
-                _a.label = 4;
+                _b.label = 4;
             case 4:
                 if (!(_i < tablesToDrop_1.length)) return [3 /*break*/, 7];
                 table = tablesToDrop_1[_i];
                 return [4 /*yield*/, client.query("DROP TABLE IF EXISTS public.".concat(table, " CASCADE;"))];
             case 5:
-                _a.sent();
+                _b.sent();
                 console.log("Table ".concat(table, " dropped (if it existed)."));
-                _a.label = 6;
+                _b.label = 6;
             case 6:
                 _i++;
                 return [3 /*break*/, 4];
@@ -122,40 +123,40 @@ var handler = function () { return __awaiter(void 0, void 0, void 0, function ()
                 console.log('Creating new tables...');
                 return [4 /*yield*/, client.query("\n            CREATE TABLE IF NOT EXISTS boroughs (\n                id SERIAL PRIMARY KEY,\n                name VARCHAR(255) NOT NULL, \n                location POINT NOT NULL, \n                inserted_at TIMESTAMP NOT NULL, \n                updated_at TIMESTAMP NOT NULL, \n                description TEXT\n            );\n        ")];
             case 8:
-                _a.sent();
+                _b.sent();
                 return [4 /*yield*/, client.query("\n            CREATE TABLE IF NOT EXISTS zones (\n                id SERIAL PRIMARY KEY,\n                name VARCHAR(255) NOT NULL, \n                location POINT NOT NULL, \n                inserted_at TIMESTAMP NOT NULL, \n                updated_at TIMESTAMP NOT NULL, \n                description TEXT\n            );\n        ")];
             case 9:
-                _a.sent();
+                _b.sent();
                 return [4 /*yield*/, client.query("\n            CREATE TABLE IF NOT EXISTS postcode_areas (\n                id SERIAL PRIMARY KEY,\n                name VARCHAR(255) NOT NULL, \n                location POINT NOT NULL, \n                inserted_at TIMESTAMP NOT NULL, \n                updated_at TIMESTAMP NOT NULL, \n                description TEXT\n            );\n        ")];
             case 10:
-                _a.sent();
+                _b.sent();
                 return [4 /*yield*/, client.query("\n            CREATE TABLE IF NOT EXISTS tiles (\n                id SERIAL PRIMARY KEY,\n                /* borough_id INT REFERENCES boroughs(id), */\n                borough_id INT, \n                /* zone_id INT REFERENCES zones(id), */ \n                zone_id INT, \n                /* postcode_area_id INT REFERENCES postcode_areas(id), */\n                postcode_area_id INT, \n                name VARCHAR(255) NOT NULL, \n                location POINT NOT NULL, \n                inserted_at TIMESTAMP NOT NULL, \n                updated_at TIMESTAMP NOT NULL, \n                description TEXT\n            );\n        ")];
             case 11:
-                _a.sent();
+                _b.sent();
                 return [4 /*yield*/, client.query("\n            CREATE TABLE IF NOT EXISTS aq_records (\n                id SERIAL PRIMARY KEY,\n                tile_id INT NOT NULL,\n                timestamp TIMESTAMP NOT NULL,\n                ingestion_timestamp TIMESTAMP NOT NULL\n            );\n        ")];
             case 12:
-                _a.sent();
+                _b.sent();
                 return [4 /*yield*/, client.query("\n            CREATE TABLE IF NOT EXISTS pollutant_concentration (\n                id SERIAL PRIMARY KEY,\n                record_id INT REFERENCES aq_records(id),\n                /* tile_id INT REFERENCES Tiles(id), */\n                tile_id INT NOT NULL,\n                timestamp TIMESTAMP NOT NULL,\n                ingestion_timestamp TIMESTAMP NOT NULL,\n                pm25_value DOUBLE PRECISION,\n                pm10_value DOUBLE PRECISION,\n                no2_value DOUBLE PRECISION,\n                so2_value DOUBLE PRECISION,\n                o3_value DOUBLE PRECISION,\n                co_value DOUBLE PRECISION\n            );\n        ")];
             case 13:
-                _a.sent();
+                _b.sent();
                 return [4 /*yield*/, client.query("\n            CREATE TABLE IF NOT EXISTS air_quality_index (\n                id SERIAL PRIMARY KEY,\n                record_id INT REFERENCES aq_records(id),\n                /* tile_id INT REFERENCES Tiles(id), */\n                tile_id INT NOT NULL,\n                index_type VARCHAR(20) NOT NULL,\n                category TEXT NOT NULL,\n                colour_code JSONB NOT NULL,\n                dominant_pollutant VARCHAR(50) NOT NULL,\n                timestamp TIMESTAMP NOT NULL,\n                ingestion_timestamp TIMESTAMP NOT NULL,\n                value INT\n            );\n        ")];
             case 14:
-                _a.sent();
+                _b.sent();
                 return [4 /*yield*/, client.query("\n            CREATE TABLE IF NOT EXISTS health_recommendation (\n                id SERIAL PRIMARY KEY,\n                record_id INT REFERENCES aq_records(id),\n                /* tile_id INT REFERENCES Tiles(id), */\n                tile_id INT NOT NULL,\n                timestamp TIMESTAMP NOT NULL,\n                ingestion_timestamp TIMESTAMP NOT NULL,\n                recommendations JSONB NOT NULL\n            );\n        ")];
             case 15:
-                _a.sent();
+                _b.sent();
                 bucket = process.env.BUCKET;
                 key = process.env.BOROUGH_COORDS_FILENAME;
                 return [4 /*yield*/, s3Client.send(new client_s3_1.GetObjectCommand({ Bucket: bucket, Key: key }))];
             case 16:
-                s3Resp = _a.sent();
+                s3Resp = _b.sent();
                 return [4 /*yield*/, streamToString(s3Resp.Body)];
             case 17:
-                jsonString = _a.sent();
+                jsonString = _b.sent();
                 boroughs = JSON.parse(jsonString);
+                now_1 = new Date().toISOString();
                 console.log("Loaded ".concat(boroughs.length, " boroughs from S3"));
                 if (!(boroughs.length > 0)) return [3 /*break*/, 19];
-                now_1 = new Date().toISOString();
                 valuesClause = boroughs
                     .map(function (_, i) {
                     return "($".concat(i * 7 + 1, ", $").concat(i * 7 + 2, ", POINT($").concat(i * 7 + 3, ", $").concat(i * 7 + 4, "), $").concat(i * 7 + 5, ", $").concat(i * 7 + 6, ", $").concat(i * 7 + 7, ")");
@@ -174,34 +175,80 @@ var handler = function () { return __awaiter(void 0, void 0, void 0, function ()
                 return [4 /*yield*/, client.query("INSERT INTO boroughs (id, name, location, inserted_at, updated_at, description) VALUES ".concat(valuesClause), params)];
             case 18:
                 // Run query
-                _a.sent();
+                _b.sent();
                 console.log("Inserted ".concat(boroughs.length, " boroughs successfully."));
-                _a.label = 19;
-            case 19: return [2 /*return*/, {
+                _b.label = 19;
+            case 19:
+                tileKey = process.env.TILE_COORDS_FILENAME;
+                return [4 /*yield*/, s3Client.send(new client_s3_1.GetObjectCommand({ Bucket: bucket, Key: tileKey }))];
+            case 20:
+                tileResp = _b.sent();
+                return [4 /*yield*/, streamToString(tileResp.Body)];
+            case 21:
+                csvString = _b.sent();
+                tileLines = csvString.trim().split('\n');
+                tileHeader = (_a = tileLines.shift()) === null || _a === void 0 ? void 0 : _a.split(',');
+                // Catch missing tileHeader
+                if (!tileHeader)
+                    throw new Error('Tile CSV header missing');
+                tiles = tileLines.map(function (line) {
+                    var cols = line.split(',');
+                    return {
+                        id: Number(cols[0]),
+                        latitude: Number(cols[1]),
+                        longitude: Number(cols[2]),
+                        boroughId: Number(cols[3])
+                    };
+                });
+                console.log("Loaded ".concat(tiles.length, " tiles from CSV"));
+                if (!(tiles.length > 0)) return [3 /*break*/, 23];
+                valuesClause = tiles
+                    .map(function (tile, i) {
+                    return "($".concat(i * 10 + 1, ", $").concat(i * 10 + 2, ", $").concat(i * 10 + 3, ", $").concat(i * 10 + 4, ", $").concat(i * 10 + 5, ", POINT($").concat(i * 10 + 6, ", $").concat(i * 10 + 7, "), $").concat(i * 10 + 8, ", $").concat(i * 10 + 9, ", $").concat(i * 10 + 10, ")");
+                })
+                    .join(', ');
+                params = tiles.flatMap(function (tile) { return [
+                    tile.id, // id
+                    tile.boroughId || null, //borough_id
+                    null, // zone_id placeholder
+                    null, // postcode_area_id placeholder
+                    "Tile ".concat(tile.id), // name
+                    tile.longitude, // POINT X
+                    tile.latitude, // POINT Y
+                    now_1, // inserted_at
+                    now_1, // updated_at
+                    null, // description
+                ]; });
+                return [4 /*yield*/, client.query("INSERT INTO tiles (id, borough_id, zone_id, postcode_area_id, name, location, inserted_at, updated_at, description) VALUES ".concat(valuesClause), params)];
+            case 22:
+                _b.sent();
+                console.log("Inserted ".concat(tiles.length, " tiles successfully."));
+                _b.label = 23;
+            case 23: return [2 /*return*/, {
                     statusCode: 200,
                     body: JSON.stringify({ message: 'Schema setup completed successfully' }),
                 }];
-            case 20:
-                error_1 = _a.sent();
-                if (!client) return [3 /*break*/, 22];
+            case 24:
+                error_1 = _b.sent();
+                if (!client) return [3 /*break*/, 26];
                 return [4 /*yield*/, client.end()];
-            case 21:
-                _a.sent();
-                _a.label = 22;
-            case 22:
+            case 25:
+                _b.sent();
+                _b.label = 26;
+            case 26:
                 console.error('Schema migration failed', error_1);
                 return [2 /*return*/, {
                         statusCode: 500,
                         body: JSON.stringify({ error: error_1.message }),
                     }];
-            case 23:
-                if (!client) return [3 /*break*/, 25];
+            case 27:
+                if (!client) return [3 /*break*/, 29];
                 return [4 /*yield*/, client.end()];
-            case 24:
-                _a.sent();
-                _a.label = 25;
-            case 25: return [7 /*endfinally*/];
-            case 26: return [2 /*return*/];
+            case 28:
+                _b.sent();
+                _b.label = 29;
+            case 29: return [7 /*endfinally*/];
+            case 30: return [2 /*return*/];
         }
     });
 }); };
