@@ -12,8 +12,9 @@ dotenv.config();
 interface ApiComputeStackProps extends cdk.StackProps {
     dbSecret: Secret;
     databaseName: string;
-    tileCoordsBucket: s3.IBucket;
+    bucket: s3.IBucket;
     tileCoordsKey: string;
+    boroughCoordsKey: string;
 }
 export class ApiComputeStack extends cdk.Stack {
     constructor(scope: cdk.App, id:string, props?: ApiComputeStackProps) {
@@ -33,11 +34,15 @@ export class ApiComputeStack extends cdk.Stack {
                     DB_SECRET_ARN: props!.dbSecret.secretArn,
                     // DB_ENDPOINT: props!.dbEndpoint,
                     DB_NAME: props!.databaseName, 
+                    BUCKET: props!.bucket.bucketName, 
+                    BOROUGH_COORDS_FILENAME: props!.boroughCoordsKey,
+                    TILE_COORDS_FILENAME: props!.tileCoordsKey,
                 },
             }
         );
 
         props!.dbSecret.grantRead(CreateDbSchemaFunction);
+        props!.bucket.grantRead(CreateDbSchemaFunction);
 
         // Create trigger to run the CreateDbSchemaFunction Lambda after stack deployment
         new triggers.Trigger(this, 'DeployRunCreateDbSchemaTrigger', {
@@ -63,7 +68,7 @@ export class ApiComputeStack extends cdk.Stack {
                     DB_SECRET_ARN: props!.dbSecret.secretArn,
                     DB_NAME: props!.databaseName,
                     GOOGLE_API_SECRET_ARN: googleAqApiKeySecret.secretArn,
-                    TILE_COORDS_BUCKET: props!.tileCoordsBucket.bucketName,
+                    TILE_COORDS_BUCKET: props!.bucket.bucketName,
                     TILE_COORDS_FILENAME: props!.tileCoordsKey,
                 },
             }
@@ -71,7 +76,7 @@ export class ApiComputeStack extends cdk.Stack {
         props!.dbSecret.grantRead(ingestAqDataFunction);
         googleAqApiKeySecret.grantRead(ingestAqDataFunction);
         
-        props!.tileCoordsBucket.grantRead(ingestAqDataFunction);
+        props!.bucket.grantRead(ingestAqDataFunction);
 
         // Add API Gateway
         const httpApi = new apigatewayv2.HttpApi(

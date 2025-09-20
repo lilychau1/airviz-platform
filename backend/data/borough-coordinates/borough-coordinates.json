@@ -1,0 +1,194 @@
+[
+  {
+    "name": "Barking and Dagenham",
+    "latitude": 51.540807,
+    "longitude": 0.130455,
+    "description": "The London Borough of Barking and Dagenham is a London borough in East London. The borough was created in 1965 as the London Borough of Barking; the name was changed in 1980. (Wikipedia)"
+  },
+  {
+    "name": "Barnet",
+    "latitude": 51.661417, 
+    "longitude": -0.186680,
+    "description": "The London Borough of Barnet is a suburban London borough in north London, England. Forming part of Outer London, the borough was formed in 1965 from parts of the ceremonial counties of Middlesex and Hertfordshire. (Wikipedia)"
+  },
+  {
+    "name": "Bexley",
+    "latitude": 51.460870, 
+    "longitude": 0.138846,
+    "description": "The London Borough of Bexley is a London borough in south-east London, forming part of Outer London. It has a population of 248,287. The main settlements are Sidcup, Erith, Bexleyheath, Belvedere, Crayford, Welling and Old Bexley. (Wikipedia)"
+  },
+  {
+    "name": "Brent",
+    "latitude": 51.556003,
+    "longitude": -0.266705, 
+    "description": "Brent is a borough in north-west London, England. It is known for landmarks such as Wembley Stadium, the Swaminarayan Temple and the Kiln Theatre. It also contains the Welsh Harp reservoir and the Park Royal commercial estate. The local authority is Brent London Borough Council. (Wikipedia)"
+  },
+  {
+    "name": "Bromley",
+    "latitude": 51.375151, 
+    "longitude": 0.061260,
+    "description": "The London Borough of Bromley is a borough in London, England. It is the largest and southeasternmost borough in London, and borders the county of Kent, of which it formed part until 1965. The borough's population in the 2021 census was 329,991. It is named after Bromley, its principal town. (Wikipedia)"
+  },
+  {
+    "name": "Camden",
+    "latitude": 51.546378, 
+    "longitude": -0.147057,
+    "description": "The London Borough of Camden is a borough in Inner London, England. Camden Town Hall, on Euston Road, lies 1.4 mi north of Charing Cross. The borough was established on 1 April 1965 from the former metropolitan boroughs of Holborn, St Pancras and Hampstead. (Wikipedia)"
+  },
+  {
+    "name": "Croydon",
+    "latitude": 51.356671, 
+    "longitude": -0.082233,
+    "description": "The London Borough of Croydon is a borough within Outer London. It covers an area of 87 km² and has a population of 397,741 as of mid-2023, making it one of London's most populated boroughs. At its centre is the historic town of Croydon, from which the borough takes its name. (Wikipedia)"
+  },
+  {
+    "name": "Ealing",
+    "latitude": 51.518179, 
+    "longitude": -0.325844,
+    "description": "The London Borough of Ealing is a London borough in London, England. It comprises the districts of Acton, Ealing, Greenford, Hanwell, Northolt, Perivale and Southall. With a population of 367,100 inhabitants, it is the third most populous London borough. (Wikipedia)"
+  },
+  {
+    "name": "Enfield",
+    "latitude": 51.650175, 
+    "longitude": -0.081622,
+    "description": "The London Borough of Enfield is a London borough in Greater London, England. The main communities in the borough are Edmonton, Enfield, Southgate and Palmers Green. (Wikipedia)"
+  },
+  {
+    "name": "Greenwich",
+    "latitude": 51.473088, 
+    "longitude": 0.056438,
+    "description": "The Royal Borough of Greenwich is a London borough in southeast Greater London, England. The London Borough of Greenwich was formed in 1965 by the London Government Act 1963. The new borough covered the former area of the Metropolitan Borough of Greenwich and most of the Metropolitan Borough of Woolwich to the east. (Wikipedia)"
+  },
+  {
+    "name": "Hackney",
+    "latitude": 51.552665, 
+    "longitude": -0.059535,
+    "description": "The London Borough of Hackney is a London borough in Inner London, England. The historical and administrative heart of Hackney is Mare Street, which lies 5 miles north-east of Charing Cross. The borough is named after Hackney, its principal district. (Wikipedia)"
+  },
+  {
+    "name": "Hammersmith and Fulham",
+    "latitude": 51.493568, 
+    "longitude": -0.221174,
+    "description": "The London Borough of Hammersmith and Fulham is a London borough in West London and which also forms part of Inner London. The borough was formed in 1965 as the London Borough of Hammersmith from the merger of the former Metropolitan Boroughs of Fulham and Hammersmith. (Wikipedia)"
+  },
+  {
+    "name": "Haringey",
+    "latitude": 51.589787, 
+    "longitude": -0.107050,
+    "description": "The London Borough of Haringey is a London borough in north London, classified by some definitions as part of Inner London, and by others as part of Outer London. It was created in 1965 by the amalgamation of three former boroughs. It shares borders with six other London boroughs. (Wikipedia)"
+  },
+  {
+    "name": "Harrow",
+    "latitude": 51.593542, 
+    "longitude": -0.339054,
+    "description": "The London Borough of Harrow is a London borough in northwest London, England; it forms part of Outer London. (Wikipedia)"
+  },
+  {
+    "name": "Havering",
+    "latitude": 51.558689, 
+    "longitude": 0.225186,
+    "description": "The London Borough of Havering in East London, England, forms part of Outer London. It has a population of 259,552 inhabitants; the principal town is Romford, while other communities include Hornchurch, Upminster, Collier Row and Rainham. The borough is mainly suburban, with large areas of protected open space. (Wikipedia)"
+  },
+  {
+    "name": "Hillingdon",
+    "latitude": 51.537577, 
+    "longitude": -0.449352,
+    "description": "The London Borough of Hillingdon is a London borough in Greater London, England. It forms part of outer London and West London, being the westernmost London borough. It was formed in 1965 from the districts of Hayes and Harlington, Ruislip-Northwood, Uxbridge, and Yiewsley and West Drayton. (Wikipedia)"
+  },
+  {
+    "name": "Hounslow",
+    "latitude": 51.475157, 
+    "longitude": -0.362574,
+    "description": "The London Borough of Hounslow is a London borough in west London, England, forming part of Outer London. It is governed by Hounslow London Borough Council. (Wikipedia)"
+  },
+  {
+    "name": "Islington",
+    "latitude": 51.547311, 
+    "longitude": -0.107359,
+    "description": "The London Borough of Islington is a borough in North London, England. Forming part of Inner London, Islington has an estimated population of 215,667. It was formed in 1965, under the London Government Act 1963, by the amalgamation of the metropolitan boroughs of Islington and Finsbury. (Wikipedia)"
+  },
+  {
+    "name": "Kensington and Chelsea",
+    "latitude": 51.500034, 
+    "longitude": -0.193581,
+    "description": "The Royal Borough of Kensington and Chelsea is an Inner London borough with royal status. It is the smallest borough in London and the second smallest district in England; it is one of the most densely populated administrative regions in the United Kingdom. (Wikipedia)"
+  },
+  {
+    "name": "Kingston upon Thames",
+    "latitude": 51.385862, 
+    "longitude": -0.285972,
+    "description": "The Royal Borough of Kingston upon Thames is a borough in southwest London. The main town is Kingston upon Thames and it includes Chessington, Malden Rushett, New Malden, Surbiton and Tolworth. It is the oldest of the four royal boroughs in England. (Wikipedia)"
+  },
+  {
+    "name": "Lambeth",
+    "latitude": 51.453958, 
+    "longitude": -0.118214,
+    "description": "Lambeth is a London borough in South London, England, which forms part of Inner London. Its name was recorded in 1062 as Lambehitha and in 1255 as Lambeth. (Wikipedia)"
+  },
+  {
+    "name": "Lewisham",
+    "latitude": 51.452431, 
+    "longitude": -0.021117,
+    "description": "Lewisham is a London borough in south-east London, England. It forms part of Inner London. The principal settlement of the borough is Lewisham. The local authority is Lewisham London Borough Council, based in Catford. The Prime Meridian passes through Lewisham. (Wikipedia)"
+  },
+  {
+    "name": "Merton",
+    "latitude": 51.410118, 
+    "longitude": -0.197785,
+    "description": "The London Borough of Merton is a London borough in London, England. The borough was formed under the London Government Act 1963 in 1965 by the merger of the Municipal Borough of Mitcham, the Municipal Borough of Wimbledon and the Merton and Morden Urban District, all formerly within Surrey. (Wikipedia)"
+  },
+  {
+    "name": "Newham",
+    "latitude": 51.524389, 
+    "longitude": 0.032733,
+    "description": " (Wikipedia)"
+  },
+  {
+    "name": "Redbridge",
+    "latitude": 51.586847, 
+    "longitude": 0.074958,
+    "description": " (Wikipedia)"
+  },
+  {
+    "name": "Richmond upon Thames",
+    "latitude": 51.449524, 
+    "longitude": -0.303033,
+    "description": "The London Borough of Newham is a London borough created in 1965 by the London Government Act 1963. It covers an area previously administered by the Essex county boroughs of West Ham and East Ham, authorities that were both abolished by the same act. (Wikipedia)"
+  },
+  {
+    "name": "Southwark",
+    "latitude": 51.474402, 
+    "longitude": -0.075199,
+    "description": "The London Borough of Southwark in South London forms part of Inner London and is connected by bridges across the River Thames to the City of London and the London Borough of Tower Hamlets. It was created in 1965 when three smaller council areas were amalgamated under the London Government Act 1963. (Wikipedia)"
+  },
+  {
+    "name": "Sutton",
+    "latitude": 51.362551, 
+    "longitude": -0.179792,
+    "description": "The London Borough of Sutton is an Outer London borough in south London, England. It covers an area of 43 km² and is the 80th largest local authority in England by population. (Wikipedia)"
+  },
+  {
+    "name": "Tower Hamlets",
+    "latitude": 51.521166, 
+    "longitude": -0.043737,
+    "description": "The London Borough of Tower Hamlets is a borough in London, England. Situated on the north bank of the River Thames and immediately east of the City of London, the borough spans much of the traditional East End of London and includes much of the regenerated London Docklands area. (Wikipedia)"
+  },
+  {
+    "name": "Waltham Forest",
+    "latitude": 51.601319, 
+    "longitude": -0.015516,
+    "description": "The London Borough of Waltham Forest is an outer London borough formed in 1965 from the merger of the Essex municipal boroughs of Leyton, Walthamstow and Chingford. The borough's administrative headquarters are at Waltham Forest Town Hall, which before the merger of the boroughs, was called Walthamstow Town Hall. (Wikipedia)"
+  },
+  {
+    "name": "Wandsworth",
+    "latitude": 51.451977, 
+    "longitude": -0.190335,
+    "description": "Wandsworth is a London borough in South West London, England. It forms part of Inner London and has an estimated population of 329,677 inhabitants. Its main communities are Battersea, Balham, Putney, Tooting and Wandsworth Town. (Wikipedia)"
+  },
+  {
+    "name": "Westminster",
+    "latitude": 51.514078, 
+    "longitude": -0.163398,
+    "description": "The City of Westminster is a London borough with city status in Greater London, England. It is the site of the United Kingdom's Houses of Parliament and much of the British government. (Wikipedia)"
+  }
+]
