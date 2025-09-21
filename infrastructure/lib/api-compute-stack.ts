@@ -78,6 +78,25 @@ export class ApiComputeStack extends cdk.Stack {
         
         props!.bucket.grantRead(ingestAqDataFunction);
 
+        // 
+        const fetchAllRegionsFunction = new lambda.Function(
+            this, 
+            'fetchAllRegionsFunction', {
+                code: lambda.Code.fromAsset('../backend/lambda/fetchAllRegions'), 
+                runtime: lambda.Runtime.NODEJS_18_X,
+                handler: 'index.handler',
+                timeout: cdk.Duration.minutes(10),
+                memorySize: 512,
+                environment: {
+                    DB_SECRET_ARN: props!.dbSecret.secretArn,
+                    DB_NAME: props!.databaseName
+                },
+            }
+        );
+        props!.dbSecret.grantRead(fetchAllRegionsFunction);
+        
+        props!.bucket.grantRead(fetchAllRegionsFunction);
+
         // Add API Gateway
         const httpApi = new apigatewayv2.HttpApi(
             this, 
@@ -94,7 +113,6 @@ export class ApiComputeStack extends cdk.Stack {
             }
         ); 
 
-        // Add API Gateway route for each lambda function
         httpApi.addRoutes({
             path: '/createDbSchema', 
             methods: [apigatewayv2.HttpMethod.POST], 
@@ -104,13 +122,23 @@ export class ApiComputeStack extends cdk.Stack {
             ), 
         });
 
-        // Add API Gateway route for each lambda function
+        // ingestAqData
         httpApi.addRoutes({
             path: '/ingestAqData', 
             methods: [apigatewayv2.HttpMethod.POST], 
             integration: new integrations.HttpLambdaIntegration(
                 'ingestAqDataFunction', 
                 ingestAqDataFunction, 
+            ), 
+        });
+
+        // fetchAllRegions
+        httpApi.addRoutes({
+            path: '/fetchAllRegions', 
+            methods: [apigatewayv2.HttpMethod.POST], 
+            integration: new integrations.HttpLambdaIntegration(
+                'fetchAllRegionsFunction', 
+                fetchAllRegionsFunction, 
             ), 
         });
     }
