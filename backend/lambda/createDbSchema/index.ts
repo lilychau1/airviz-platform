@@ -207,13 +207,13 @@ export const handler = async () => {
 
             // Flatten parameters for all of the boråoughs
             const params = boroughs.flatMap((borough: Borough, i: number) => [
-                i + 1, 
-                borough.name, 
-                borough.longitude, 
-                borough.latitude, 
-                now, 
-                now, 
-                borough.description || '' 
+                i + 1, // id
+                borough.name, // name
+                borough.longitude, // POINT X
+                borough.latitude, // POINT Y
+                now, // inserted_at
+                now, // updated at
+                borough.description || '' //description
             ]);
             
             // Run query

@@ -163,13 +163,13 @@ var handler = function () { return __awaiter(void 0, void 0, void 0, function ()
                 })
                     .join(', ');
                 params = boroughs.flatMap(function (borough, i) { return [
-                    i + 1,
-                    borough.name,
-                    borough.longitude,
-                    borough.latitude,
-                    now_1,
-                    now_1,
-                    borough.description || ''
+                    i + 1, // id
+                    borough.name, // name
+                    borough.longitude, // POINT X
+                    borough.latitude, // POINT Y
+                    now_1, // inserted_at
+                    now_1, // updated at
+                    borough.description || '' //description
                 ]; });
                 // Run query
                 return [4 /*yield*/, client.query("INSERT INTO boroughs (id, name, location, inserted_at, updated_at, description) VALUES ".concat(valuesClause), params)];
