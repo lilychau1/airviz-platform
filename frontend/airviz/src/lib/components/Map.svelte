@@ -6,14 +6,13 @@
     import type { Chart } from "chart.js";
 
     import { 
-        fetchCurrentLocation, 
         fetchAllRegions, 
         fetchPollutantData, 
         fetchMapRadius, 
         fetchPopupInformation 
     } from '../../api/MockApi';
     import { Pollutants, type RegionUnit, type Coordinates, LevelCategory } from '../constants';
-    import { filterByTimeRange } from '../utils/utils';
+    import { fetchCurrentLocation, filterByTimeRange } from '../utils/utils';
 
     const mapTilerAPIKey: string = import.meta.env.VITE_MAPTILER_API_KEY as string;
     console.log(mapTilerAPIKey)
