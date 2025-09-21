@@ -137,6 +137,12 @@ export const handler = async () => {
                 ingestion_timestamp TIMESTAMP NOT NULL
             );
         `);
+        
+        // Add index for more efficient query
+        await client.query(`
+            CREATE INDEX IF NOT EXISTS idx_aq_records_tile_timestamp
+            ON aq_records(tile_id, timestamp DESC, ingestion_timestamp DESC);
+        `);
 
         await client.query(`
             CREATE TABLE IF NOT EXISTS pollutant_concentration (
@@ -169,6 +175,12 @@ export const handler = async () => {
                 ingestion_timestamp TIMESTAMP NOT NULL,
                 value INT
             );
+        `);
+
+        // Add index for more efficient query
+        await client.query(`
+            CREATE INDEX IF NOT EXISTS idx_air_quality_index_record_id
+            ON air_quality_index(record_id);
         `);
 
         await client.query(`
