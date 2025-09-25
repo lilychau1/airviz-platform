@@ -75,7 +75,7 @@ var handler = function () { return __awaiter(void 0, void 0, void 0, function ()
     return __generator(this, function (_b) {
         switch (_b.label) {
             case 0:
-                _b.trys.push([0, 24, 27, 30]);
+                _b.trys.push([0, 30, 33, 36]);
                 secretId = process.env.DB_SECRET_ARN;
                 return [4 /*yield*/, getSecret(secretId)];
             case 1:
@@ -104,6 +104,8 @@ var handler = function () { return __awaiter(void 0, void 0, void 0, function ()
                     'postcode_areas',
                     'zones',
                     'boroughs',
+                    'aggregate_state',
+                    'regional_aggregates'
                 ];
                 _i = 0, tablesToDrop_1 = tablesToDrop;
                 _b.label = 4;
@@ -136,27 +138,37 @@ var handler = function () { return __awaiter(void 0, void 0, void 0, function ()
                 return [4 /*yield*/, client.query("\n            CREATE TABLE IF NOT EXISTS aq_records (\n                id SERIAL PRIMARY KEY,\n                tile_id INT NOT NULL,\n                timestamp TIMESTAMP NOT NULL,\n                ingestion_timestamp TIMESTAMP NOT NULL\n            );\n        ")];
             case 12:
                 _b.sent();
-                return [4 /*yield*/, client.query("\n            CREATE TABLE IF NOT EXISTS pollutant_concentration (\n                id SERIAL PRIMARY KEY,\n                record_id INT REFERENCES aq_records(id),\n                /* tile_id INT REFERENCES Tiles(id), */\n                tile_id INT NOT NULL,\n                timestamp TIMESTAMP NOT NULL,\n                ingestion_timestamp TIMESTAMP NOT NULL,\n                pm25_value DOUBLE PRECISION,\n                pm10_value DOUBLE PRECISION,\n                no2_value DOUBLE PRECISION,\n                so2_value DOUBLE PRECISION,\n                o3_value DOUBLE PRECISION,\n                co_value DOUBLE PRECISION\n            );\n        ")];
+                // Add index for more efficient query
+                return [4 /*yield*/, client.query("\n            CREATE INDEX IF NOT EXISTS idx_aq_records_tile_timestamp\n            ON aq_records(tile_id, timestamp DESC, ingestion_timestamp DESC);\n        ")];
             case 13:
+                // Add index for more efficient query
                 _b.sent();
-                return [4 /*yield*/, client.query("\n            CREATE TABLE IF NOT EXISTS air_quality_index (\n                id SERIAL PRIMARY KEY,\n                record_id INT REFERENCES aq_records(id),\n                /* tile_id INT REFERENCES Tiles(id), */\n                tile_id INT NOT NULL,\n                index_type VARCHAR(20) NOT NULL,\n                category TEXT NOT NULL,\n                colour_code JSONB NOT NULL,\n                dominant_pollutant VARCHAR(50) NOT NULL,\n                timestamp TIMESTAMP NOT NULL,\n                ingestion_timestamp TIMESTAMP NOT NULL,\n                value INT\n            );\n        ")];
+                return [4 /*yield*/, client.query("\n            CREATE TABLE IF NOT EXISTS pollutant_concentration (\n                id SERIAL PRIMARY KEY,\n                record_id INT REFERENCES aq_records(id),\n                /* tile_id INT REFERENCES Tiles(id), */\n                tile_id INT NOT NULL,\n                timestamp TIMESTAMP NOT NULL,\n                ingestion_timestamp TIMESTAMP NOT NULL,\n                pm25_value DOUBLE PRECISION,\n                pm10_value DOUBLE PRECISION,\n                no2_value DOUBLE PRECISION,\n                so2_value DOUBLE PRECISION,\n                o3_value DOUBLE PRECISION,\n                co_value DOUBLE PRECISION\n            );\n        ")];
             case 14:
                 _b.sent();
-                return [4 /*yield*/, client.query("\n            CREATE TABLE IF NOT EXISTS health_recommendation (\n                id SERIAL PRIMARY KEY,\n                record_id INT REFERENCES aq_records(id),\n                /* tile_id INT REFERENCES Tiles(id), */\n                tile_id INT NOT NULL,\n                timestamp TIMESTAMP NOT NULL,\n                ingestion_timestamp TIMESTAMP NOT NULL,\n                recommendations JSONB NOT NULL\n            );\n        ")];
+                return [4 /*yield*/, client.query("\n            CREATE TABLE IF NOT EXISTS air_quality_index (\n                id SERIAL PRIMARY KEY,\n                record_id INT REFERENCES aq_records(id),\n                /* tile_id INT REFERENCES Tiles(id), */\n                tile_id INT NOT NULL,\n                index_type VARCHAR(20) NOT NULL,\n                category TEXT NOT NULL,\n                colour_code JSONB NOT NULL,\n                dominant_pollutant VARCHAR(50) NOT NULL,\n                timestamp TIMESTAMP NOT NULL,\n                ingestion_timestamp TIMESTAMP NOT NULL,\n                value INT\n            );\n        ")];
             case 15:
+                _b.sent();
+                // Add index for more efficient query
+                return [4 /*yield*/, client.query("\n            CREATE INDEX IF NOT EXISTS idx_air_quality_index_record_id\n            ON air_quality_index(record_id);\n        ")];
+            case 16:
+                // Add index for more efficient query
+                _b.sent();
+                return [4 /*yield*/, client.query("\n            CREATE TABLE IF NOT EXISTS health_recommendation (\n                id SERIAL PRIMARY KEY,\n                record_id INT REFERENCES aq_records(id),\n                /* tile_id INT REFERENCES Tiles(id), */\n                tile_id INT NOT NULL,\n                timestamp TIMESTAMP NOT NULL,\n                ingestion_timestamp TIMESTAMP NOT NULL,\n                recommendations JSONB NOT NULL\n            );\n        ")];
+            case 17:
                 _b.sent();
                 bucket = process.env.BUCKET;
                 key = process.env.BOROUGH_COORDS_FILENAME;
                 return [4 /*yield*/, s3Client.send(new client_s3_1.GetObjectCommand({ Bucket: bucket, Key: key }))];
-            case 16:
+            case 18:
                 s3Resp = _b.sent();
                 return [4 /*yield*/, streamToString(s3Resp.Body)];
-            case 17:
+            case 19:
                 jsonString = _b.sent();
                 boroughs = JSON.parse(jsonString);
                 now_1 = new Date().toISOString();
                 console.log("Loaded ".concat(boroughs.length, " boroughs from S3"));
-                if (!(boroughs.length > 0)) return [3 /*break*/, 19];
+                if (!(boroughs.length > 0)) return [3 /*break*/, 21];
                 valuesClause = boroughs
                     .map(function (_, i) {
                     return "($".concat(i * 7 + 1, ", $").concat(i * 7 + 2, ", POINT($").concat(i * 7 + 3, ", $").concat(i * 7 + 4, "), $").concat(i * 7 + 5, ", $").concat(i * 7 + 6, ", $").concat(i * 7 + 7, ")");
@@ -173,18 +185,18 @@ var handler = function () { return __awaiter(void 0, void 0, void 0, function ()
                 ]; });
                 // Run query
                 return [4 /*yield*/, client.query("INSERT INTO boroughs (id, name, location, inserted_at, updated_at, description) VALUES ".concat(valuesClause), params)];
-            case 18:
+            case 20:
                 // Run query
                 _b.sent();
                 console.log("Inserted ".concat(boroughs.length, " boroughs successfully."));
-                _b.label = 19;
-            case 19:
+                _b.label = 21;
+            case 21:
                 tileKey = process.env.TILE_COORDS_FILENAME;
                 return [4 /*yield*/, s3Client.send(new client_s3_1.GetObjectCommand({ Bucket: bucket, Key: tileKey }))];
-            case 20:
+            case 22:
                 tileResp = _b.sent();
                 return [4 /*yield*/, streamToString(tileResp.Body)];
-            case 21:
+            case 23:
                 csvString = _b.sent();
                 tileLines = csvString.trim().split('\n');
                 tileHeader = (_a = tileLines.shift()) === null || _a === void 0 ? void 0 : _a.split(',');
@@ -201,7 +213,7 @@ var handler = function () { return __awaiter(void 0, void 0, void 0, function ()
                     };
                 });
                 console.log("Loaded ".concat(tiles.length, " tiles from CSV"));
-                if (!(tiles.length > 0)) return [3 /*break*/, 23];
+                if (!(tiles.length > 0)) return [3 /*break*/, 25];
                 valuesClause = tiles
                     .map(function (tile, i) {
                     return "($".concat(i * 10 + 1, ", $").concat(i * 10 + 2, ", $").concat(i * 10 + 3, ", $").concat(i * 10 + 4, ", $").concat(i * 10 + 5, ", POINT($").concat(i * 10 + 6, ", $").concat(i * 10 + 7, "), $").concat(i * 10 + 8, ", $").concat(i * 10 + 9, ", $").concat(i * 10 + 10, ")");
@@ -220,35 +232,56 @@ var handler = function () { return __awaiter(void 0, void 0, void 0, function ()
                     null, // description
                 ]; });
                 return [4 /*yield*/, client.query("INSERT INTO tiles (id, borough_id, zone_id, postcode_area_id, name, location, inserted_at, updated_at, description) VALUES ".concat(valuesClause), params)];
-            case 22:
+            case 24:
                 _b.sent();
                 console.log("Inserted ".concat(tiles.length, " tiles successfully."));
-                _b.label = 23;
-            case 23: return [2 /*return*/, {
-                    statusCode: 200,
-                    body: JSON.stringify({ message: 'Schema setup completed successfully' }),
-                }];
-            case 24:
-                error_1 = _b.sent();
-                if (!client) return [3 /*break*/, 26];
-                return [4 /*yield*/, client.end()];
-            case 25:
-                _b.sent();
-                _b.label = 26;
+                _b.label = 25;
+            case 25: 
+            // Regional aggregates table
+            return [4 /*yield*/, client.query("\n            CREATE TABLE IF NOT EXISTS regional_aggregates (\n                id SERIAL PRIMARY KEY,\n                level VARCHAR(20) NOT NULL,\n                region_id INT NOT NULL,\n                aqi JSONB,\n                pm25_value DOUBLE PRECISION,\n                pm10_value DOUBLE PRECISION,\n                no2_value DOUBLE PRECISION,\n                so2_value DOUBLE PRECISION,\n                o3_value DOUBLE PRECISION,\n                co_value DOUBLE PRECISION,\n                last_30d_unhealthy_aqi_days INT,\n                last_30d_aqi_mean DOUBLE PRECISION,\n                last_30d_aqi_max DOUBLE PRECISION,\n                last_30d_aqi_min DOUBLE PRECISION,\n                timestamp TIMESTAMP NOT NULL,\n                update_timestamp TIMESTAMP NOT NULL\n            );\n        ")];
             case 26:
+                // Regional aggregates table
+                _b.sent();
+                // Add an index to improve query performance on level + region_id
+                return [4 /*yield*/, client.query("\n            CREATE INDEX IF NOT EXISTS idx_regional_aggregates_level_region\n            ON regional_aggregates(level, region_id);\n        ")];
+            case 27:
+                // Add an index to improve query performance on level + region_id
+                _b.sent();
+                // Aggregate state table (tracks last processed timestamp)
+                return [4 /*yield*/, client.query("\n            CREATE TABLE IF NOT EXISTS aggregate_state (\n                id SERIAL PRIMARY KEY,\n                level VARCHAR(20) NOT NULL,\n                last_processed_timestamp TIMESTAMP NOT NULL,\n                UNIQUE(level)\n            );\n        ")];
+            case 28:
+                // Aggregate state table (tracks last processed timestamp)
+                _b.sent();
+                // Index on aggregate_state
+                return [4 /*yield*/, client.query("\n            CREATE INDEX IF NOT EXISTS idx_aggregate_state_level\n            ON aggregate_state(level);\n        ")];
+            case 29:
+                // Index on aggregate_state
+                _b.sent();
+                return [2 /*return*/, {
+                        statusCode: 200,
+                        body: JSON.stringify({ message: 'Schema setup completed successfully' }),
+                    }];
+            case 30:
+                error_1 = _b.sent();
+                if (!client) return [3 /*break*/, 32];
+                return [4 /*yield*/, client.end()];
+            case 31:
+                _b.sent();
+                _b.label = 32;
+            case 32:
                 console.error('Schema migration failed', error_1);
                 return [2 /*return*/, {
                         statusCode: 500,
                         body: JSON.stringify({ error: error_1.message }),
                     }];
-            case 27:
-                if (!client) return [3 /*break*/, 29];
+            case 33:
+                if (!client) return [3 /*break*/, 35];
                 return [4 /*yield*/, client.end()];
-            case 28:
+            case 34:
                 _b.sent();
-                _b.label = 29;
-            case 29: return [7 /*endfinally*/];
-            case 30: return [2 /*return*/];
+                _b.label = 35;
+            case 35: return [7 /*endfinally*/];
+            case 36: return [2 /*return*/];
         }
     });
 }); };

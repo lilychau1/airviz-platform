@@ -78,7 +78,24 @@ export class ApiComputeStack extends cdk.Stack {
         
         props!.bucket.grantRead(ingestAqDataFunction);
 
-        // 
+        // Aggregate regional metrics
+        const aggregateRegionalMetricsFunction = new lambda.Function(
+            this, 
+            'aggregateRegionalMetricsFunction', {
+                code: lambda.Code.fromAsset('../backend/lambda/aggregateRegionalMetrics'), 
+                runtime: lambda.Runtime.NODEJS_18_X,
+                handler: 'index.handler',
+                timeout: cdk.Duration.minutes(10),
+                memorySize: 512,
+                environment: {
+                    DB_SECRET_ARN: props!.dbSecret.secretArn,
+                    DB_NAME: props!.databaseName
+                },
+            }
+        );
+        props!.dbSecret.grantRead(aggregateRegionalMetricsFunction);
+
+        // Fetch all regions
         const fetchAllRegionsFunction = new lambda.Function(
             this, 
             'fetchAllRegionsFunction', {
@@ -129,6 +146,16 @@ export class ApiComputeStack extends cdk.Stack {
             integration: new integrations.HttpLambdaIntegration(
                 'ingestAqDataFunction', 
                 ingestAqDataFunction, 
+            ), 
+        });
+
+        // aggregateRegionalMetrics
+        httpApi.addRoutes({
+            path: '/aggregateRegionalMetrics', 
+            methods: [apigatewayv2.HttpMethod.POST], 
+            integration: new integrations.HttpLambdaIntegration(
+                'aggregateRegionalMetricsFunction', 
+                aggregateRegionalMetricsFunction, 
             ), 
         });
 

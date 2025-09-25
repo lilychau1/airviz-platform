@@ -69,6 +69,8 @@ export const handler = async () => {
             'postcode_areas',
             'zones',
             'boroughs',
+            'aggregate_state', 
+            'regional_aggregates'
         ];
 
         for (const table of tablesToDrop) {
@@ -291,6 +293,49 @@ export const handler = async () => {
             console.log(`Inserted ${tiles.length} tiles successfully.`);
         }
 
+        // Regional aggregates table
+        await client.query(`
+            CREATE TABLE IF NOT EXISTS regional_aggregates (
+                id SERIAL PRIMARY KEY,
+                level VARCHAR(20) NOT NULL,
+                region_id INT NOT NULL,
+                aqi JSONB,
+                pm25_value DOUBLE PRECISION,
+                pm10_value DOUBLE PRECISION,
+                no2_value DOUBLE PRECISION,
+                so2_value DOUBLE PRECISION,
+                o3_value DOUBLE PRECISION,
+                co_value DOUBLE PRECISION,
+                last_30d_unhealthy_aqi_days INT,
+                last_30d_aqi_mean DOUBLE PRECISION,
+                last_30d_aqi_max DOUBLE PRECISION,
+                last_30d_aqi_min DOUBLE PRECISION,
+                timestamp TIMESTAMP NOT NULL,
+                update_timestamp TIMESTAMP NOT NULL
+            );
+        `);
+
+        // Add an index to improve query performance on level + region_id
+        await client.query(`
+            CREATE INDEX IF NOT EXISTS idx_regional_aggregates_level_region
+            ON regional_aggregates(level, region_id);
+        `);
+
+        // Aggregate state table (tracks last processed timestamp)
+        await client.query(`
+            CREATE TABLE IF NOT EXISTS aggregate_state (
+                id SERIAL PRIMARY KEY,
+                level VARCHAR(20) NOT NULL,
+                last_processed_timestamp TIMESTAMP NOT NULL,
+                UNIQUE(level)
+            );
+        `);
+
+        // Index on aggregate_state
+        await client.query(`
+            CREATE INDEX IF NOT EXISTS idx_aggregate_state_level
+            ON aggregate_state(level);
+        `);
 
         return {
             statusCode: 200,
