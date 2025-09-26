@@ -24,8 +24,8 @@ export interface TilePopupInformation {
     name: string;
     region: string;
     boroughRegion: string | null;
-    currentAqi: number | null;
-    currentAqiCategoryLevel: number | null;
+    currentAqi: Record<string, number> | null;
+    currentAqiCategoryLevel: Record<string, number | null> | null;
     currentPm25Level: number | null;
     currentPm10Level: number | null;
     currentNo2Level: number | null;
@@ -34,12 +34,12 @@ export interface TilePopupInformation {
     currentCoLevel: number | null;
 }
 
-export interface BoroughPopupInformation {
+export interface RegionPopupInformation {
     id: number;
     name: string;
     region: string;
-    currentAqi: number | null;
-    currentAqiCategoryLevel: number | null;
+    currentAqi: Record<string, number> | null;
+    currentAqiCategoryLevel: Record<string, number | null> | null;
     currentPm25Level: number | null;
     currentPm10Level: number | null;
     currentNo2Level: number | null;
@@ -52,15 +52,35 @@ export interface BoroughPopupInformation {
     last30dAQIMin: number | null;
 }
 
-// Rate DEFRA AQI into 1–3
-function rateDefraAqi(aqi: number | null): 1 | 2 | 3 | null {
+// Universal AQI scaling: 1 = low, 3 = high
+function rateUaqi(aqi: number | null): 1 | 2 | 3 | null {
     if (aqi === null) return null;
-    if (aqi <= 66) return 1; // Low
-    if (aqi <= 149) return 2; // Medium
+    if (aqi >= 80) return 1; // Low
+    if (aqi >= 60) return 2; // Moderate
     return 3; // High
 }
 
-// Predefined pollutant boundaries for 1–3 scale
+// UK DEFRA AQI scaling: 1 = low, 3 = high
+function rateGbrDefra(aqi: number | null): 1 | 2 | 3 | null {
+    if (aqi === null) return null;
+    if (aqi <= 3) return 1; // Low
+    if (aqi <= 6) return 2; // Moderate
+    return 3; // High
+}
+
+// Convert AQI dict to category dict
+function rateAqi(aqiDict: Record<string, number> | null): Record<string, number | null> | null {
+    if (!aqiDict) return null;
+    const result: Record<string, number | null> = {};
+    for (const [indexType, value] of Object.entries(aqiDict)) {
+        if (indexType === "uaqi") result[indexType] = rateUaqi(value);
+        else if (indexType === "gbr_defra") result[indexType] = rateGbrDefra(value);
+        else result[indexType] = null;
+    }
+    return Object.keys(result).length ? result : null;
+}
+
+// Pollutant scaling
 function ratePollutant(value: number | null, boundaries: [number, number]): 1 | 2 | 3 | null {
     if (value === null) return null;
     if (value <= boundaries[0]) return 1;
@@ -73,6 +93,8 @@ export const handler = async (event: APIGatewayProxyEventV2) => {
 
     try {
         const input: FetchPopupInput = JSON.parse(event.body || "{}");
+        const level: RegionLevel = input.level;
+
         const secretId = process.env.DB_SECRET_ARN!;
         const dbCreds = await getSecret(secretId);
 
@@ -89,11 +111,20 @@ export const handler = async (event: APIGatewayProxyEventV2) => {
         let query: string;
         const params = [input.id];
 
-        if (input.level === "tile") {
+        if (level === "tile") {
             query = `
-                SELECT t.id, t.name, 'Greater London' AS region, b.name AS "boroughRegion",
-                       aqi.value AS "currentAqi",
-                       p.pm25_value, p.pm10_value, p.no2_value, p.so2_value, p.o3_value, p.co_value
+                SELECT 
+                    t.id, 
+                    t.name, 
+                    'Greater London' AS region, 
+                    b.name AS "boroughRegion",
+                    aqi_json.aqi AS "currentAqi",
+                    p.pm25_value, 
+                    p.pm10_value, 
+                    p.no2_value, 
+                    p.so2_value, 
+                    p.o3_value, 
+                    p.co_value
                 FROM tiles t
                 LEFT JOIN boroughs b ON t.borough_id = b.id
                 LEFT JOIN LATERAL (
@@ -103,55 +134,73 @@ export const handler = async (event: APIGatewayProxyEventV2) => {
                     ORDER BY timestamp DESC, ingestion_timestamp DESC
                     LIMIT 1
                 ) ar ON TRUE
-                LEFT JOIN air_quality_index aqi ON aqi.record_id = ar.id
-                LEFT JOIN pollutant_concentration p ON p.record_id = ar.id
-                WHERE t.id = $1;
-            `;
-        } else if (input.level === "borough") {
-            query = `
-                SELECT t.id, t.name, 'Greater London' AS region,
-                       aqi.value AS "currentAqi",
-                       p.pm25_value, p.pm10_value, p.no2_value, p.so2_value, p.o3_value, p.co_value,
-                       ra.last_30d_unhealthy_aqi_days,
-                       ra.last_30d_aqi_mean,
-                       ra.last_30d_aqi_max,
-                       ra.last_30d_aqi_min
-                FROM boroughs t
                 LEFT JOIN LATERAL (
-                    SELECT id
-                    FROM aq_records
-                    WHERE borough_id = t.id
-                    ORDER BY timestamp DESC, ingestion_timestamp DESC
-                    LIMIT 1
-                ) ar ON TRUE
-                LEFT JOIN air_quality_index aqi ON aqi.record_id = ar.id
+                    SELECT jsonb_object_agg(index_type, value) AS aqi
+                    FROM air_quality_index
+                    WHERE record_id = ar.id
+                ) aqi_json ON TRUE
                 LEFT JOIN pollutant_concentration p ON p.record_id = ar.id
-                LEFT JOIN LATERAL (
-                    SELECT region_id,
-                           last_30d_unhealthy_aqi_days,
-                           last_30d_aqi_mean,
-                           last_30d_aqi_max,
-                           last_30d_aqi_min
-                    FROM regional_aggregates
-                    WHERE level = 'borough' AND region_id = t.id
-                    ORDER BY timestamp DESC, update_timestamp DESC
-                    LIMIT 1
-                ) ra ON TRUE
                 WHERE t.id = $1;
             `;
         } else {
-            throw new Error(`Unsupported level: ${input.level}`);
+            query = `
+                SELECT 
+                    r.id, 
+                    r.name, 
+                    'Greater London' AS region,
+                    ra.aqi AS "currentAqi",
+                    ra.pm25_value, 
+                    ra.pm10_value, 
+                    ra.no2_value, 
+                    ra.so2_value, 
+                    ra.o3_value, 
+                    ra.co_value,
+                    ra.last_30d_unhealthy_aqi_days,
+                    ra.last_30d_aqi_mean,
+                    ra.last_30d_aqi_max,
+                    ra.last_30d_aqi_min
+                FROM ${level}s r
+                LEFT JOIN LATERAL (
+                    SELECT 
+                        region_id,
+                        aqi, 
+                        pm25_value, 
+                        pm10_value, 
+                        no2_value, 
+                        so2_value, 
+                        o3_value, 
+                        co_value,
+                        last_30d_unhealthy_aqi_days,
+                        last_30d_aqi_mean,
+                        last_30d_aqi_max,
+                        last_30d_aqi_min
+                    FROM regional_aggregates
+                    WHERE 
+                        level = '${level}' AND region_id = r.id
+                    ORDER BY timestamp DESC, update_timestamp DESC
+                    LIMIT 1
+                ) ra ON TRUE
+                WHERE r.id = $1;
+            `;
         }
 
         const res = await client.query(query, params);
         if (res.rows.length === 0) {
-            return { error: `No data found for ${input.level} with id=${input.id}` };
+            return { error: `No data found for ${level} with id=${input.id}` };
         }
 
         const row = res.rows[0];
 
-        // Categorize pollutants into 1–3 levels
-        const currentAqiCategoryLevel = rateDefraAqi(row.currentAqi);
+        // Parse currentAqi JSON if necessary
+        const currentAqi: Record<string, number> | null = row.currentAqi
+            ? typeof row.currentAqi === "string"
+                ? JSON.parse(row.currentAqi)
+                : row.currentAqi
+            : null;
+
+        const currentAqiCategoryLevel = rateAqi(currentAqi);
+
+        // Pollutant levels
         const currentPm25Level = ratePollutant(row.pm25_value, [15, 35]);
         const currentPm10Level = ratePollutant(row.pm10_value, [30, 60]);
         const currentNo2Level = ratePollutant(row.no2_value, [40, 90]);
@@ -159,13 +208,13 @@ export const handler = async (event: APIGatewayProxyEventV2) => {
         const currentSo2Level = ratePollutant(row.so2_value, [20, 80]);
         const currentCoLevel = ratePollutant(row.co_value, [4, 10]);
 
-        if (input.level === "tile") {
+        if (level === "tile") {
             const result: TilePopupInformation = {
                 id: row.id,
                 name: row.name,
                 region: row.region,
                 boroughRegion: row.boroughRegion,
-                currentAqi: row.currentAqi,
+                currentAqi,
                 currentAqiCategoryLevel,
                 currentPm25Level,
                 currentPm10Level,
@@ -176,11 +225,11 @@ export const handler = async (event: APIGatewayProxyEventV2) => {
             };
             return result;
         } else {
-            const result: BoroughPopupInformation = {
+            const result: RegionPopupInformation = {
                 id: row.id,
                 name: row.name,
                 region: row.region,
-                currentAqi: row.currentAqi,
+                currentAqi,
                 currentAqiCategoryLevel,
                 currentPm25Level,
                 currentPm10Level,
