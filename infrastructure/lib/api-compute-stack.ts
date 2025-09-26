@@ -114,6 +114,23 @@ export class ApiComputeStack extends cdk.Stack {
         
         props!.bucket.grantRead(fetchAllRegionsFunction);
 
+        // Fetch popup information
+        const fetchPopupInformationFunction = new lambda.Function(
+            this, 
+            'fetchPopupInformationFunction', {
+                code: lambda.Code.fromAsset('../backend/lambda/fetchPopupInformation'), 
+                runtime: lambda.Runtime.NODEJS_18_X,
+                handler: 'index.handler',
+                timeout: cdk.Duration.minutes(10),
+                memorySize: 512,
+                environment: {
+                    DB_SECRET_ARN: props!.dbSecret.secretArn,
+                    DB_NAME: props!.databaseName
+                },
+            }
+        );
+        props!.dbSecret.grantRead(fetchPopupInformationFunction);
+
         // Add API Gateway
         const httpApi = new apigatewayv2.HttpApi(
             this, 
@@ -166,6 +183,16 @@ export class ApiComputeStack extends cdk.Stack {
             integration: new integrations.HttpLambdaIntegration(
                 'fetchAllRegionsFunction', 
                 fetchAllRegionsFunction, 
+            ), 
+        });
+
+        // fetchPopupInformation
+        httpApi.addRoutes({
+            path: '/fetchPopupInformation', 
+            methods: [apigatewayv2.HttpMethod.POST], 
+            integration: new integrations.HttpLambdaIntegration(
+                'fetchPopupInformationFunction', 
+                fetchPopupInformationFunction, 
             ), 
         });
     }
