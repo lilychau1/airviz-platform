@@ -1,0 +1,25 @@
+{
+  "compilerOptions": {
+    "target": "ES2020",
+    "module": "CommonJS",
+    "strict": true,
+    "esModuleInterop": true,
+    "forceConsistentCasingInFileNames": true,
+    "skipLibCheck": true,
+    "outDir": "dist",
+    "rootDir": "./",
+    "baseUrl": "./",
+    "paths": {
+      "/opt/nodejs/aqiBenchmark": ["./layer/nodejs/aqiBenchmark.ts"],
+      "/opt/nodejs/utils": ["./layer/nodejs/utils.ts"]
+    },
+  },
+  "include": [
+    "fetchPopupInformation/**/*.ts",
+    "createDbSchema/**/*.ts",
+    "fetchPopupInformation/**/*.ts",
+    "ingestAqData/**/*.ts",
+    "layer/nodejs/**/*.ts"
+  ],
+  "exclude": ["node_modules"]
+}

@@ -1,64 +1,20 @@
-import { Client } from "pg";
-import { APIGatewayProxyEventV2 } from "aws-lambda";
-import { rateAqiDict, ratePollutant } from '/opt/nodejs/aqiBenchmark';
-import { getSecret } from '/opt/nodejs/utils';
-
-// Types
-export type RegionLevel = "tile" | "borough";
-
-export interface FetchPopupInput {
-    level: RegionLevel;
-    id: number;
-}
-
-export interface TilePopupInformation {
-    id: number;
-    name: string;
-    region: string;
-    boroughRegion: string | null;
-    currentAqi: Record<string, number> | null;
-    currentAqiCategoryLevel: Record<string, number | null> | null;
-    currentPm25Level: number | null;
-    currentPm10Level: number | null;
-    currentNo2Level: number | null;
-    currentO3Level: number | null;
-    currentSo2Level: number | null;
-    currentCoLevel: number | null;
-}
-
-export interface RegionPopupInformation {
-    id: number;
-    name: string;
-    region: string;
-    currentAqi: Record<string, number> | null;
-    currentAqiCategoryLevel: Record<string, number | null> | null;
-    currentPm25Level: number | null;
-    currentPm10Level: number | null;
-    currentNo2Level: number | null;
-    currentO3Level: number | null;
-    currentSo2Level: number | null;
-    currentCoLevel: number | null;
-    last30dUnhealthyAQIDays: number | null;
-    last30dAQIMean: number | null;
-    last30dAQIMax: number | null;
-    last30dAQIMin: number | null;
-}
-
-export const handler = async (event: APIGatewayProxyEventV2) => {
-    let client: Client | undefined;
-
+"use strict";
+Object.defineProperty(exports, "__esModule", { value: true });
+exports.handler = void 0;
+const pg_1 = require("pg");
+const aqiBenchmark_1 = require("/opt/nodejs/aqiBenchmark");
+const utils_1 = require("/opt/nodejs/utils");
+const handler = async (event) => {
+    let client;
     try {
-        const input: FetchPopupInput = JSON.parse(event.body || "{}");
-        const level: RegionLevel = input.level;
-
-        const secretId = process.env.DB_SECRET_ARN!;
-        const dbCreds = await getSecret(secretId);
-        
+        const input = JSON.parse(event.body || "{}");
+        const level = input.level;
+        const secretId = process.env.DB_SECRET_ARN;
+        const dbCreds = await (0, utils_1.getSecret)(secretId);
         if (typeof dbCreds === "string") {
             throw new Error("Expected DB secret to be a JSON object, got string instead");
         }
-        
-        client = new Client({
+        client = new pg_1.Client({
             host: dbCreds.host,
             user: dbCreds.username,
             password: dbCreds.password,
@@ -67,10 +23,8 @@ export const handler = async (event: APIGatewayProxyEventV2) => {
             ssl: { rejectUnauthorized: false },
         });
         await client.connect();
-
-        let query: string;
+        let query;
         const params = [input.id];
-
         if (level === "tile") {
             query = `
                 SELECT 
@@ -102,7 +56,8 @@ export const handler = async (event: APIGatewayProxyEventV2) => {
                 LEFT JOIN pollutant_concentration p ON p.record_id = ar.id
                 WHERE t.id = $1;
             `;
-        } else {
+        }
+        else {
             query = `
                 SELECT 
                     r.id, 
@@ -143,33 +98,27 @@ export const handler = async (event: APIGatewayProxyEventV2) => {
                 WHERE r.id = $1;
             `;
         }
-
         const res = await client.query(query, params);
         if (res.rows.length === 0) {
             return { error: `No data found for ${level} with id=${input.id}` };
         }
-
         const row = res.rows[0];
-
         // Parse currentAqi JSON if necessary
-        const currentAqi: Record<string, number> | null = row.currentAqi
+        const currentAqi = row.currentAqi
             ? typeof row.currentAqi === "string"
                 ? JSON.parse(row.currentAqi)
                 : row.currentAqi
             : null;
-
-        const currentAqiCategoryLevel = rateAqiDict(currentAqi);
-
+        const currentAqiCategoryLevel = (0, aqiBenchmark_1.rateAqiDict)(currentAqi);
         // Pollutant levels
-        const currentPm25Level = ratePollutant(row.pm25_value, "pm25");
-        const currentPm10Level = ratePollutant(row.pm10_value, "pm10");
-        const currentNo2Level = ratePollutant(row.no2_value, "no2");
-        const currentO3Level = ratePollutant(row.o3_value, "o3");
-        const currentSo2Level = ratePollutant(row.so2_value, "so2");
-        const currentCoLevel = ratePollutant(row.co_value, "co");
-
+        const currentPm25Level = (0, aqiBenchmark_1.ratePollutant)(row.pm25_value, "pm25");
+        const currentPm10Level = (0, aqiBenchmark_1.ratePollutant)(row.pm10_value, "pm10");
+        const currentNo2Level = (0, aqiBenchmark_1.ratePollutant)(row.no2_value, "no2");
+        const currentO3Level = (0, aqiBenchmark_1.ratePollutant)(row.o3_value, "o3");
+        const currentSo2Level = (0, aqiBenchmark_1.ratePollutant)(row.so2_value, "so2");
+        const currentCoLevel = (0, aqiBenchmark_1.ratePollutant)(row.co_value, "co");
         if (level === "tile") {
-            const result: TilePopupInformation = {
+            const result = {
                 id: row.id,
                 name: row.name,
                 region: row.region,
@@ -184,8 +133,9 @@ export const handler = async (event: APIGatewayProxyEventV2) => {
                 currentCoLevel,
             };
             return result;
-        } else {
-            const result: RegionPopupInformation = {
+        }
+        else {
+            const result = {
                 id: row.id,
                 name: row.name,
                 region: row.region,
@@ -204,10 +154,14 @@ export const handler = async (event: APIGatewayProxyEventV2) => {
             };
             return result;
         }
-    } catch (err) {
+    }
+    catch (err) {
         console.error("Error in fetchPopupInformation:", err);
-        return { error: (err as Error).message };
-    } finally {
-        if (client) await client.end();
+        return { error: err.message };
+    }
+    finally {
+        if (client)
+            await client.end();
     }
 };
+exports.handler = handler;
