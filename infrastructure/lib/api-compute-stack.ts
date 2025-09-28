@@ -5,8 +5,11 @@ import * as apigatewayv2 from 'aws-cdk-lib/aws-apigatewayv2';
 import * as integrations from 'aws-cdk-lib/aws-apigatewayv2-integrations';
 import { Secret } from 'aws-cdk-lib/aws-secretsmanager';
 import * as s3 from 'aws-cdk-lib/aws-s3';
+import * as lambdaNodejs from 'aws-cdk-lib/aws-lambda-nodejs';
 
 import * as dotenv from 'dotenv';
+import * as path from 'path';
+
 dotenv.config();
 
 interface ApiComputeStackProps extends cdk.StackProps {
@@ -20,16 +23,34 @@ export class ApiComputeStack extends cdk.Stack {
     constructor(scope: cdk.App, id:string, props?: ApiComputeStackProps) {
         super(scope, id, props); 
 
+
+        // Lambda Layers
+        const aqiLayer = new lambda.LayerVersion(this, 'AqiLayer', {
+            code: lambda.Code.fromAsset('../backend/lambda/layer'),
+            compatibleRuntimes: [lambda.Runtime.NODEJS_18_X],
+            description: 'Shared AQI benchmarks and helper functions',
+            layerVersionName: 'AqiBenchmarksLayer',
+        });
+
+        const utilsLayer = new lambda.LayerVersion(this, 'utilsLayer', {
+            code: lambda.Code.fromAsset('../backend/lambda/layer'),
+            compatibleRuntimes: [lambda.Runtime.NODEJS_18_X],
+            description: 'Shared utility functions',
+            layerVersionName: 'UtilsLayer',
+        });
+         
         // Add Lambda function resources
+
         // (0) Create Database Schema on RDS
-        const CreateDbSchemaFunction = new lambda.Function(
+        const CreateDbSchemaFunction = new lambdaNodejs.NodejsFunction(
             this, 
             'CreateDbSchemaFunction', {
                 runtime: lambda.Runtime.NODEJS_18_X,
                 handler: 'index.handler',
-                code: lambda.Code.fromAsset('../backend/lambda/createDbSchema'),
+                entry: '../backend/lambda/createDbSchema/index.ts',
                 timeout: cdk.Duration.minutes(5), 
                 memorySize: 512, 
+                bundling: {},
                 environment: {
                     DB_SECRET_ARN: props!.dbSecret.secretArn,
                     // DB_ENDPOINT: props!.dbEndpoint,
@@ -56,14 +77,16 @@ export class ApiComputeStack extends cdk.Stack {
             secretStringValue: cdk.SecretValue.unsafePlainText(process.env.GOOGLE_AIR_QUALITY_API!),
         });
 
-        const ingestAqDataFunction = new lambda.Function(
+        const ingestAqDataFunction = new lambdaNodejs.NodejsFunction(
             this, 
             'ingestAqDataFunction', {
-                code: lambda.Code.fromAsset('../backend/lambda/ingestAqData'), 
+                entry: '../backend/lambda/ingestAqData/index.ts',
+                handler: 'handler',
                 runtime: lambda.Runtime.NODEJS_18_X,
-                handler: 'index.handler',
+                bundling: {},
                 timeout: cdk.Duration.minutes(10),
                 memorySize: 512,
+                layers: [aqiLayer, utilsLayer],
                 environment: {
                     DB_SECRET_ARN: props!.dbSecret.secretArn,
                     DB_NAME: props!.databaseName,
@@ -79,14 +102,16 @@ export class ApiComputeStack extends cdk.Stack {
         props!.bucket.grantRead(ingestAqDataFunction);
 
         // Aggregate regional metrics
-        const aggregateRegionalMetricsFunction = new lambda.Function(
+        const aggregateRegionalMetricsFunction = new lambdaNodejs.NodejsFunction(
             this, 
             'aggregateRegionalMetricsFunction', {
-                code: lambda.Code.fromAsset('../backend/lambda/aggregateRegionalMetrics'), 
+                entry: '../backend/lambda/aggregateRegionalMetrics/index.ts',
                 runtime: lambda.Runtime.NODEJS_18_X,
                 handler: 'index.handler',
                 timeout: cdk.Duration.minutes(10),
                 memorySize: 512,
+                bundling: {},
+                layers: [aqiLayer, utilsLayer],
                 environment: {
                     DB_SECRET_ARN: props!.dbSecret.secretArn,
                     DB_NAME: props!.databaseName
@@ -96,14 +121,16 @@ export class ApiComputeStack extends cdk.Stack {
         props!.dbSecret.grantRead(aggregateRegionalMetricsFunction);
 
         // Fetch all regions
-        const fetchAllRegionsFunction = new lambda.Function(
+        const fetchAllRegionsFunction = new lambdaNodejs.NodejsFunction(
             this, 
             'fetchAllRegionsFunction', {
-                code: lambda.Code.fromAsset('../backend/lambda/fetchAllRegions'), 
+                entry: '../backend/lambda/fetchAllRegions/index.ts',
                 runtime: lambda.Runtime.NODEJS_18_X,
                 handler: 'index.handler',
                 timeout: cdk.Duration.minutes(10),
                 memorySize: 512,
+                bundling: {},
+                layers: [aqiLayer, utilsLayer],
                 environment: {
                     DB_SECRET_ARN: props!.dbSecret.secretArn,
                     DB_NAME: props!.databaseName
@@ -115,14 +142,15 @@ export class ApiComputeStack extends cdk.Stack {
         props!.bucket.grantRead(fetchAllRegionsFunction);
 
         // Fetch popup information
-        const fetchPopupInformationFunction = new lambda.Function(
+        const fetchPopupInformationFunction = new lambdaNodejs.NodejsFunction(
             this, 
             'fetchPopupInformationFunction', {
-                code: lambda.Code.fromAsset('../backend/lambda/fetchPopupInformation'), 
+                entry: '../backend/lambda/fetchPopupInformation/index.ts',
                 runtime: lambda.Runtime.NODEJS_18_X,
                 handler: 'index.handler',
                 timeout: cdk.Duration.minutes(10),
                 memorySize: 512,
+                layers: [aqiLayer, utilsLayer],
                 environment: {
                     DB_SECRET_ARN: props!.dbSecret.secretArn,
                     DB_NAME: props!.databaseName

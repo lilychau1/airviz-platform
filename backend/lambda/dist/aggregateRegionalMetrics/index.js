@@ -1,42 +1,16 @@
-import { Client } from "pg";
-import { APIGatewayProxyEventV2 } from 'aws-lambda';
-import { rateAqiDict } from '/opt/nodejs/aqiBenchmark';
-import { getSecret } from '/opt/nodejs/utils';
-
-export interface AggregateRegionalMetricsInput {
-    level: "borough"; // To extend later
-}
-
-export interface RegionalAggregate {
-    region_id: number;
-    aqi: Record<string, number>;
-    pm25_value: number;
-    pm10_value: number;
-    no2_value: number;
-    so2_value: number;
-    o3_value: number;
-    co_value: number;
-    timestamp: string;
-    last30dUnhealthyAQIDays: Record<string, number> | null;
-    last30dAQIMean: Record<string, number> | null;
-    last30dAQIMax: Record<string, number> | null;
-    last30dAQIMin: Record<string, number> | null;
-}
-
-export const handler = async (event: APIGatewayProxyEventV2) => {
-    let client: Client | undefined;
-
-    const input: AggregateRegionalMetricsInput = JSON.parse(event.body || "{}");
+"use strict";
+Object.defineProperty(exports, "__esModule", { value: true });
+exports.handler = void 0;
+const pg_1 = require("pg");
+const aqiBenchmark_1 = require("/opt/nodejs/aqiBenchmark");
+const utils_1 = require("/opt/nodejs/utils");
+const handler = async (event) => {
+    let client;
+    const input = JSON.parse(event.body || "{}");
     const level = input.level;
-
     try {
-        const dbCreds = await getSecret(process.env.DB_SECRET_ARN!);
-
-        if (typeof dbCreds === "string") {
-            throw new Error("Expected DB secret to be a JSON object, got string instead");
-        }
-        
-        client = new Client({
+        const dbCreds = await (0, utils_1.getSecret)(process.env.DB_SECRET_ARN);
+        client = new pg_1.Client({
             host: dbCreds.host,
             user: dbCreds.username,
             password: dbCreds.password,
@@ -45,24 +19,16 @@ export const handler = async (event: APIGatewayProxyEventV2) => {
             ssl: { rejectUnauthorized: false },
         });
         await client.connect();
-
         // Get last processed timestamp
-        const stateRes = await client.query(
-            `SELECT last_processed_timestamp FROM aggregate_state WHERE level = $1 FOR UPDATE`,
-            [level]
-        );
-
-        let lastProcessed: string;
+        const stateRes = await client.query(`SELECT last_processed_timestamp FROM aggregate_state WHERE level = $1 FOR UPDATE`, [level]);
+        let lastProcessed;
         if (stateRes.rows.length === 0) {
             lastProcessed = new Date(0).toISOString();
-            await client.query(
-                `INSERT INTO aggregate_state(level, last_processed_timestamp) VALUES ($1, $2)`,
-                [level, lastProcessed]
-            );
-        } else {
+            await client.query(`INSERT INTO aggregate_state(level, last_processed_timestamp) VALUES ($1, $2)`, [level, lastProcessed]);
+        }
+        else {
             lastProcessed = stateRes.rows[0].last_processed_timestamp;
         }
-
         // Fetch new records for aggregation
         const recordsRes = await client.query(`
             SELECT
@@ -77,18 +43,16 @@ export const handler = async (event: APIGatewayProxyEventV2) => {
             WHERE ar.timestamp > $1
             GROUP BY t.borough_id, ar.timestamp, p.pm25_value, p.pm10_value, p.no2_value, p.so2_value, p.o3_value, p.co_value
         `, [lastProcessed]);
-
         // Group by region_id
-        const aggregatesMap: Record<number, RegionalAggregate[]> = {};
+        const aggregatesMap = {};
         const now = new Date();
         const THIRTY_DAYS_AGO = new Date(now.getTime() - 30 * 24 * 60 * 60 * 1000);
-
         for (const row of recordsRes.rows) {
             const regionId = row.region_id;
-            const aqi: Record<string, number> = row.aqi_json;
+            const aqi = row.aqi_json;
             const timestamp = new Date(row.timestamp);
-
-            if (!aggregatesMap[regionId]) aggregatesMap[regionId] = [];
+            if (!aggregatesMap[regionId])
+                aggregatesMap[regionId] = [];
             aggregatesMap[regionId].push({
                 region_id: regionId,
                 aqi,
@@ -105,40 +69,32 @@ export const handler = async (event: APIGatewayProxyEventV2) => {
                 last30dAQIMin: null,
             });
         }
-
-        const finalAggregates: RegionalAggregate[] = [];
-
+        const finalAggregates = [];
         for (const [regionIdStr, records] of Object.entries(aggregatesMap)) {
             const regionId = parseInt(regionIdStr, 10);
-
             // Compute "current" values (most recent record)
             records.sort((a, b) => new Date(b.timestamp).getTime() - new Date(a.timestamp).getTime());
             const latest = records[0];
-
             // Compute 30-day metrics per index type
             const last30dRecords = records.filter(r => new Date(r.timestamp) >= THIRTY_DAYS_AGO);
-
-            const indexTypes = new Set<string>();
+            const indexTypes = new Set();
             last30dRecords.forEach(r => Object.keys(r.aqi).forEach(k => indexTypes.add(k)));
-
-            const last30dUnhealthyAQIDays: Record<string, number> = {};
-            const last30dAQIMean: Record<string, number> = {};
-            const last30dAQIMax: Record<string, number> = {};
-            const last30dAQIMin: Record<string, number> = {};
-
+            const last30dUnhealthyAQIDays = {};
+            const last30dAQIMean = {};
+            const last30dAQIMax = {};
+            const last30dAQIMin = {};
             indexTypes.forEach(indexType => {
                 const values = last30dRecords.map(r => r.aqi[indexType]).filter(v => v != null);
-                if (values.length === 0) return;
-
+                if (values.length === 0)
+                    return;
                 last30dAQIMean[indexType] = values.reduce((sum, v) => sum + v, 0) / values.length;
                 last30dAQIMax[indexType] = Math.max(...values);
                 last30dAQIMin[indexType] = Math.min(...values);
                 // count "unhealthy" days using rateAqiDict
                 last30dUnhealthyAQIDays[indexType] = values
-                    .map(v => rateAqiDict({ [indexType]: v })![indexType]!)
+                    .map(v => (0, aqiBenchmark_1.rateAqiDict)({ [indexType]: v })[indexType]) // !! because rateAqiDict returns Record<string, number | null>
                     .reduce((sum, level) => sum >= 1 ? sum + 1 : sum, 0);
             });
-
             finalAggregates.push({
                 ...latest,
                 last30dUnhealthyAQIDays,
@@ -147,7 +103,6 @@ export const handler = async (event: APIGatewayProxyEventV2) => {
                 last30dAQIMin,
             });
         }
-
         // Insert/update regional_aggregates
         for (const agg of finalAggregates) {
             await client.query(`
@@ -171,41 +126,31 @@ export const handler = async (event: APIGatewayProxyEventV2) => {
                     last_30d_aqi_max = EXCLUDED.last_30d_aqi_max,
                     last_30d_aqi_min = EXCLUDED.last_30d_aqi_min
             `, [
-                level,
-                agg.region_id,
-                JSON.stringify(agg.aqi),
-                agg.pm25_value,
-                agg.pm10_value,
-                agg.no2_value,
-                agg.so2_value,
-                agg.o3_value,
-                agg.co_value,
-                agg.timestamp,
-                JSON.stringify(agg.last30dUnhealthyAQIDays),
-                JSON.stringify(agg.last30dAQIMean),
-                JSON.stringify(agg.last30dAQIMax),
-                JSON.stringify(agg.last30dAQIMin),
+                level, agg.region_id, agg.aqi, agg.pm25_value, agg.pm10_value, agg.no2_value, agg.so2_value,
+                agg.o3_value, agg.co_value, agg.timestamp,
+                agg.last30dUnhealthyAQIDays,
+                agg.last30dAQIMean,
+                agg.last30dAQIMax,
+                agg.last30dAQIMin
             ]);
         }
-
         // Update last_processed_timestamp
         if (recordsRes.rows.length > 0) {
             const maxTimestamp = recordsRes.rows.reduce((max, row) => {
                 const ts = new Date(row.timestamp).getTime();
                 return ts > max ? ts : max;
             }, 0);
-            await client.query(
-                `UPDATE aggregate_state SET last_processed_timestamp=$1 WHERE level=$2`,
-                [new Date(maxTimestamp).toISOString(), level]
-            );
+            await client.query(`UPDATE aggregate_state SET last_processed_timestamp=$1 WHERE level=$2`, [new Date(maxTimestamp).toISOString(), level]);
         }
-
         return { message: "Aggregation completed", aggregatedCount: finalAggregates.length };
-
-    } catch (err) {
+    }
+    catch (err) {
         console.error(err);
-        return { error: (err as Error).message };
-    } finally {
-        if (client) await client.end();
+        return { error: err.message };
+    }
+    finally {
+        if (client)
+            await client.end();
     }
 };
+exports.handler = handler;

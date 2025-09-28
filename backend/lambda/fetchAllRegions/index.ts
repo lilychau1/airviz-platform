@@ -1,16 +1,6 @@
 import { Client } from "pg";
-import { SecretsManagerClient, GetSecretValueCommand } from "@aws-sdk/client-secrets-manager";
 import { APIGatewayProxyEventV2 } from "aws-lambda";
-
-
-const secretsClient = new SecretsManagerClient({});
-
-async function getSecret(secretId: string) {
-    const data = await secretsClient.send(
-        new GetSecretValueCommand({ SecretId: secretId })
-    );
-    return JSON.parse(data.SecretString || "{}");
-}
+import { getSecret } from '/opt/nodejs/utils';
 
 // Interfaces
 export interface Colour {
@@ -76,6 +66,10 @@ export const handler = async (event: APIGatewayProxyEventV2) => {
         const secretId = process.env.DB_SECRET_ARN!;
         const dbCreds = await getSecret(secretId);
 
+        if (typeof dbCreds === "string") {
+            throw new Error("Expected DB secret to be a JSON object, got string instead");
+        }
+        
         client = new Client({
             host: dbCreds.host,
             user: dbCreds.username,
