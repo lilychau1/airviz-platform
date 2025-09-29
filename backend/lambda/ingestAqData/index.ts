@@ -6,16 +6,9 @@ import { getSecret } from '/opt/nodejs/utils';
 
 const s3Client = new S3Client({});
 
-// Interfaces
 interface FetchAirQualityResponse {
     dateTime: string;
-    pollutants: {
-        code: string; 
-        concentration: {
-        value: number;
-        unit?: string;
-        };
-    }[];
+    pollutants: PollutantApiResponse[];
     indexes: {
         code: string;  
         category: string; 
@@ -28,76 +21,90 @@ interface FetchAirQualityResponse {
         dominantPollutant: string;
         aqi: number;
     }[];
-    healthRecommendations: Record<string, string>; 
-    [key: string]: any; // Any extra fields
+    healthRecommendations: Record<string, string>;
+    [key: string]: any;
 }
 
 interface PollutantConcentrationRecord {
-  recordId: number;
-  tileId: number;
-  timestamp: string; 
-  ingestionTimestamp: string; 
-  pm25Value: number | null;
-  pm10Value: number | null;
-  no2Value: number | null;
-  so2Value: number | null;
-  o3Value: number | null;
-  coValue: number | null;
+    recordId: number;
+    tileId: number;
+    timestamp: string; 
+    ingestionTimestamp: string; 
+    pm25Value: number | null;
+    pm10Value: number | null;
+    no2Value: number | null;
+    so2Value: number | null;
+    o3Value: number | null;
+    coValue: number | null;
+    pm25Impact?: string | null;
+    pm10Impact?: string | null;
+    no2Impact?: string | null;
+    so2Impact?: string | null;
+    o3Impact?: string | null;
+    coImpact?: string | null;
 }
 
 interface AqiRecord {
-  recordId: number;
-  tileId: number;
-  indexType: string;
-  category: string;
-  colourCode: {
-    red?: number;
-    green?: number;
-    blue?: number;
-    alpha: number;
-  };
-  dominantPollutant: string;
-  timestamp: string;
-  ingestionTimestamp: string;
-  value: number;
+    recordId: number;
+    tileId: number;
+    indexType: string;
+    category: string;
+    colourCode: {
+        red?: number;
+        green?: number;
+        blue?: number;
+        alpha: number;
+    };
+    dominantPollutant: string;
+    timestamp: string;
+    ingestionTimestamp: string;
+    value: number;
 }
 
 interface HealthRecommendationRecord {
-  recordId: number;
-  tileId: number;
-  timestamp: string;
-  ingestionTimestamp: string;
-  recommendations: Record<string, string>;
+    recordId: number;
+    tileId: number;
+    timestamp: string;
+    ingestionTimestamp: string;
+    recommendations: Record<string, string>;
 }
 
 interface coordsRecord {
-    id: number, 
-    latitude: string, 
-    longitude: string
+    id: number;
+    latitude: string;
+    longitude: string;
 }
 
-type AqTileData = {
-    tile: coordsRecord; 
-    aqData: FetchAirQualityResponse;
+interface PollutantApiResponse {
+    code: string;
+    displayName: string;
+    fullName: string;
+    concentration: {
+        value: number;
+        units: string;
+    };
+    additionalInfo?: {
+        sources?: string;
+        effects?: string;
+    };
 }
 
-// Helper functions
+type PollutantValueKeys = 
+    | 'pm25Value' | 'pm10Value' | 'no2Value' | 'so2Value' | 'o3Value' | 'coValue'
+    | 'pm25Impact' | 'pm10Impact' | 'no2Impact' | 'so2Impact' | 'o3Impact' | 'coImpact';
 
 async function getCoordsFromS3(bucket: string, key: string): Promise<coordsRecord[]> {
     const rows: coordsRecord[] = [];
     const command = new GetObjectCommand({ Bucket: bucket, Key: key });
     const response = await s3Client.send(command);
 
-    if (!response.Body) {
-        throw new Error('No Body in S3 response');
-    }
+    if (!response.Body) throw new Error('No Body in S3 response');
 
     const stream = response.Body as Readable;
-
     await new Promise((resolve, reject) => {
         stream
             .pipe(csvParser())
-            .on('data', (row: { id: number; latitude: string; longitude: string; }) => rows.push(row))
+            .on('data', (row: { id: number; latitude: string; longitude: string }) => rows.push(row))
             .on('end', resolve)
             .on('error', reject);
     });
@@ -105,16 +112,10 @@ async function getCoordsFromS3(bucket: string, key: string): Promise<coordsRecor
 }
 
 async function fetchAirQuality(apiKey: string, latitude: string, longitude: string) {
-    // Follows API request template for Multiple parameters response
-    // Available at: https://developers.google.com/maps/documentation/air-quality/current-conditions?hl=en#multiple_parameters_response
     const url = `https://airquality.googleapis.com/v1/currentConditions:lookup?key=${apiKey}`;
-
     const body = JSON.stringify({
         universalAqi: true,
-        location: {
-            latitude: Number(latitude),
-            longitude: Number(longitude)
-        },
+        location: { latitude: Number(latitude), longitude: Number(longitude) },
         extraComputations: [
             "HEALTH_RECOMMENDATIONS",
             "DOMINANT_POLLUTANT_CONCENTRATION",
@@ -125,217 +126,130 @@ async function fetchAirQuality(apiKey: string, latitude: string, longitude: stri
         languageCode: "en"
     });
 
-    const resp = await fetch(url, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body,
-    });
-
-    if (!resp.ok) {
-        const errorText = await resp.text();
-        throw new Error(`Air Quality API error: ${errorText}`);
-    }
+    const resp = await fetch(url, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body });
+    if (!resp.ok) throw new Error(`Air Quality API error: ${await resp.text()}`);
     return resp.json();
 }
 
+async function bulkInsertAqRecords(client: Client, AqRecords: { tileId: number; timestamp: string; ingestionTimestamp: string }[]): Promise<{ id: number; tileId: number }[]> {
+    if (AqRecords.length === 0) return [];
 
-// Batch insert function for AqRecords
-async function bulkInsertAqRecords(
-    client: Client, 
-    AqRecords: { tileId: number; timestamp: string; ingestionTimestamp: string}[]
-): Promise<{ id: number; tileId: number }[]> {
-    if (AqRecords.length === 0) return []; 
-
-    const valuesClause = AqRecords
-        .map((_, i) => `($${i * 3 + 1}, $${i * 3 + 2}, $${i * 3 + 3})`) // Parameter position fpr tileId, timestamp and ingestionTimestamp
-        .join(','); 
-    
-    const params = AqRecords.flatMap((r) => [r.tileId, r.timestamp, r.ingestionTimestamp]); 
+    const valuesClause = AqRecords.map((_, i) => `($${i*3+1}, $${i*3+2}, $${i*3+3})`).join(',');
+    const params = AqRecords.flatMap(r => [r.tileId, r.timestamp, r.ingestionTimestamp]);
 
     const result = await client.query(
-        `INSERT INTO aq_records (tile_id, timestamp, ingestion_timestamp) VALUES ${valuesClause} RETURNING id, tile_id AS "tileId"`
-        , params);
-    return result.rows;
-}; 
+        `INSERT INTO aq_records (tile_id, timestamp, ingestion_timestamp)
+         VALUES ${valuesClause}
+         ON CONFLICT (tile_id, timestamp) DO UPDATE SET timestamp = EXCLUDED.timestamp
+         RETURNING id, tile_id AS "tileId"`,
+        params
+    );
 
-// Batch insert function for Pollutants
-async function bulkInsertPollutants(client: Client, pollutantData: any[]) {
+    return result.rows;
+}
+
+async function bulkInsertPollutants(client: Client, pollutantData: PollutantConcentrationRecord[]) {
     if (pollutantData.length === 0) return;
 
-    console.log("Bulk inserting pollutant records:");
-    // pollutantData.forEach((record, index) => {
-    //     console.log(`Record ${index + 1}:`, record);
-    // });
-    
     const valuesClause = pollutantData
-        .map(
-            (_, i) =>
-            `($${i * 10 + 1}, $${i * 10 + 2}, $${i * 10 + 3}, $${i * 10 + 4}, $${i * 10 + 5}, $${i * 10 + 6}, $${i * 10 + 7}, $${i * 10 + 8}, $${i * 10 + 9}, $${i * 10 + 10})`
-        )
-        .join(',');
+        .map((_, i) => 
+            `($${i*16+1}, $${i*16+2}, $${i*16+3}, $${i*16+4}, $${i*16+5}, $${i*16+6}, $${i*16+7}, $${i*16+8}, $${i*16+9}, $${i*16+10}, $${i*16+11}, $${i*16+12}, $${i*16+13}, $${i*16+14}, $${i*16+15}, $${i*16+16})`
+        ).join(',');
 
-    const params = pollutantData.flatMap((r) => [
-        r.recordId,
-        r.tileId,
-        r.timestamp,
-        r.ingestionTimestamp,
-        r.pm25Value,
-        r.pm10Value,
-        r.no2Value,
-        r.so2Value,
-        r.o3Value,
-        r.coValue,
+    const params = pollutantData.flatMap(r => [
+        r.recordId, r.tileId, r.timestamp, r.ingestionTimestamp,
+        r.pm25Value, r.pm10Value, r.no2Value, r.so2Value, r.o3Value, r.coValue,
+        r.pm25Impact, r.pm10Impact, r.no2Impact, r.so2Impact, r.o3Impact, r.coImpact
     ]);
 
     await client.query(
         `INSERT INTO pollutant_concentration
-            (record_id, tile_id, timestamp, ingestion_timestamp, pm25_value, pm10_value, no2_value, so2_value, o3_value, co_value)
-        VALUES ${valuesClause} ON CONFLICT DO NOTHING`,
+            (record_id, tile_id, timestamp, ingestion_timestamp, pm25_value, pm10_value, no2_value, so2_value, o3_value, co_value,
+            pm25_impact, pm10_impact, no2_impact, so2_impact, o3_impact, co_impact)
+         VALUES ${valuesClause} ON CONFLICT (record_id, tile_id) DO NOTHING`,
         params
     );
 }
 
-// Batch insert function for AirQualityIndex
-async function bulkInsertAirQualityIndex(client: Client, indexData: any[]) {
+async function bulkInsertAirQualityIndex(client: Client, indexData: AqiRecord[]) {
     if (indexData.length === 0) return;
 
     const valuesClause = indexData
-        .map(
-            (_, i) =>
-            `($${i * 9 + 1}, $${i * 9 + 2}, $${i * 9 + 3}, $${i * 9 + 4}, $${i * 9 + 5}, $${i * 9 + 6}, $${i * 9 + 7}, $${i * 9 + 8}, $${i * 9 + 9})`
-        )
-        .join(',');
+        .map((_, i) => 
+            `($${i*9+1}, $${i*9+2}, $${i*9+3}, $${i*9+4}, $${i*9+5}, $${i*9+6}, $${i*9+7}, $${i*9+8}, $${i*9+9})`
+        ).join(',');
 
-    const params = indexData.flatMap((r) => [
-        r.recordId,
-        r.tileId,
-        r.indexType,
-        r.category,
-        JSON.stringify(r.colourCode),
-        r.dominantPollutant,
-        r.timestamp,
-        r.ingestionTimestamp,
-        r.value,
+    const params = indexData.flatMap(r => [
+        r.recordId, r.tileId, r.indexType, r.category, JSON.stringify(r.colourCode),
+        r.dominantPollutant, r.timestamp, r.ingestionTimestamp, r.value
     ]);
 
     await client.query(
         `INSERT INTO air_quality_index
             (record_id, tile_id, index_type, category, colour_code, dominant_pollutant, timestamp, ingestion_timestamp, value)
-        VALUES ${valuesClause} ON CONFLICT DO NOTHING`,
+         VALUES ${valuesClause} ON CONFLICT (record_id, tile_id, index_type) DO NOTHING`,
         params
     );
 }
 
-// Batch insert function for HealthRecommendations
-async function bulkInsertHealthRecommendations(client: Client, healthData: any[]) {
+async function bulkInsertHealthRecommendations(client: Client, healthData: HealthRecommendationRecord[]) {
     if (healthData.length === 0) return;
 
     const valuesClause = healthData
-        .map((_, i) =>
-            `($${i * 5 + 1}, $${i * 5 + 2}, $${i * 5 + 3}, $${i * 5 + 4}, $${i * 5 + 5})`
-        )
-        .join(',');
+        .map((_, i) => `($${i*5+1}, $${i*5+2}, $${i*5+3}, $${i*5+4}, $${i*5+5})`).join(',');
 
     const params = healthData.flatMap(r => [
-        r.recordId,
-        r.tileId,
-        r.timestamp,
-        r.ingestionTimestamp,
-        JSON.stringify(r.recommendations),
+        r.recordId, r.tileId, r.timestamp, r.ingestionTimestamp, JSON.stringify(r.recommendations)
     ]);
 
     await client.query(
         `INSERT INTO health_recommendation
-         (record_id, tile_id, timestamp, ingestion_timestamp, recommendations)
-         VALUES ${valuesClause} ON CONFLICT DO NOTHING`,
+            (record_id, tile_id, timestamp, ingestion_timestamp, recommendations)
+         VALUES ${valuesClause} ON CONFLICT (record_id, tile_id) DO NOTHING`,
         params
     );
 }
 
-// Limit concurrent API requests to 10
-const BATCH_CONCURRENCY = 10; 
-
-// Set maximum retries upon fetch failures
+const BATCH_CONCURRENCY = 10;
 const MAX_RETRIES = 4;
 
-async function sleep(ms: number) {
-  return new Promise(resolve => setTimeout(resolve, ms));
-}
+async function sleep(ms: number) { return new Promise(resolve => setTimeout(resolve, ms)); }
 
-// Perform data fetch with retries
-async function fetchAqDataWithRetry(
-    apiKey: string, 
-    latitude: string, 
-    longitude: string, 
-    retries = MAX_RETRIES
-): Promise<FetchAirQualityResponse> {
+async function fetchAqDataWithRetry(apiKey: string, latitude: string, longitude: string, retries = MAX_RETRIES): Promise<FetchAirQualityResponse> {
     let lastError;
     for (let attempt = 0; attempt < retries; attempt++) {
         try {
-            if (attempt > 0) {
-                console.log(`Retry attempt ${attempt} for coordinates (${latitude}, ${longitude})`);
-            }
-            
-            const aqData = await fetchAirQuality(apiKey, latitude, longitude);
-            // console.log(`Fetched AQ data for (${latitude}, ${longitude}):`, JSON.stringify(aqData, null, 2));
-
-            return aqData;
-
+            if (attempt > 0) console.log(`Retry attempt ${attempt} for coordinates (${latitude}, ${longitude})`);
+            return await fetchAirQuality(apiKey, latitude, longitude);
         } catch (error: any) {
-        lastError = error;
-        if (error.message?.includes("rate limit") || error.message?.includes("429") || error.cause?.code === "UND_ERR_SOCKET") {
-            // Perform exponential backoff delay in the case of rate limiting mechanism from the GOogle air quality API end point
-            const delay = Math.pow(2, attempt) * 500;
-
-            console.warn(`Rate limit or socket error on attempt ${attempt} for coordinates (${latitude}, ${longitude}). Backing off for ${delay} ms.`);
-
-            await sleep(delay);
-        } else {
-            
-            console.error(`Fetch error on attempt ${attempt} for coordinates (${latitude}, ${longitude}):`, error);
-
-            break; 
-        }
+            lastError = error;
+            if (error.message?.includes("rate limit") || error.message?.includes("429") || error.cause?.code === "UND_ERR_SOCKET") {
+                const delay = Math.pow(2, attempt) * 500;
+                console.warn(`Rate limit/socket error on attempt ${attempt} for (${latitude}, ${longitude}), backing off ${delay}ms`);
+                await sleep(delay);
+            } else {
+                console.error(`Fetch error on attempt ${attempt} for (${latitude}, ${longitude}):`, error);
+                break;
+            }
         }
     }
-    
-    console.error(`All ${retries} attempts failed for coordinates (${latitude}, ${longitude})`);
-
+    console.error(`All ${retries} attempts failed for (${latitude}, ${longitude})`);
     throw lastError;
 }
 
-// Concurrency scheduler for batch (tiles)
-// Concurrency scheduler for batch (tiles)
 async function rateLimitedBatchFetch(batch: coordsRecord[], apiSecret: string) {
     let results: { tile: coordsRecord, aqData: FetchAirQualityResponse }[] = [];
-
     for (let i = 0; i < batch.length; i += BATCH_CONCURRENCY) {
         const chunk = batch.slice(i, i + BATCH_CONCURRENCY);
-
-        // Use Promise.allSettled instead of Promise.all
         const chunkResults = await Promise.allSettled(
-            chunk.map(async (tile) => {
-                const aqData = await fetchAqDataWithRetry(apiSecret, tile.latitude, tile.longitude);
-                return { tile, aqData };
-            })
+            chunk.map(tile => fetchAqDataWithRetry(apiSecret, tile.latitude, tile.longitude).then(aqData => ({ tile, aqData })))
         );
-
-        // Keep only fulfilled results
         chunkResults.forEach((res, idx) => {
-            if (res.status === "fulfilled") {
-                results.push(res.value);
-            } else {
-                console.error(
-                    `Failed to fetch AQ data for tile ${chunk[idx].id} (${chunk[idx].latitude}, ${chunk[idx].longitude}):`,
-                    res.reason
-                );
-            }
+            if (res.status === "fulfilled") results.push(res.value);
+            else console.error(`Failed to fetch AQ data for tile ${chunk[idx].id} (${chunk[idx].latitude}, ${chunk[idx].longitude}):`, res.reason);
         });
-
-        // Add a small delay between chunks to further reduce burst load
         await sleep(500);
     }
-
     return results;
 }
 
@@ -348,10 +262,8 @@ export const handler = async () => {
         const key = process.env.TILE_COORDS_FILENAME!;
         const dbCreds = await getSecret(secretId);
         const apiSecret = await getSecret(apiSecretId);
-        
-        if (typeof dbCreds === "string") {
-            throw new Error("Expected DB secret to be a JSON object, got string instead");
-        }
+
+        if (typeof dbCreds === "string") throw new Error("Expected DB secret to be a JSON object, got string instead");
 
         client = new Client({
             host: dbCreds.host,
@@ -365,27 +277,17 @@ export const handler = async () => {
         await client.connect();
 
         const coords = await getCoordsFromS3(bucket, key);
-
-        // Configs for how much records to batch and insert into the RDS+pg database 
         const batchSize = 1000;
 
-        // Start batched operations
-        for (let i=0; i < coords.length; i += batchSize) {
-            const batch = coords.slice(i, i + batchSize); 
-            
-            console.log(`Starting bulk ingest of records from index ${i} to ${Math.min(i + batchSize - 1, coords.length - 1)}`);
+        for (let i = 0; i < coords.length; i += batchSize) {
+            const batch = coords.slice(i, i + batchSize);
+            console.log(`Starting bulk ingest of records from index ${i} to ${Math.min(i+batchSize-1, coords.length-1)}`);
 
-            // Fetch Air quality data 
-            if (typeof apiSecret !== "string") {
-                throw new Error("Expected API secret to be a string");
-            }
+            if (typeof apiSecret !== "string") throw new Error("Expected API secret to be a string");
             const batchedAqData = await rateLimitedBatchFetch(batch, apiSecret);
-            
-            if (batchedAqData.length > 0) {
-                console.log("First entry of batchedAqData:", JSON.stringify(batchedAqData[0], null, 2));
-            } else {
-                console.log("batchedAqData is empty");
-            }
+
+            if (batchedAqData.length > 0) console.log("First entry of batchedAqData:", JSON.stringify(batchedAqData[0], null, 2));
+            else console.log("batchedAqData is empty");
 
             const aqRecordsToInsert = batchedAqData.map(({ tile, aqData }) => ({
                 tileId: tile.id,
@@ -395,32 +297,17 @@ export const handler = async () => {
 
             const insertedAqRecords = await bulkInsertAqRecords(client, aqRecordsToInsert);
 
-            // console.log("Inserted AqRecords:");
-            // if (insertedAqRecords.length === 0) {
-            //     console.log("No rows were inserted. Check for conflicts or duplicates.");
-            // } else {
-            //     insertedAqRecords.forEach((rec, index) => {
-            //         console.log(`Row ${index + 1}: id=${rec.id}, tileId=${rec.tileId}`);
-            //     });
-            // }
-
-            // Draw relationship between recordId and tileId
             const recordIdMap = new Map<number, number>();
-            insertedAqRecords.forEach(
-                ({ id, tileId }) => {
-                    recordIdMap.set(tileId, id); 
-            });
+            insertedAqRecords.forEach(({ id, tileId }) => recordIdMap.set(tileId, id));
             console.log("recordIdMap contents:");
             console.log(Array.from(recordIdMap.entries()).map(([tileId, recordId]) => `${tileId} => ${recordId}`).join(", "));
 
-            const pollutantData: PollutantConcentrationRecord[] = []; 
-            const aqiData: AqiRecord[] = []; 
-            const healthRecommendationData: HealthRecommendationRecord[] = []; 
+            const pollutantData: PollutantConcentrationRecord[] = [];
+            const aqiData: AqiRecord[] = [];
+            const healthRecommendationData: HealthRecommendationRecord[] = [];
 
             for (const { tile, aqData } of batchedAqData) {
                 const recordId = recordIdMap.get(Number(tile.id));
-                // console.log(`recordId: ${recordId}`)
-
                 if (!recordId) {
                     console.warn(`No record ID found for tile ${tile.id}, skipping child inserts`);
                     continue;
@@ -429,35 +316,46 @@ export const handler = async () => {
                 const ingestionTimestamp = new Date().toISOString();
                 const timestamp = aqData.dateTime;
 
-                // Map pollutant codes to DB columns for insertion
-                type PollutantKeys = keyof Omit<PollutantConcentrationRecord, 'recordId' | 'tileId' | 'timestamp' | 'ingestionTimestamp'>;
-
-                const pollutantsMap: Record<string, PollutantKeys> = {
-                    pm25: 'pm25Value',
-                    pm10: 'pm10Value',
-                    no2: 'no2Value',
-                    so2: 'so2Value',
-                    o3: 'o3Value',
-                    co: 'coValue',
+                const pollutantsMap: Record<string, { valueKey: PollutantValueKeys, impactKey: PollutantValueKeys }> = {
+                    pm25: { valueKey: 'pm25Value', impactKey: 'pm25Impact' },
+                    pm10: { valueKey: 'pm10Value', impactKey: 'pm10Impact' },
+                    no2:  { valueKey: 'no2Value',  impactKey: 'no2Impact' },
+                    so2:  { valueKey: 'so2Value',  impactKey: 'so2Impact' },
+                    o3:   { valueKey: 'o3Value',   impactKey: 'o3Impact' },
+                    co:   { valueKey: 'coValue',   impactKey: 'coImpact' },
                 };
 
-                // Initialise pollutant values by taking from the PollutantConcentrationRecord class
-                // Any columns except for recordId, tileId, timestamp, ingestionTimestamp
-
-                const pollutantValues: Record<PollutantKeys, number | null> = {
-                    pm25Value: null,
-                    pm10Value: null,
-                    no2Value: null,
-                    so2Value: null,
-                    o3Value: null,
-                    coValue: null,
+                const pollutantValues: {
+                    pm25Value: number | null,
+                    pm10Value: number | null,
+                    no2Value: number | null,
+                    so2Value: number | null,
+                    o3Value: number | null,
+                    coValue: number | null,
+                    pm25Impact: string | null,
+                    pm10Impact: string | null,
+                    no2Impact: string | null,
+                    so2Impact: string | null,
+                    o3Impact: string | null,
+                    coImpact: string | null
+                } = {
+                pm25Value: null, pm10Value: null, no2Value: null, so2Value: null, o3Value: null, coValue: null,
+                pm25Impact: null, pm10Impact: null, no2Impact: null, so2Impact: null, o3Impact: null, coImpact: null,
                 };
 
-                //  Fill pollutant values from API data
-                aqData.pollutants.forEach((p: any) => {
-                    const col = pollutantsMap[p.code];
-                    if (col) {
-                        pollutantValues[col] = p.concentration.value;
+                aqData.pollutants.forEach((p: PollutantApiResponse) => {
+                    const mapping = pollutantsMap[p.code];
+                    if (mapping) {
+                        if (mapping.valueKey.endsWith('Value')) {
+                            pollutantValues[mapping.valueKey as
+                            'pm25Value' | 'pm10Value' | 'no2Value' | 'so2Value' | 'o3Value' | 'coValue'] =
+                            typeof p.concentration.value === "number" ? p.concentration.value : null;
+                        }
+                        if (mapping.impactKey.endsWith('Impact')) {
+                            pollutantValues[mapping.impactKey as
+                            'pm25Impact' | 'pm10Impact' | 'no2Impact' | 'so2Impact' | 'o3Impact' | 'coImpact'] =
+                            p.additionalInfo?.effects ?? null;
+                        }
                     }
                 });
 
@@ -466,11 +364,22 @@ export const handler = async () => {
                     tileId: tile.id,
                     timestamp,
                     ingestionTimestamp,
-                    ...pollutantValues,
+                    pm25Value: pollutantValues.pm25Value,
+                    pm10Value: pollutantValues.pm10Value,
+                    no2Value: pollutantValues.no2Value,
+                    so2Value: pollutantValues.so2Value,
+                    o3Value: pollutantValues.o3Value,
+                    coValue: pollutantValues.coValue,
+                    pm25Impact: pollutantValues.pm25Impact,
+                    pm10Impact: pollutantValues.pm10Impact,
+                    no2Impact: pollutantValues.no2Impact,
+                    so2Impact: pollutantValues.so2Impact,
+                    o3Impact: pollutantValues.o3Impact,
+                    coImpact: pollutantValues.coImpact,
                 });
 
-                // Prepare AirQualityIndex rows
-                aqData.indexes.forEach((idx: any) => {
+
+                aqData.indexes.forEach(idx => {
                     aqiData.push({
                         recordId,
                         tileId: tile.id,
@@ -484,15 +393,10 @@ export const handler = async () => {
                     });
                 });
 
-                // Prepare HealthRecommendation rows
                 const recommendations: Record<string, string> = {};
-
-                Object.entries(aqData.healthRecommendations)
-                    .forEach(([popGroup, val]) => {
-                        if (typeof val === 'string' && val.trim().length > 0) {
-                            recommendations[popGroup] = val;
-                        }
-                    });
+                Object.entries(aqData.healthRecommendations).forEach(([popGroup, val]) => {
+                    if (typeof val === 'string' && val.trim().length > 0) recommendations[popGroup] = val;
+                });
 
                 healthRecommendationData.push({
                     recordId,
@@ -501,9 +405,8 @@ export const handler = async () => {
                     ingestionTimestamp,
                     recommendations,
                 });
-
             }
-            // Call bulk insert functions with typed arrays
+
             console.log(`Inserting ${pollutantData.length} pollutant records`);
             await bulkInsertPollutants(client, pollutantData);
 
@@ -513,22 +416,14 @@ export const handler = async () => {
             console.log(`Inserting ${healthRecommendationData.length} health recommendation records`);
             await bulkInsertHealthRecommendations(client, healthRecommendationData);
 
-            console.log(`Completed ingestion of records from index ${i} to ${Math.min(i + batchSize - 1, coords.length - 1)}`);
-
+            console.log(`Completed ingestion of records from index ${i} to ${Math.min(i+batchSize-1, coords.length-1)}`);
         }
 
         await client.end();
-
-        return {
-            statusCode: 200,
-            body: JSON.stringify({ message: 'Batch ingestion succeeded.' }),
-        };
+        return { statusCode: 200, body: JSON.stringify({ message: 'Batch ingestion succeeded.' }) };
     } catch (error) {
         if (client) await client.end();
         console.error('Ingestion failed', error);
-        return {
-            statusCode: 500,
-            body: JSON.stringify({ error: (error as Error).message }),
-        };
+        return { statusCode: 500, body: JSON.stringify({ error: (error as Error).message }) };
     }
 };

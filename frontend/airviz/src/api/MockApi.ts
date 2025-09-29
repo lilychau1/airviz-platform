@@ -111,7 +111,7 @@ export async function fetchCurrentAirQualityInfo(
 
   const raw = await resp.json();
 
-  // normalize JSON keys and add new field "healthImpact"
+  // normalise JSON keys and add new field "healthImpact"
   const currentRecords: PollutantCurrentRecord[] = raw.CurrentRecords.map(
     (r: any) => ({
       pollutantId: r.pollutantId,
