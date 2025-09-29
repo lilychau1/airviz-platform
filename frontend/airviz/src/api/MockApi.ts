@@ -58,6 +58,7 @@ export async function fetchPollutantData(
     id: number, 
     pollutantId: PollutantId
 ): Promise<PollutantRecord[]> {
+    // TODO: no pollutantId, fetch all at once
     const resp = await fetch(`/mock/${level}/${id}/${pollutantId}.json`); 
     if (!resp.ok) {
         throw new Error(`Failed to load ${pollutantId} data for ${level} ${id}`); 
@@ -136,6 +137,7 @@ export async function fetchAqiData(
     id: number, 
     aqiTypeId: AqiTypeId
 ): Promise<AqiRecord[]> {
+    // TODO: no aqiTypeId, fetch all at once
     const resp = await fetch(`/mock/${level}/${id}/aqi-${aqiTypeId}.json`); 
     if (!resp.ok) {
         throw new Error(`Failed to load AQI (${aqiTypeId}) data for ${level} ${id}`); 
