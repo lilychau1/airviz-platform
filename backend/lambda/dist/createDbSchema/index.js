@@ -248,7 +248,8 @@ const handler = async () => {
                 last_30d_aqi_max JSONB,
                 last_30d_aqi_min JSONB,
                 timestamp TIMESTAMP NOT NULL,
-                update_timestamp TIMESTAMP NOT NULL
+                update_timestamp TIMESTAMP NOT NULL,
+                CONSTRAINT unique_level_region UNIQUE (level, region_id)
             );
         `);
         // Add an index to improve query performance on level + region_id

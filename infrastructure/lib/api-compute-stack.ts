@@ -177,6 +177,24 @@ export class ApiComputeStack extends cdk.Stack {
         );
         props!.dbSecret.grantRead(fetchPollutantDataFunction);
 
+        // Fetch AQI data
+        const fetchAqiDataFunction = new lambdaNodejs.NodejsFunction(
+            this, 
+            'fetchAqiDataFunction', {
+                entry: '../backend/lambda/fetchAqiData/index.ts',
+                runtime: lambda.Runtime.NODEJS_18_X,
+                handler: 'index.handler',
+                timeout: cdk.Duration.minutes(10),
+                memorySize: 512,
+                layers: [aqiLayer, utilsLayer],
+                environment: {
+                    DB_SECRET_ARN: props!.dbSecret.secretArn,
+                    DB_NAME: props!.databaseName
+                },
+            }
+        );
+        props!.dbSecret.grantRead(fetchAqiDataFunction);
+
         // Add API Gateway
         const httpApi = new apigatewayv2.HttpApi(
             this, 
@@ -249,6 +267,16 @@ export class ApiComputeStack extends cdk.Stack {
             integration: new integrations.HttpLambdaIntegration(
                 'fetchPollutantDataFunction', 
                 fetchPollutantDataFunction, 
+            ), 
+        });
+
+        // fetchAqiData
+        httpApi.addRoutes({
+            path: '/fetchAqiData', 
+            methods: [apigatewayv2.HttpMethod.POST], 
+            integration: new integrations.HttpLambdaIntegration(
+                'fetchAqiDataFunction', 
+                fetchAqiDataFunction, 
             ), 
         });
     }

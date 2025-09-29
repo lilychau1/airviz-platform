@@ -6,8 +6,8 @@ interface Input {
     level: "tile" | "borough";
     id: number;
     selectedPeriod: {
-        start: string; // ISO string of period start
-        end: string; // ISO string of period end
+        start: string;
+        end: string;
     };
 }
 
@@ -42,39 +42,57 @@ export const handler = async (event: APIGatewayProxyEventV2) => {
 
         if (input.level === "tile") {
             query = `
-                SELECT tile_id AS id, timestamp,
-                       pm25_value, pm10_value, no2_value, so2_value, o3_value, co_value
-                FROM pollutant_concentration
+                SELECT 
+                    tile_id AS id,
+                    timestamp,
+                    index_type,
+                    value
+                FROM air_quality_index
                 WHERE tile_id = $1
                   AND timestamp BETWEEN $2 AND $3
-                ORDER BY timestamp ASC;
+                ORDER BY index_type, timestamp ASC;
             `;
             params = [input.id, input.selectedPeriod.start, input.selectedPeriod.end];
         } else {
             query = `
-                SELECT region_id AS id, timestamp,
-                       pm25_value, pm10_value, no2_value, so2_value, o3_value, co_value
+                SELECT 
+                    region_id AS id,
+                    timestamp,
+                    index_type,
+                    value
                 FROM regional_aggregates
+                CROSS JOIN LATERAL jsonb_each_text(aqi) AS aqi(index_type, value)
                 WHERE level = $1
                   AND region_id = $2
                   AND timestamp BETWEEN $3 AND $4
-                ORDER BY timestamp ASC;
+                ORDER BY index_type, timestamp ASC;
             `;
             params = [input.level, input.id, input.selectedPeriod.start, input.selectedPeriod.end];
         }
 
         const res = await client.query(query, params);
 
+        // Group by index_type
+        const grouped: Record<string, { timestamp: string; value: number }[]> = {};
+        for (const row of res.rows) {
+            const type = row.index_type;
+            if (!grouped[type]) grouped[type] = [];
+            grouped[type].push({
+                timestamp: row.timestamp,
+                value: parseFloat(row.value),
+            });
+        }
+
         return {
             statusCode: 200,
             body: JSON.stringify({
                 level: input.level,
                 id: input.id,
-                records: res.rows,
+                records: grouped, // grouped by index_type
             }),
         };
     } catch (err) {
-        console.error("Error fetching pollutant data:", err);
+        console.error("Error fetching AQI data:", err);
         return {
             statusCode: 500,
             body: JSON.stringify({ error: (err as Error).message }),
