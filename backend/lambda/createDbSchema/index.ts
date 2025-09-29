@@ -134,7 +134,8 @@ export const handler = async () => {
                 id SERIAL PRIMARY KEY,
                 tile_id INT NOT NULL,
                 timestamp TIMESTAMP NOT NULL,
-                ingestion_timestamp TIMESTAMP NOT NULL
+                ingestion_timestamp TIMESTAMP NOT NULL,
+                CONSTRAINT uq_aq_records_tile_timestamp UNIQUE (tile_id, timestamp)
             );
         `);
         
@@ -157,7 +158,14 @@ export const handler = async () => {
                 no2_value DOUBLE PRECISION,
                 so2_value DOUBLE PRECISION,
                 o3_value DOUBLE PRECISION,
-                co_value DOUBLE PRECISION
+                co_value DOUBLE PRECISION, 
+                pm25_impact TEXT,
+                pm10_impact TEXT,
+                no2_impact TEXT,
+                so2_impact TEXT,
+                o3_impact TEXT,
+                co_impact TEXT, 
+                CONSTRAINT uq_pollutant_record_tile UNIQUE (record_id, tile_id)
             );
         `);
 
@@ -173,7 +181,8 @@ export const handler = async () => {
                 dominant_pollutant VARCHAR(50) NOT NULL,
                 timestamp TIMESTAMP NOT NULL,
                 ingestion_timestamp TIMESTAMP NOT NULL,
-                value INT
+                value INT,
+                CONSTRAINT uq_aqi_record_tile_index UNIQUE (record_id, tile_id, index_type)
             );
         `);
 
@@ -191,7 +200,8 @@ export const handler = async () => {
                 tile_id INT NOT NULL,
                 timestamp TIMESTAMP NOT NULL,
                 ingestion_timestamp TIMESTAMP NOT NULL,
-                recommendations JSONB NOT NULL
+                recommendations JSONB NOT NULL,
+                CONSTRAINT uq_health_record_tile UNIQUE (record_id, tile_id)
             );
         `);
 
