@@ -195,6 +195,24 @@ export class ApiComputeStack extends cdk.Stack {
         );
         props!.dbSecret.grantRead(fetchAqiDataFunction);
 
+        // Fetch AQI data
+        const fetchCurrentAirQualityInfoFunction = new lambdaNodejs.NodejsFunction(
+            this, 
+            'fetchCurrentAirQualityInfoFunction', {
+                entry: '../backend/lambda/fetchCurrentAirQualityInfo/index.ts',
+                runtime: lambda.Runtime.NODEJS_18_X,
+                handler: 'index.handler',
+                timeout: cdk.Duration.minutes(10),
+                memorySize: 512,
+                layers: [aqiLayer, utilsLayer],
+                environment: {
+                    DB_SECRET_ARN: props!.dbSecret.secretArn,
+                    DB_NAME: props!.databaseName
+                },
+            }
+        );
+        props!.dbSecret.grantRead(fetchCurrentAirQualityInfoFunction);
+
         // Add API Gateway
         const httpApi = new apigatewayv2.HttpApi(
             this, 
@@ -277,6 +295,16 @@ export class ApiComputeStack extends cdk.Stack {
             integration: new integrations.HttpLambdaIntegration(
                 'fetchAqiDataFunction', 
                 fetchAqiDataFunction, 
+            ), 
+        });
+
+        // fetchCurrentAirQualityInfo
+        httpApi.addRoutes({
+            path: '/fetchCurrentAirQualityInfo', 
+            methods: [apigatewayv2.HttpMethod.POST], 
+            integration: new integrations.HttpLambdaIntegration(
+                'fetchCurrentAirQualityInfoFunction', 
+                fetchCurrentAirQualityInfoFunction, 
             ), 
         });
     }
