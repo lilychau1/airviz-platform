@@ -195,7 +195,7 @@ export class ApiComputeStack extends cdk.Stack {
         );
         props!.dbSecret.grantRead(fetchAqiDataFunction);
 
-        // Fetch AQI data
+        // Fetch Air Quality information
         const fetchCurrentAirQualityInfoFunction = new lambdaNodejs.NodejsFunction(
             this, 
             'fetchCurrentAirQualityInfoFunction', {
@@ -212,6 +212,24 @@ export class ApiComputeStack extends cdk.Stack {
             }
         );
         props!.dbSecret.grantRead(fetchCurrentAirQualityInfoFunction);
+
+        // Fetch Air Quality information
+        const fetchTileHealthRecommendationsFunction = new lambdaNodejs.NodejsFunction(
+            this, 
+            'fetchTileHealthRecommendationsFunction', {
+                entry: '../backend/lambda/fetchTileHealthRecommendations/index.ts',
+                runtime: lambda.Runtime.NODEJS_18_X,
+                handler: 'index.handler',
+                timeout: cdk.Duration.minutes(10),
+                memorySize: 512,
+                layers: [aqiLayer, utilsLayer],
+                environment: {
+                    DB_SECRET_ARN: props!.dbSecret.secretArn,
+                    DB_NAME: props!.databaseName
+                },
+            }
+        );
+        props!.dbSecret.grantRead(fetchTileHealthRecommendationsFunction);
 
         // Add API Gateway
         const httpApi = new apigatewayv2.HttpApi(
@@ -305,6 +323,16 @@ export class ApiComputeStack extends cdk.Stack {
             integration: new integrations.HttpLambdaIntegration(
                 'fetchCurrentAirQualityInfoFunction', 
                 fetchCurrentAirQualityInfoFunction, 
+            ), 
+        });
+
+        // fetchTileHealthRecommendations
+        httpApi.addRoutes({
+            path: '/fetchTileHealthRecommendations', 
+            methods: [apigatewayv2.HttpMethod.POST], 
+            integration: new integrations.HttpLambdaIntegration(
+                'fetchTileHealthRecommendationsFunction', 
+                fetchTileHealthRecommendationsFunction, 
             ), 
         });
     }
