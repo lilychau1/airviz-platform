@@ -5,9 +5,9 @@ import { getSecret } from "/opt/nodejs/utils";
 interface Input {
     level: "tile" | "borough";
     id: number;
-    selectedPeriod: {
-        start: string; // ISO string of period start
-        end: string; // ISO string of period end
+    selectedTimestampPeriod: {
+        start: number; // UTC timestamp of period start
+        end: number; // UTC timestamp of period end
     };
 }
 
@@ -17,7 +17,7 @@ export const handler = async (event: APIGatewayProxyEventV2) => {
     try {
         const input: Input = JSON.parse(event.body || "{}");
 
-        if (!input.level || !input.id || !input.selectedPeriod?.start || !input.selectedPeriod?.end) {
+        if (!input.level || !input.id || !input.selectedTimestampPeriod?.start || !input.selectedTimestampPeriod?.end) {
             return { statusCode: 400, body: JSON.stringify({ error: "Missing required parameters" }) };
         }
 
@@ -39,28 +39,39 @@ export const handler = async (event: APIGatewayProxyEventV2) => {
 
         let query: string;
         let params: any[];
-
+        let selectedPeriodStart = new Date(input.selectedTimestampPeriod.start).toISOString();
+        let selectedPeriodEnd = new Date(input.selectedTimestampPeriod.end).toISOString();
+        
         if (input.level === "tile") {
             query = `
-                SELECT tile_id AS id, timestamp,
-                       pm25_value, pm10_value, no2_value, so2_value, o3_value, co_value
-                FROM pollutant_concentration
-                WHERE tile_id = $1
-                  AND timestamp BETWEEN $2 AND $3
-                ORDER BY timestamp ASC;
+            SELECT tile_id AS id, timestamp,
+                pm25_value, pm10_value, no2_value, so2_value, o3_value, co_value
+            FROM pollutant_concentration
+            WHERE tile_id = $1
+              AND timestamp BETWEEN $2 AND $3
+            ORDER BY timestamp ASC;
             `;
-            params = [input.id, input.selectedPeriod.start, input.selectedPeriod.end];
+            params = [
+                input.id,
+                selectedPeriodStart,
+                selectedPeriodEnd
+            ];
         } else {
             query = `
-                SELECT region_id AS id, timestamp,
-                       pm25_value, pm10_value, no2_value, so2_value, o3_value, co_value
-                FROM regional_aggregates
-                WHERE level = $1
-                  AND region_id = $2
-                  AND timestamp BETWEEN $3 AND $4
-                ORDER BY timestamp ASC;
+            SELECT region_id AS id, timestamp,
+                pm25_value, pm10_value, no2_value, so2_value, o3_value, co_value
+            FROM regional_aggregates
+            WHERE level = $1
+              AND region_id = $2
+              AND timestamp BETWEEN $3 AND $4
+            ORDER BY timestamp ASC;
             `;
-            params = [input.level, input.id, input.selectedPeriod.start, input.selectedPeriod.end];
+            params = [
+                input.level,
+                input.id,
+                selectedPeriodStart,
+                selectedPeriodEnd
+            ];
         }
 
         const res = await client.query(query, params);
