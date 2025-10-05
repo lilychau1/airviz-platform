@@ -3,8 +3,6 @@
   import ChartLib from "chart.js/auto";
   import type { Chart } from "chart.js";
   import { fetchPollutantData } from "../../../api/MockLambdaApi";
-  import { Pollutants } from "../../constants";
-  import { filterByTimeRange } from "../../utils/utils";
 
   export let tileId: number;
 

@@ -15,7 +15,7 @@
         fetchAllRegions, 
         fetchPollutantData
     } from '../../api/MockLambdaApi'
-    import { Pollutants, type RegionUnit, type Coordinates, LevelCategory } from '../constants';
+    import { type RegionUnit, type Coordinates, LevelCategory } from '../constants';
     import { fetchCurrentLocation, filterByTimeRange } from '../utils/utils';
 
     const mapTilerAPIKey: string = import.meta.env.VITE_MAPTILER_API_KEY as string;
