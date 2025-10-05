@@ -91,7 +91,7 @@ export const handler = async (event: APIGatewayProxyEventV2) => {
                 ) VALUES (
                     $1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11,$12,$13,NOW()
                 )
-                ON CONFLICT (level, region_id) DO UPDATE SET
+                ON CONFLICT (level, timestamp, region_id) DO UPDATE SET
                     aqi = EXCLUDED.aqi,
                     category = EXCLUDED.category,
                     dominant_pollutant = EXCLUDED.dominant_pollutant,

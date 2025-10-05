@@ -5,7 +5,7 @@ import { getSecret } from "/opt/nodejs/utils";
 interface Input {
     level: "tile" | "borough";
     id: number;
-    selectedPeriod: {
+    selectedTimestampPeriod: {
         start: string;
         end: string;
     };
@@ -17,7 +17,7 @@ export const handler = async (event: APIGatewayProxyEventV2) => {
     try {
         const input: Input = JSON.parse(event.body || "{}");
 
-        if (!input.level || !input.id || !input.selectedPeriod?.start || !input.selectedPeriod?.end) {
+        if (!input.level || !input.id || !input.selectedTimestampPeriod?.start || !input.selectedTimestampPeriod?.end) {
             return { statusCode: 400, body: JSON.stringify({ error: "Missing required parameters" }) };
         }
 
@@ -39,7 +39,9 @@ export const handler = async (event: APIGatewayProxyEventV2) => {
 
         let query: string;
         let params: any[];
-
+        let selectedPeriodStart = new Date(input.selectedTimestampPeriod.start).toISOString();
+        let selectedPeriodEnd = new Date(input.selectedTimestampPeriod.end).toISOString();
+        
         if (input.level === "tile") {
             query = `
                 SELECT 
@@ -52,7 +54,7 @@ export const handler = async (event: APIGatewayProxyEventV2) => {
                   AND timestamp BETWEEN $2 AND $3
                 ORDER BY index_type, timestamp ASC;
             `;
-            params = [input.id, input.selectedPeriod.start, input.selectedPeriod.end];
+            params = [input.id, selectedPeriodStart, selectedPeriodEnd];
         } else {
             query = `
                 SELECT 
@@ -67,7 +69,7 @@ export const handler = async (event: APIGatewayProxyEventV2) => {
                   AND timestamp BETWEEN $3 AND $4
                 ORDER BY index_type, timestamp ASC;
             `;
-            params = [input.level, input.id, input.selectedPeriod.start, input.selectedPeriod.end];
+            params = [input.level, input.id, selectedPeriodStart, selectedPeriodEnd];
         }
 
         const res = await client.query(query, params);

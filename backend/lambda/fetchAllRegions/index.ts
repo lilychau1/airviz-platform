@@ -103,68 +103,65 @@ export const handler = async (event: APIGatewayProxyEventV2) => {
 
         const ids = nearby.map((r: RegionRow) => r.id);
         const inputTime = new Date(input.timestamp);
-        const exactHour = isExactHour(inputTime);
+        const isTimestampExactHour = isExactHour(inputTime);
 
         let query: string;
         let params: any[] = [ids];
 
-        if (exactHour) {
-        // Compute hour window
-        const endTime = inputTime.toISOString();
-        const startTime = new Date(inputTime.getTime() - 60 * 60 * 1000).toISOString(); // minus 1 hour
-        params = [ids, startTime, endTime];
+        // If the input timestamp is not on the hour, fetch the latest record for the last full hour
+        if (isTimestampExactHour) {
+            params = [ids, inputTime.toISOString()];
+        } else {
+            // Compute the last full hour before inputTime
+            const lastFullHour = new Date(inputTime);
+            lastFullHour.setUTCMinutes(0, 0, 0);
+            lastFullHour.setUTCHours(lastFullHour.getUTCHours() - 1);
 
+            console.log('Input time:', inputTime.toISOString());
+            console.log('Last full hour:', lastFullHour.toISOString());
+
+            lastFullHour.setUTCMinutes(0, 0, 0);
+            params = [ids, lastFullHour.toISOString()];
+        }
         query = `
-            WITH ranked_records AS (
+            WITH latest_records AS (
             SELECT
                 id,
                 tile_id,
                 timestamp,
-                ingestion_timestamp,
-                ROW_NUMBER() OVER (
-                PARTITION BY tile_id
-                ORDER BY timestamp DESC, ingestion_timestamp DESC
-                ) AS rn
+                ingestion_timestamp
             FROM aq_records
             WHERE tile_id = ANY($1::int[])
-                AND timestamp >= $2::timestamptz
-                AND timestamp <  $3::timestamptz
+              AND timestamp = $2::timestamptz
+            ),
+            avg_colour AS (
+            SELECT
+                aqi.record_id,
+                AVG((aqi.colour_code->>'red')::float) AS red,
+                AVG((aqi.colour_code->>'green')::float) AS green,
+                AVG((aqi.colour_code->>'blue')::float) AS blue
+            FROM air_quality_index aqi
+            WHERE aqi.record_id IN (SELECT id FROM latest_records)
+            GROUP BY aqi.record_id
             )
             SELECT
             t.id,
             t.location[0] AS longitude,
             t.location[1] AS latitude,
-            aqi.colour_code
+            CASE
+                WHEN avg_colour.record_id IS NOT NULL THEN
+                jsonb_build_object(
+                    'red', avg_colour.red,
+                    'green', avg_colour.green,
+                    'blue', avg_colour.blue
+                )
+                ELSE NULL
+            END AS colour_code
             FROM ${table} t
-            LEFT JOIN ranked_records r ON t.id = r.tile_id AND r.rn = 1
-            LEFT JOIN air_quality_index aqi ON aqi.record_id = r.id
+            LEFT JOIN latest_records r ON t.id = r.tile_id
+            LEFT JOIN avg_colour ON avg_colour.record_id = r.id
             WHERE t.id = ANY($1::int[]);
         `;
-        } else {
-        // Default: latest records overall
-        query = `
-            WITH ranked_records AS (
-            SELECT
-                id,
-                tile_id,
-                ROW_NUMBER() OVER (
-                PARTITION BY tile_id
-                ORDER BY timestamp DESC, ingestion_timestamp DESC
-                ) AS rn
-            FROM aq_records
-            WHERE tile_id = ANY($1::int[])
-            )
-            SELECT
-            t.id,
-            t.location[0] AS longitude,
-            t.location[1] AS latitude,
-            aqi.colour_code
-            FROM ${table} t
-            LEFT JOIN ranked_records r ON t.id = r.tile_id AND r.rn = 1
-            LEFT JOIN air_quality_index aqi ON aqi.record_id = r.id
-            WHERE t.id = ANY($1::int[]);
-        `;
-        }
 
         const latestRes = await client.query(query, params);
 
