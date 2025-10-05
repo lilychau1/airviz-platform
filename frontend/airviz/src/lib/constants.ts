@@ -31,11 +31,22 @@ export interface RegionUnit {
     currentAqiColour: Colour
 }
 
-export interface PollutantRecord {
+export interface PollutantRecord_old {
     pollutantId: PollutantId; 
     timestamp: string; 
     value: number;
     unit: PollutantUnitId;
+}
+
+export interface PollutantRecord {
+    id: number; 
+    timestamp: string; 
+    pm25Value: number;
+    pm10Value: number;
+    no2Value: number;
+    so2Value: number;
+    o3Value: number;
+    coValue: number;
 }
 
 export interface PollutantCurrentRecord extends PollutantRecord {

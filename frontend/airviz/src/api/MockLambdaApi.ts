@@ -35,12 +35,12 @@ export async function fetchAllRegions(
 export async function fetchPollutantData(
     level: string, 
     id: number, 
-    pollutantId: PollutantId
+    selectedTimestampPeriod: {start: number, end: number},
 ): Promise<PollutantRecord[]> {
     // TODO: no pollutantId, fetch all at once
-    const resp = await fetch(`/sample-responses/${level}/${id}/${pollutantId}.json`); 
+    const resp = await fetch(`/sample-responses/fetchPollutantData-${level}.json`); 
     if (!resp.ok) {
-        throw new Error(`Failed to load ${pollutantId} data for ${level} ${id}`); 
+        throw new Error(`Failed to load pollutant data for ${level} ${id}`); 
     }
 
     return resp.json() as Promise<PollutantRecord[]>;

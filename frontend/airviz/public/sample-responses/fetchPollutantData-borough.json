@@ -4,13 +4,43 @@
     "records": [
         {
             "id": 1,
-            "timestamp": "2025-10-05T13:00:00.000Z",
-            "pm25_value": 3.33,
-            "pm10_value": 10.77,
-            "no2_value": 3.37,
-            "so2_value": 0.35,
-            "o3_value": 28.36,
-            "co_value": 80.05
+            "timestamp": "2025-10-05T14:00:00.000Z",
+            "pm25Value": 3.42,
+            "pm10Value": 10.38,
+            "no2Value": 3.33,
+            "so2Value": 0.43,
+            "o3Value": 29.59,
+            "coValue": 88.93
+        },
+        {
+            "id": 1,
+            "timestamp": "2025-10-05T15:00:00.000Z",
+            "pm25Value": 3.58,
+            "pm10Value": 8.61,
+            "no2Value": 3.02,
+            "so2Value": 0.42,
+            "o3Value": 31.47,
+            "coValue": 99.1
+        },
+        {
+            "id": 1,
+            "timestamp": "2025-10-05T16:00:00.000Z",
+            "pm25Value": 9.07,
+            "pm10Value": 9.07,
+            "no2Value": 3.31,
+            "so2Value": 0.4,
+            "o3Value": 30.5,
+            "coValue": 81.33
+        },
+        {
+            "id": 1,
+            "timestamp": "2025-10-05T19:00:00.000Z",
+            "pm25Value": 2.44,
+            "pm10Value": 4.6,
+            "no2Value": 3.9,
+            "so2Value": 0.33,
+            "o3Value": 30.44,
+            "coValue": 107.98
         }
     ]
 }

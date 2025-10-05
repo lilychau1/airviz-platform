@@ -1,4 +1,4 @@
-import { type PollutantId, type Coordinates, type PollutantRecord, type RegionUnit, type TilePopupInformation, type TileDetails, type CurrentAirQualityInfo, HealthImpacts, type PollutantCurrentRecord, type AqiRecord, type AqiTypeId, type HealthRecommendationRecord, type TileMetadata, type RegionPopupInformation, type RegionLevel, type DetailsReturnTypeForRegionLevel, type PopupInfoReturnTypeForRegionLevel} from "../lib/constants";
+import { type PollutantId, type Coordinates, type PollutantRecord_old, type RegionUnit, type TilePopupInformation, type TileDetails, type CurrentAirQualityInfo, HealthImpacts, type PollutantCurrentRecord, type AqiRecord, type AqiTypeId, type HealthRecommendationRecord, type TileMetadata, type RegionPopupInformation, type RegionLevel, type DetailsReturnTypeForRegionLevel, type PopupInfoReturnTypeForRegionLevel} from "../lib/constants";
 import type { FeatureCollection } from 'geojson';
 
 // Fetch current location
@@ -57,14 +57,14 @@ export async function fetchPollutantData(
     level: string, 
     id: number, 
     pollutantId: PollutantId
-): Promise<PollutantRecord[]> {
+): Promise<PollutantRecord_old[]> {
     // TODO: no pollutantId, fetch all at once
     const resp = await fetch(`/mock/${level}/${id}/${pollutantId}.json`); 
     if (!resp.ok) {
         throw new Error(`Failed to load ${pollutantId} data for ${level} ${id}`); 
     }
 
-    return resp.json() as Promise<PollutantRecord[]>;
+    return resp.json() as Promise<PollutantRecord_old[]>;
 }
 
 // Fetch tile information
