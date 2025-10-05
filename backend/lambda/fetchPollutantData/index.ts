@@ -44,27 +44,27 @@ export const handler = async (event: APIGatewayProxyEventV2) => {
         
         if (input.level === "tile") {
             query = `
-            SELECT tile_id AS id, timestamp,
+                SELECT tile_id AS id, timestamp,
                 pm25_value, pm10_value, no2_value, so2_value, o3_value, co_value
-            FROM pollutant_concentration
-            WHERE tile_id = $1
-              AND timestamp BETWEEN $2 AND $3
-            ORDER BY timestamp ASC;
+                FROM pollutant_concentration
+                WHERE tile_id = $1
+                AND timestamp BETWEEN $2 AND $3
+                ORDER BY timestamp ASC;
             `;
             params = [
-                input.id,
-                selectedPeriodStart,
-                selectedPeriodEnd
+            input.id,
+            selectedPeriodStart,
+            selectedPeriodEnd
             ];
         } else {
             query = `
-            SELECT region_id AS id, timestamp,
+                SELECT region_id AS id, timestamp,
                 pm25_value, pm10_value, no2_value, so2_value, o3_value, co_value
-            FROM regional_aggregates
-            WHERE level = $1
-              AND region_id = $2
-              AND timestamp BETWEEN $3 AND $4
-            ORDER BY timestamp ASC;
+                FROM regional_aggregates
+                WHERE level = $1
+                AND region_id = $2
+                AND timestamp BETWEEN $3 AND $4
+                ORDER BY timestamp ASC;
             `;
             params = [
                 input.level,
@@ -76,12 +76,24 @@ export const handler = async (event: APIGatewayProxyEventV2) => {
 
         const res = await client.query(query, params);
 
+        // Convert snake_case keys to camelCase
+        const toCamel = (str: string) =>
+            str.replace(/_([a-z])/g, (_, c) => c.toUpperCase());
+
+        const records = res.rows.map(row => {
+            const newRow: any = {};
+            for (const key in row) {
+                newRow[toCamel(key)] = row[key];
+            }
+            return newRow;
+        });
+
         return {
             statusCode: 200,
             body: JSON.stringify({
-                level: input.level,
-                id: input.id,
-                records: res.rows,
+            level: input.level,
+            id: input.id,
+            records,
             }),
         };
     } catch (err) {

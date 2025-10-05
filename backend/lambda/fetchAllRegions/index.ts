@@ -115,7 +115,6 @@ export const handler = async (event: APIGatewayProxyEventV2) => {
             // Compute the last full hour before inputTime
             const lastFullHour = new Date(inputTime);
             lastFullHour.setUTCMinutes(0, 0, 0);
-            lastFullHour.setUTCHours(lastFullHour.getUTCHours() - 1);
 
             console.log('Input time:', inputTime.toISOString());
             console.log('Last full hour:', lastFullHour.toISOString());
