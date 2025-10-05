@@ -5,13 +5,15 @@
     import ChartLib from "chart.js/auto";
     import type { Chart } from "chart.js";
 
-    import { 
-        fetchAllRegions, 
-        fetchPollutantData, 
+    import {
         fetchMapRadius, 
         fetchPopupInformation, 
         loadRegionalGeoJSON
     } from '../../api/MockApi';
+    import { 
+        fetchAllRegions, 
+        fetchPollutantData
+    } from '../../api/MockLambdaApi'
     import { Pollutants, type RegionUnit, type Coordinates, LevelCategory, type RegionLevel, type PopupInfoReturnTypeForRegionLevel, type RegionPopupInformation } from '../constants';
     import { fetchCurrentLocation, filterByTimeRange } from '../utils/utils';
     
@@ -519,33 +521,13 @@
 
             try {
                 // Placeholder: Fetch last 24 hours' records for the specific region ID, PM2.5 and PM10 pollutants
-                const [
-                    pm25Data, 
-                    pm10Data, 
-                    no2Data, 
-                    coData, 
-                    o3Data, 
-                    so2Data, 
-                ] = await Promise.all([
-                    fetchPollutantData(regionLevel, regionId, Pollutants.PM25.id), 
-                    fetchPollutantData(regionLevel, regionId, Pollutants.PM10.id), 
-                    fetchPollutantData(regionLevel, regionId, Pollutants.NO2.id), 
-                    fetchPollutantData(regionLevel, regionId, Pollutants.CO.id), 
-                    fetchPollutantData(regionLevel, regionId, Pollutants.O3.id), 
-                    fetchPollutantData(regionLevel, regionId, Pollutants.SO2.id), 
-                ]);
-
                 const showHours = 24;
                 const cutoff = selectedTimestamp - showHours * 60 * 60 * 1000; 
+                const selectedTimestampPeriod = {start: cutoff, end: selectedTimestamp};
 
-                const filteredPm25 = filterByTimeRange(pm25Data, cutoff, selectedTimestamp); 
-                const filteredPm10 = filterByTimeRange(pm10Data, cutoff, selectedTimestamp); 
-                const filteredNo2 = filterByTimeRange(no2Data, cutoff, selectedTimestamp); 
-                const filteredCo = filterByTimeRange(coData, cutoff, selectedTimestamp); 
-                const filteredO3 = filterByTimeRange(o3Data, cutoff, selectedTimestamp); 
-                const filteredSo2 = filterByTimeRange(so2Data, cutoff, selectedTimestamp); 
+                const pollutantData = await fetchPollutantData(regionLevel, regionId, selectedTimestampPeriod);
 
-                const labels = filteredPm25.map(d => new Date(d.timestamp).toLocaleTimeString([], {
+                const labels = pollutantData.map(d => new Date(d.timestamp).toLocaleTimeString([], {
                     hour: '2-digit', 
                     minute: '2-digit'
                 }));
@@ -569,7 +551,7 @@
                             datasets: [
                                 {
                                     label: 'PM2.5 (µg/m³)',
-                                    data: filteredPm25.map(d => d.value),
+                                    data: pollutantData.map(d => d.pm25Value),
                                     yAxisID: 'y-left',
                                     borderColor: 'rgba(255, 99, 132, 1)', 
                                     backgroundColor: 'rgba(255, 99, 132, 0.2)',
@@ -578,7 +560,7 @@
                                 },
                                 {
                                     label: 'PM10 (µg/m³)',
-                                    data: filteredPm10.map(d => d.value),
+                                    data: pollutantData.map(d => d.pm10Value),
                                     yAxisID: 'y-left',
                                     borderColor: 'rgba(54, 162, 235, 1)',
                                     backgroundColor: 'rgba(54, 162, 235, 0.2)',
@@ -587,7 +569,7 @@
                                 },
                                 {
                                     label: 'NO2 (ppb)',
-                                    data: filteredNo2.map(d => d.value),
+                                    data: pollutantData.map(d => d.no2Value),
                                     yAxisID: 'y-right',
                                     borderColor: 'rgba(255, 206, 86, 1)', 
                                     backgroundColor: 'rgba(255, 206, 86, 0.2)',
@@ -596,7 +578,7 @@
                                 },
                                 {
                                     label: 'CO (ppb)',
-                                    data: filteredCo.map(d => d.value),
+                                    data: pollutantData.map(d => d.coValue),
                                     yAxisID: 'y-right',
                                     borderColor: 'rgba(153, 102, 255, 1)',
                                     backgroundColor: 'rgba(153, 102, 255, 0.2)',
@@ -605,7 +587,7 @@
                                 },
                                 {
                                     label: 'O3 (ppb)',
-                                    data: filteredO3.map(d => d.value),
+                                    data: pollutantData.map(d => d.o3Value),
                                     yAxisID: 'y-right',
                                     borderColor: 'rgba(255, 159, 64, 1)',
                                     backgroundColor: 'rgba(255, 159, 64, 0.2)',
@@ -614,7 +596,7 @@
                                 },
                                 {
                                     label: 'SO2 (ppb)',
-                                    data: filteredSo2.map(d => d.value),
+                                    data: pollutantData.map(d => d.so2Value),
                                     yAxisID: 'y-right',
                                     borderColor: 'rgba(75, 192, 192, 1)',
                                     backgroundColor: 'rgba(75, 192, 192, 0.2)',

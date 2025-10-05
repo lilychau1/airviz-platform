@@ -39,11 +39,14 @@ export async function fetchPollutantData(
 ): Promise<PollutantRecord[]> {
     // TODO: no pollutantId, fetch all at once
     const resp = await fetch(`/sample-responses/fetchPollutantData-${level}.json`); 
+    const data = await resp.json();
+    const allRecords: PollutantRecord[] = data["records"];
+
     if (!resp.ok) {
         throw new Error(`Failed to load pollutant data for ${level} ${id}`); 
     }
 
-    return resp.json() as Promise<PollutantRecord[]>;
+    return allRecords;
 }
 
 // Fetch tile information
