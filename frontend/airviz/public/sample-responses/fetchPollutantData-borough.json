@@ -1,0 +1,16 @@
+{
+    "level": "borough",
+    "id": 1,
+    "records": [
+        {
+            "id": 1,
+            "timestamp": "2025-10-05T13:00:00.000Z",
+            "pm25_value": 3.33,
+            "pm10_value": 10.77,
+            "no2_value": 3.37,
+            "so2_value": 0.35,
+            "o3_value": 28.36,
+            "co_value": 80.05
+        }
+    ]
+}

@@ -6,11 +6,12 @@
     import type { Chart } from "chart.js";
 
     import { 
-        fetchAllRegions, 
+        // fetchAllRegions, 
         fetchPollutantData, 
         fetchMapRadius, 
         fetchPopupInformation 
     } from '../../api/MockApi';
+    import { fetchAllRegions } from '../../api/MockLambdaApi'
     import { Pollutants, type RegionUnit, type Coordinates, LevelCategory } from '../constants';
     import { fetchCurrentLocation, filterByTimeRange } from '../utils/utils';
 
@@ -424,16 +425,28 @@
     }
 
     $: if (sliderHour !== undefined) {
-        selectedTimestamp = now - sliderHour * 3600 * 1000;
-        refreshTiles();
+        const currentDate = new Date(now);
+
+        // Snap the base time ("now") to the latest full hour
+        const roundedNow = new Date(currentDate);
+        roundedNow.setMinutes(0, 0, 0);
+
+        // Subtract the number of hours from the snapped base
+        const adjustedDate = new Date(roundedNow);
+        adjustedDate.setHours(roundedNow.getHours() - sliderHour);
+
+        selectedTimestamp = adjustedDate.getTime();
+
+        console.log(`Selected timestamp updated to: ${adjustedDate.toISOString()}`);
     }
+
 </script>
 
 <div class="map-wrapper">
     <div id="map" class="map-landing-container"></div>
 
     <div class="time-slider-container">
-        <label for="timeSlider">Show Hour: {24 - sliderHour}h ago</label>
+        <label for="timeSlider">Show Hour: {sliderHour}h ago</label>
         <input 
             id="timeSlider" 
             type="range" 

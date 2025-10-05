@@ -1,0 +1,16 @@
+{
+    "level": "tile",
+    "id": 42,
+    "records": [
+        {
+            "id": 42,
+            "timestamp": "2025-10-05T13:00:00.000Z",
+            "pm25_value": 5.22,
+            "pm10_value": 16.69,
+            "no2_value": 6.94,
+            "so2_value": 0.21,
+            "o3_value": 27.18,
+            "co_value": 76.35
+        }
+    ]
+}

@@ -28,7 +28,7 @@
     let regionLevel: RegionLevel = 'borough'
 
     // placeholder date for testing
-    const now = new Date("2025-08-11T20:00:00Z").getTime();
+    const now = new Date("2025-08-11T20:20:00Z").getTime();
     let sliderHour = 0;
     let selectedTimestamp = now;
 
@@ -713,8 +713,21 @@
     }
 
     $: if (sliderHour !== undefined) {
-        selectedTimestamp = now - sliderHour * 3600 * 1000;
+        const currentDate = new Date(now);
+
+        // Snap the base time ("now") to the latest full hour
+        const roundedNow = new Date(currentDate);
+        roundedNow.setMinutes(0, 0, 0);
+
+        // Subtract the number of hours from the snapped base
+        const adjustedDate = new Date(roundedNow);
+        adjustedDate.setHours(roundedNow.getHours() - sliderHour);
+
+        selectedTimestamp = adjustedDate.getTime();
+
+        console.log(`Selected timestamp updated to: ${adjustedDate.toISOString()}`);
     }
+
     $: if (map && selectedTimestamp !== undefined) {
         refreshRegions();
     }
@@ -725,7 +738,7 @@
     <div id="map" class="map-landing-container"></div>
 
     <div class="time-slider-container">
-        <label for="timeSlider">Show Hour: {24 - sliderHour}h ago</label>
+        <label for="timeSlider">Show Hour: {sliderHour}h ago</label>
         <input 
             id="timeSlider" 
             type="range" 
@@ -733,6 +746,7 @@
             max="23" 
             bind:value={sliderHour} 
             step="1" 
+            style="direction: rtl;" 
         />
         <div class="time-slider-timestamp">
             {new Date(selectedTimestamp).toLocaleString()}
