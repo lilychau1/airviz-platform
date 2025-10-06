@@ -180,11 +180,9 @@ export interface AqiRecord {
     value: number;
 }
 
-export interface HealthRecommendationRecord {
-    id: number;
-    demographic: string;
-    recommendation: string;
-}
+export type HealthRecommendationRecord = { 
+    [demographic: string]: string 
+};
 
 export const staticMetadata = {
     dataSource: "Google Air Quality",

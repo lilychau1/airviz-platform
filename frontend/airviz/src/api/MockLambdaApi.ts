@@ -10,7 +10,8 @@ import {
     type DetailsReturnTypeForRegionLevel, 
     type PopupInfoReturnTypeForRegionLevel, 
     type CurrentAirQualityInfo, 
-    type PollutantCurrentRecord
+    type PollutantCurrentRecord,
+    type HealthRecommendationRecord
 } from "../lib/constants";
 import type { FeatureCollection } from 'geojson';
 
@@ -154,12 +155,13 @@ export async function fetchAqiData(
 export async function fetchTileHealthRecommendations(
     tileId: number
 ): Promise<HealthRecommendationRecord[]> {
-    const resp = await fetch(`/sample-responses/tile/${tileId}/health-recommendations.json`); 
+    const resp = await fetch(`/sample-responses/fetchTileHealthRecommendations.json`); 
     if (!resp.ok) {
         throw new Error(`Failed to load health recommendation data for tile ${tileId}`); 
     }
 
-    return resp.json() as Promise<HealthRecommendationRecord[]>;
+    const data = await resp.json();
+    return data["recommendations"] as HealthRecommendationRecord[];
 }
 
 // Fetch metadata

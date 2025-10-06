@@ -1,7 +1,7 @@
 <script lang="ts">
     import { onMount } from "svelte";
     import type { HealthRecommendationRecord } from "../../constants";
-    import { fetchTileHealthRecommendations } from "../../../api/MockApi";
+    import { fetchTileHealthRecommendations } from "../../../api/MockLambdaApi";
 
     export let tileId: number;
 
@@ -11,18 +11,26 @@
     let currentPage = 0;
     const cardsPerPage = 3;
 
-    $: totalPages = Math.ceil(recommendations.length / cardsPerPage);
+    $: recommendationsArray = recommendations && !Array.isArray(recommendations)
+        ? Object.entries(recommendations).map(([demographic, recommendation], idx) => ({
+            id: idx + 1,
+            demographic,
+            recommendation
+        }))
+        : recommendations;
 
-    $: currentCards = recommendations.slice(
+    $: totalPages = Math.ceil((recommendationsArray?.length || 0) / cardsPerPage);
+
+    $: currentCards = (recommendationsArray || []).slice(
         currentPage * cardsPerPage,
         currentPage * cardsPerPage + cardsPerPage
     );
 
     async function loadRecommendations() {
         try {
-        recommendations = await fetchTileHealthRecommendations(tileId);
+            recommendations = await fetchTileHealthRecommendations(tileId);
         } catch (error) {
-        console.error("Error loading health recommendations:", error);
+            console.error("Error loading health recommendations:", error);
         }
     }
 
