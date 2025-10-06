@@ -1,6 +1,7 @@
 import { Client } from "pg";
 import { APIGatewayProxyEventV2 } from 'aws-lambda';
 import { getSecret } from '/opt/nodejs/utils';
+import { rateAqiDict } from '/opt/nodejs/aqiBenchmark';
 
 export interface AggregateRegionalMetricsInput {
     level: "borough"; // Extendable later
@@ -81,15 +82,87 @@ export const handler = async (event: APIGatewayProxyEventV2) => {
         const res = await client.query(aggregationQuery, [lastProcessed]);
         const finalAggregates = res.rows;
 
+        // --- last30d columns logic ---
+        const now = new Date();
+        const THIRTY_DAYS_AGO = new Date(now.getTime() - 30 * 24 * 60 * 60 * 1000);
+
+        // Fetch last 30 days records for all regions
+        const last30dRes = await client.query(`
+            SELECT
+                t.borough_id AS region_id,
+                aqi.index_type,
+                aqi.value,
+                ar.timestamp
+            FROM tiles t
+            JOIN aq_records ar ON t.id = ar.tile_id
+            JOIN air_quality_index aqi ON aqi.record_id = ar.id
+            WHERE ar.timestamp >= $1
+        `, [THIRTY_DAYS_AGO.toISOString()]);
+
+        // Group by region_id and index_type
+        const last30dMap: Record<number, Record<string, number[]>> = {};
+        for (const row of last30dRes.rows) {
+            const regionId = row.region_id;
+            const indexType = row.index_type;
+            const value = row.value;
+            if (!last30dMap[regionId]) last30dMap[regionId] = {};
+            if (!last30dMap[regionId][indexType]) last30dMap[regionId][indexType] = [];
+            last30dMap[regionId][indexType].push(value);
+        }
+
+        // Compute last30d metrics for each region
+        const last30dMetrics: Record<number, {
+            last30dUnhealthyAQIDays: Record<string, number>,
+            last30dAQIMean: Record<string, number>,
+            last30dAQIMax: Record<string, number>,
+            last30dAQIMin: Record<string, number>
+        }> = {};
+
+        for (const [regionIdStr, indexTypeMap] of Object.entries(last30dMap)) {
+            const regionId = parseInt(regionIdStr, 10);
+            const last30dUnhealthyAQIDays: Record<string, number> = {};
+            const last30dAQIMean: Record<string, number> = {};
+            const last30dAQIMax: Record<string, number> = {};
+            const last30dAQIMin: Record<string, number> = {};
+
+            for (const [indexType, values] of Object.entries(indexTypeMap)) {
+                if (values.length === 0) continue;
+                last30dAQIMean[indexType] = values.reduce((sum, v) => sum + v, 0) / values.length;
+                last30dAQIMax[indexType] = Math.max(...values);
+                last30dAQIMin[indexType] = Math.min(...values);
+                last30dUnhealthyAQIDays[indexType] = values
+                    .map(v => rateAqiDict({ [indexType]: v })![indexType]!)
+                    .reduce((sum, level) => level >= 1 ? sum + 1 : sum, 0);
+            }
+
+            last30dMetrics[regionId] = {
+                last30dUnhealthyAQIDays,
+                last30dAQIMean,
+                last30dAQIMax,
+                last30dAQIMin
+            };
+        }
+        // --- end last30d columns logic ---
+
         // Insert/update regional_aggregates table
         for (const agg of finalAggregates) {
+            const regionId = agg.region_id;
+            const metrics = last30dMetrics[regionId] || {
+                last30dUnhealthyAQIDays: {},
+                last30dAQIMean: {},
+                last30dAQIMax: {},
+                last30dAQIMin: {}
+            };
+
             await client.query(`
                 INSERT INTO regional_aggregates(
                     level, region_id, aqi, category, dominant_pollutant, colour_code,
                     pm25_value, pm10_value, no2_value, so2_value, o3_value, co_value,
-                    timestamp, update_timestamp
+                    timestamp, update_timestamp,
+                    last_30d_unhealthy_aqi_days, last_30d_aqi_mean, last_30d_aqi_max, last_30d_aqi_min
                 ) VALUES (
-                    $1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11,$12,$13,NOW()
+                    $1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11,$12,$13,NOW(),
+                    $14,$15,$16,$17
                 )
                 ON CONFLICT (level, timestamp, region_id) DO UPDATE SET
                     aqi = EXCLUDED.aqi,
@@ -103,21 +176,29 @@ export const handler = async (event: APIGatewayProxyEventV2) => {
                     o3_value = EXCLUDED.o3_value,
                     co_value = EXCLUDED.co_value,
                     timestamp = EXCLUDED.timestamp,
-                    update_timestamp = NOW()
+                    update_timestamp = NOW(),
+                    last_30d_unhealthy_aqi_days = EXCLUDED.last_30d_unhealthy_aqi_days,
+                    last_30d_aqi_mean = EXCLUDED.last_30d_aqi_mean,
+                    last_30d_aqi_max = EXCLUDED.last_30d_aqi_max,
+                    last_30d_aqi_min = EXCLUDED.last_30d_aqi_min
             `, [
                 level,
-                agg.region_id,
+                regionId,
                 JSON.stringify(agg.aqi),
                 agg.category,
                 agg.dominant_pollutant,
-                JSON.stringify({ red: agg.avg_red, green: agg.avg_green, blue: agg.avg_blue }),
+                JSON.stringify(agg.colour_code),
                 agg.pm25_value,
                 agg.pm10_value,
                 agg.no2_value,
                 agg.so2_value,
                 agg.o3_value,
                 agg.co_value,
-                agg.timestamp
+                agg.timestamp,
+                JSON.stringify(metrics.last30dUnhealthyAQIDays),
+                JSON.stringify(metrics.last30dAQIMean),
+                JSON.stringify(metrics.last30dAQIMax),
+                JSON.stringify(metrics.last30dAQIMin)
             ]);
         }
 
