@@ -1,0 +1,20 @@
+{
+    "id": 1,
+    "name": "Tile 1",
+    "region": "Greater London",
+    "boroughRegion": "Ealing",
+    "currentAqi": {
+        "uaqi": 83,
+        "gbr_defra": 1
+    },
+    "currentAqiCategoryLevel": {
+        "uaqi": 1,
+        "gbr_defra": 1
+    },
+    "currentPm25Level": 1,
+    "currentPm10Level": 1,
+    "currentNo2Level": 1,
+    "currentO3Level": 1,
+    "currentSo2Level": 1,
+    "currentCoLevel": 3
+}

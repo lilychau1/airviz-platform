@@ -7,14 +7,14 @@
 
     import {
         fetchMapRadius, 
-        fetchPopupInformation, 
         loadRegionalGeoJSON
     } from '../../api/MockApi';
     import { 
         fetchAllRegions, 
-        fetchPollutantData
+        fetchPollutantData, 
+        fetchPopupInformation, 
     } from '../../api/MockLambdaApi'
-    import { type RegionUnit, type Coordinates, LevelCategory, type RegionLevel, type PopupInfoReturnTypeForRegionLevel, type RegionPopupInformation } from '../constants';
+    import { type RegionUnit, type Coordinates, LevelCategory, type RegionLevel, type PopupInfoReturnTypeForRegionLevel } from '../constants';
     import { fetchCurrentLocation } from '../utils/utils';
     
     const mapTilerAPIKey: string = import.meta.env.VITE_MAPTILER_API_KEY as string;
@@ -37,7 +37,7 @@
     // Selected regions for comparison
     let selectedRegionIds: (number | null)[] = [null, null]; // Allow up to two selected IDs
     let comparePopup: maplibregl.Popup | null = null;
-    let compareRegionData: [RegionPopupInformation | null, RegionPopupInformation | null] = [null, null];
+    let compareRegionData: [PopupInfoReturnTypeForRegionLevel<RegionLevel> | null, PopupInfoReturnTypeForRegionLevel<RegionLevel> | null] = [null, null];
 
     async function refreshRegions() {
         // Only update if all necessary info is present. Otherwise do nothing
@@ -140,8 +140,8 @@
         regionId2: number
     ) {
         const [info1, info2] = await Promise.all([
-            fetchPopupInformation(regionLevel, regionId1) as Promise<RegionPopupInformation>,
-            fetchPopupInformation(regionLevel, regionId2) as Promise<RegionPopupInformation>,
+            fetchPopupInformation(regionLevel, regionId1) as Promise<PopupInfoReturnTypeForRegionLevel<typeof regionLevel>>,
+            fetchPopupInformation(regionLevel, regionId2) as Promise<PopupInfoReturnTypeForRegionLevel<typeof regionLevel>>,
         ]);
 
         compareRegionData = [info1, info2];
@@ -492,11 +492,26 @@
             popupContent.appendChild(regionInformationDiv); 
 
             fetchPopupInformation(regionLevel, regionId).then((data) => {
+                // Unpack AQI values and categories for all keys (e.g. uaqi, gbr_defra)
+                let aqiHtml = '';
+                if (data.currentAqi && data.currentAqiCategoryLevel) {
+                    for (const key of Object.keys(data.currentAqi)) {
+                        const aqiValue = data.currentAqi[key];
+                        const catLevel = data.currentAqiCategoryLevel[key];
+                        const cat = LevelCategory[catLevel as 1 | 2 | 3];
+                        aqiHtml += `
+                            <div>
+                                <span style="font-weight:bold">${key.toUpperCase()} AQI:</span>
+                                <span style="color: ${cat?.colour ?? 'black'}">${aqiValue}</span>
+                            </div>
+                        `;
+                    }
+                }
+
                 regionInformationDiv.innerHTML = `
                     <strong>Name: ${data.name}</strong><br>
                     Region: ${data.region}<br>
-                    View in Google Map
-                    AQI: <span style="color: ${LevelCategory[data.currentAqiCategoryLevel as 1 | 2 | 3]?.colour ?? 'black'}">${data.currentAqi}<br></span>
+                    ${aqiHtml}
                     <span style="color: ${LevelCategory[data.currentPm25Level as 1 | 2 | 3]?.colour ?? 'black'}">PM2.5</span>&nbsp;&nbsp;&nbsp;&nbsp;
                     <span style="color: ${LevelCategory[data.currentPm10Level as 1 | 2 | 3]?.colour ?? 'black'}">PM10</span>&nbsp;&nbsp;&nbsp;&nbsp;
                     <span style="color: ${LevelCategory[data.currentNo2Level as 1 | 2 | 3]?.colour ?? 'black'}">NO2</span>&nbsp;&nbsp;&nbsp;&nbsp;

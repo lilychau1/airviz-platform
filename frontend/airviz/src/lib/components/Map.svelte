@@ -9,14 +9,15 @@
         // fetchAllRegions, 
         // fetchPollutantData, 
         fetchMapRadius, 
-        fetchPopupInformation 
+        // fetchPopupInformation 
     } from '../../api/MockApi';
     import { 
         fetchAllRegions, 
-        fetchPollutantData
+        fetchPollutantData, 
+        fetchPopupInformation 
     } from '../../api/MockLambdaApi'
     import { type RegionUnit, type Coordinates, LevelCategory } from '../constants';
-    import { fetchCurrentLocation, filterByTimeRange } from '../utils/utils';
+    import { fetchCurrentLocation } from '../utils/utils';
 
     const mapTilerAPIKey: string = import.meta.env.VITE_MAPTILER_API_KEY as string;
     console.log(mapTilerAPIKey)
@@ -197,14 +198,28 @@
                 tileInformationDiv.innerHTML = 'Loading tile details...'; 
                 tileInformationDiv.className = 'popup-information'; 
                 popupContent.appendChild(tileInformationDiv); 
-
+            
                 fetchPopupInformation('tile', tileId).then((data) => {
+                    // Unpack AQI values and categories for all keys (e.g. uaqi, gbr_defra)
+                    let aqiHtml = '';
+                    if (data.currentAqi && data.currentAqiCategoryLevel) {
+                        for (const key of Object.keys(data.currentAqi)) {
+                            const aqiValue = data.currentAqi[key];
+                            const catLevel = data.currentAqiCategoryLevel[key];
+                            const cat = LevelCategory[catLevel as 1 | 2 | 3];
+                            aqiHtml += `
+                                <div>
+                                    <span style="font-weight:bold">${key.toUpperCase()} AQI:</span>
+                                    <span style="color: ${cat?.colour ?? 'black'}">${aqiValue}</span>
+                                </div>
+                            `;
+                        }
+                    }
+
                     tileInformationDiv.innerHTML = `
                         <strong>Name: ${data.name}</strong><br>
                         Region: ${data.region}<br>
-                        Borough: ${data.boroughRegion}<br>
-                        View in Google Map
-                        AQI: <span style="color: ${LevelCategory[data.currentAqiCategoryLevel as 1 | 2 | 3]?.colour ?? 'black'}">${data.currentAqi}<br></span>
+                        ${aqiHtml}
                         <span style="color: ${LevelCategory[data.currentPm25Level as 1 | 2 | 3]?.colour ?? 'black'}">PM2.5</span>&nbsp;&nbsp;&nbsp;&nbsp;
                         <span style="color: ${LevelCategory[data.currentPm10Level as 1 | 2 | 3]?.colour ?? 'black'}">PM10</span>&nbsp;&nbsp;&nbsp;&nbsp;
                         <span style="color: ${LevelCategory[data.currentNo2Level as 1 | 2 | 3]?.colour ?? 'black'}">NO2</span>&nbsp;&nbsp;&nbsp;&nbsp;
@@ -212,6 +227,7 @@
                         <span style="color: ${LevelCategory[data.currentSo2Level as 1 | 2 | 3]?.colour ?? 'black'}">SO2</span>&nbsp;&nbsp;&nbsp;&nbsp;
                         <span style="color: ${LevelCategory[data.currentCoLevel as 1 | 2 | 3]?.colour ?? 'black'}">CO</span>
                     `;
+
                 }).catch((error) => {
                     tileInformationDiv.innerHTML = `<span style="color: red;">Failed to load tile information.</span>`;
                     console.error(error);

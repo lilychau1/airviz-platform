@@ -1,0 +1,35 @@
+{
+    "id": 1,
+    "name": "Barking and Dagenham",
+    "region": "Greater London",
+    "currentAqi": {
+        "uaqi": 81,
+        "gbr_defra": 2
+    },
+    "currentAqiCategoryLevel": {
+        "uaqi": 1,
+        "gbr_defra": 1
+    },
+    "currentPm25Level": 1,
+    "currentPm10Level": 1,
+    "currentNo2Level": 1,
+    "currentO3Level": 1,
+    "currentSo2Level": 1,
+    "currentCoLevel": 3,
+    "last30dUnhealthyAQIDays": {
+        "uaqi": 37,
+        "gbr_defra": 37
+    },
+    "last30dAQIMean": {
+        "uaqi": 80.16216216216216,
+        "gbr_defra": 2
+    },
+    "last30dAQIMax": {
+        "uaqi": 82,
+        "gbr_defra": 2
+    },
+    "last30dAQIMin": {
+        "uaqi": 77,
+        "gbr_defra": 2
+    }
+}

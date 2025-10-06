@@ -57,8 +57,8 @@ export interface PollutantCurrentRecord extends PollutantRecord {
 export interface popupInformation{
     name: string; 
     region: string; 
-    currentAqi: number; 
-    currentAqiCategoryLevel: number;
+    currentAqi: { [key: string]: number };
+    currentAqiCategoryLevel: { [key: string]: number };
     currentPm25Level: number; 
     currentPm10Level: number; 
     currentNo2Level: number; 
@@ -70,10 +70,10 @@ export interface TilePopupInformation extends popupInformation{
     boroughRegion: string; 
 }
 export interface RegionPopupInformation extends popupInformation{
-    last30dUnhealthyAQIDays: number;
-    last30dAQIMean: number;
-    last30dAQIMax: number;
-    last30dAQIMin: number;
+    last30dUnhealthyAQIDays: { [key: string]: number };
+    last30dAQIMean: { [key: string]: number };
+    last30dAQIMax: { [key: string]: number };
+    last30dAQIMin: { [key: string]: number };
 }
 
 // Define allowed keys as a union type
