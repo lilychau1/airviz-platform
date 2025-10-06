@@ -1,0 +1,34 @@
+{
+    "level": "tile",
+    "id": 1,
+    "records": {
+        "gbr_defra": [
+            {
+                "timestamp": "2025-10-06T18:00:00.000Z",
+                "value": 1
+            },
+            {
+                "timestamp": "2025-10-06T19:00:00.000Z",
+                "value": 2
+            },
+            {
+                "timestamp": "2025-10-06T20:00:00.000Z",
+                "value": 4
+            }
+        ],
+        "uaqi": [
+            {
+                "timestamp": "2025-10-06T18:00:00.000Z",
+                "value": 83
+            },
+            {
+                "timestamp": "2025-10-06T19:00:00.000Z",
+                "value": 81
+            },
+            {
+                "timestamp": "2025-10-06T20:00:00.000Z",
+                "value": 70
+            }
+        ]
+    }
+}

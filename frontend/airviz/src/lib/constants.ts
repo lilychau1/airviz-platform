@@ -175,17 +175,6 @@ export interface CurrentAirQualityInfo {
     currentRecords: PollutantCurrentRecord[];
 }
 
-export const AqiTypes = {
-    UNIVERSAL: { id: "universal", label: "AQI (Universal)" },
-    US: { id: "us", label: "AQI (U.S.)" }, 
-} as const;
-
-export type AqiTypeKey = keyof typeof AqiTypes;
-
-export type AqiTypeId = typeof AqiTypes[keyof typeof AqiTypes]["id"];
-
-export type AqiTypeLabel = typeof AqiTypes[keyof typeof AqiTypes]["label"];
-
 export interface AqiRecord {
     timestamp: string;
     value: number;

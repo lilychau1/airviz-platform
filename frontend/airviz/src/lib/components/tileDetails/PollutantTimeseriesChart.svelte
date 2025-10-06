@@ -64,10 +64,7 @@
       canvasElement.height = 300;
       containerDiv.appendChild(canvasElement);
 
-      const showHours = 24;
-      const cutoff = selectedTimestamp - showHours * 60 * 60 * 1000; 
       const selectedTimestampPeriod = {start: cutoff, end: selectedTimestamp};
-
       const pollutantData = await fetchPollutantData('tile', tileId, selectedTimestampPeriod);
 
       const rangeDurationMs = selectedTimestamp - cutoff;

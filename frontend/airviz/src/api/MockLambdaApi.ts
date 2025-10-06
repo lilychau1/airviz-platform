@@ -1,4 +1,17 @@
-import { type PollutantId, type Coordinates, type PollutantRecord, type RegionUnit, type TilePopupInformation, type TileDetails, type CurrentAirQualityInfo, HealthImpacts, type PollutantCurrentRecord, type AqiRecord, type AqiTypeId, type HealthRecommendationRecord, type TileMetadata, type RegionPopupInformation, type RegionLevel, type DetailsReturnTypeForRegionLevel, type PopupInfoReturnTypeForRegionLevel, type PopupInfoReturnTypeForRegionLevel, type CurrentAirQualityInfo, type PollutantCurrentRecord} from "../lib/constants";
+import {
+    type PollutantId, 
+    type PollutantRecord, 
+    type RegionUnit, 
+    HealthImpacts, 
+    type AqiRecord, 
+    type HealthRecommendationRecord, 
+    type TileMetadata, 
+    type RegionLevel, 
+    type DetailsReturnTypeForRegionLevel, 
+    type PopupInfoReturnTypeForRegionLevel, 
+    type CurrentAirQualityInfo, 
+    type PollutantCurrentRecord
+} from "../lib/constants";
 import type { FeatureCollection } from 'geojson';
 
 // Fetch map radius
@@ -37,7 +50,11 @@ export async function fetchPollutantData(
     id: number, 
     selectedTimestampPeriod: {start: number, end: number},
 ): Promise<PollutantRecord[]> {
-    // TODO: no pollutantId, fetch all at once
+    const selectedTimestampPeriodUtc = {
+        start: new Date(selectedTimestampPeriod.start).getTime(),
+        end: new Date(selectedTimestampPeriod.end).getTime()
+    };
+
     const resp = await fetch(`/sample-responses/fetchPollutantData-${level}.json`); 
     const data = await resp.json();
     const allRecords: PollutantRecord[] = data["records"];
@@ -117,15 +134,20 @@ const currentRecords: PollutantCurrentRecord[] = raw.CurrentRecords.map(
 export async function fetchAqiData(
     level: string, 
     id: number, 
-    aqiTypeId: AqiTypeId
-): Promise<AqiRecord[]> {
-    // TODO: no aqiTypeId, fetch all at once
-    const resp = await fetch(`/sample-responses/${level}/${id}/aqi-${aqiTypeId}.json`); 
-    if (!resp.ok) {
-        throw new Error(`Failed to load AQI (${aqiTypeId}) data for ${level} ${id}`); 
-    }
+    selectedTimestampPeriod: {start: number, end: number},
+): Promise<Record<string, AqiRecord[]>> {
+    // Convert start and end to UTC datetime numbers
+    const selectedTimestampPeriodUtc = {
+        start: new Date(selectedTimestampPeriod.start).getTime(),
+        end: new Date(selectedTimestampPeriod.end).getTime()
+    };
 
-    return resp.json() as Promise<AqiRecord[]>;
+    const resp = await fetch(`/sample-responses/fetchAqiData-${level}.json`); 
+    const data = await resp.json();
+    if (!resp.ok) {
+        throw new Error(`Failed to load AQI data for ${level} ${id}`); 
+    }
+    return data["records"];
 }
 
 // Fetch health recommendations
