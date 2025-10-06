@@ -1,0 +1,76 @@
+{
+    "aqi": {
+        "uaqi": 83,
+        "gbr_defra": 1
+    },
+    "aqiCategory": {
+        "uaqi": "Excellent air quality",
+        "gbr_defra": "Low air pollution"
+    },
+    "dominantPollutant": {
+        "uaqi": "pm10",
+        "gbr_defra": "o3"
+    },
+    "colourCode": {
+        "uaqi": {
+            "red": 0.2901961,
+            "blue": 0.21176471,
+            "green": 0.7254902
+        },
+        "gbr_defra": {
+            "red": 0.6117647,
+            "blue": 0.6117647,
+            "green": 1
+        }
+    },
+    "CurrentRecords": [
+        {
+            "pollutantId": "pm25",
+            "timestamp": "2025-10-06T18:00:00.000Z",
+            "value": 6.52,
+            "unit": "microgram_per_cubic_meter",
+            "level": 1,
+            "impact": "Fine particles can penetrate into the lungs and bloodstream. Short term exposure can cause irritation of the airways, coughing and aggravation of heart and lung diseases, expressed as difficulty breathing, heart attacks and even premature death."
+        },
+        {
+            "pollutantId": "pm10",
+            "timestamp": "2025-10-06T18:00:00.000Z",
+            "value": 19.73,
+            "unit": "microgram_per_cubic_meter",
+            "level": 1,
+            "impact": "Inhalable particles can penetrate into the lungs. Short term exposure can cause irritation of the airways, coughing, and aggravation of heart and lung diseases, expressed as difficulty breathing, heart attacks and even premature death."
+        },
+        {
+            "pollutantId": "no2",
+            "timestamp": "2025-10-06T18:00:00.000Z",
+            "value": 16.6,
+            "unit": "ppb",
+            "level": 1,
+            "impact": "Exposure may cause increased bronchial reactivity in patients with asthma, lung function decline in patients with Chronic Obstructive Pulmonary Disease (COPD), and increased risk of respiratory infections, especially in young children."
+        },
+        {
+            "pollutantId": "so2",
+            "timestamp": "2025-10-06T18:00:00.000Z",
+            "value": 0.53,
+            "unit": "ppb",
+            "level": 1,
+            "impact": "Exposure causes irritation of the respiratory tract, coughing and generates local inflammatory reactions. These in turn, may cause aggravation of lung diseases, even with short term exposure."
+        },
+        {
+            "pollutantId": "o3",
+            "timestamp": "2025-10-06T18:00:00.000Z",
+            "value": 21.48,
+            "unit": "ppb",
+            "level": 1,
+            "impact": "Ozone can irritate the airways and cause coughing, a burning sensation, wheezing and shortness of breath. Additionally, ozone is one of the major components of photochemical smog."
+        },
+        {
+            "pollutantId": "co",
+            "timestamp": "2025-10-06T18:00:00.000Z",
+            "value": 149.15,
+            "unit": "ppb",
+            "level": 3,
+            "impact": "When inhaled, carbon monoxide can prevent the blood from carrying oxygen. Exposure may cause dizziness, nausea and headaches. Exposure to extreme concentrations can lead to loss of consciousness."
+        }
+    ]
+}

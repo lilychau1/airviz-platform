@@ -50,8 +50,12 @@ export interface PollutantRecord {
 }
 
 export interface PollutantCurrentRecord extends PollutantRecord {
+    pollutantId: PollutantId;
+    timestamp: string;
+    value: number;
+    unit: PollutantUnitId;
     level: number;
-    healthImpact: string;
+    impact: string;
 }
 
 export interface popupInformation{
@@ -165,9 +169,9 @@ export const HealthImpacts = {
 }
 
 export interface CurrentAirQualityInfo {
-    aqi: number;
-    aqiCategory: string;
-    dominantPollutant: PollutantId;
+    aqi: { [key: string]: number };
+    aqiCategory: { [key: string]: string };
+    dominantPollutant: { [key: string]: string };
     currentRecords: PollutantCurrentRecord[];
 }
 

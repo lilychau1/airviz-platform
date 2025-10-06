@@ -119,7 +119,7 @@ export async function fetchCurrentAirQualityInfo(
       value: r.value,
       unit: r.unit,
       level: r.level,
-      healthImpact: getHealthImpact(r.pollutantId, r.level)
+      impact: getHealthImpact(r.pollutantId, r.level)
     })
   );
 

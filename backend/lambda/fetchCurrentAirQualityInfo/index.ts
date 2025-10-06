@@ -47,55 +47,55 @@ export const handler = async (event: APIGatewayProxyEventV2) => {
 
         let query: string;
         const params = [input.id];
-
         if (level === "tile") {
             query = `
+            SELECT 
+                ar.id AS record_id,
+                aqi_json.aqi,
+                aqi_json.category,
+                aqi_json.dominant_pollutant,
+                aqi_json.colour_code,
+                p.timestamp,
+                p.pm25_value, p.pm10_value, p.no2_value, p.so2_value, p.o3_value, p.co_value,
+                p.pm25_impact, p.pm10_impact, p.no2_impact, p.so2_impact, p.o3_impact, p.co_impact
+            FROM tiles t
+            JOIN LATERAL (
+                SELECT id
+                FROM aq_records
+                WHERE tile_id = t.id
+                ORDER BY timestamp DESC, ingestion_timestamp DESC
+                LIMIT 1
+            ) ar ON TRUE
+            LEFT JOIN LATERAL (
                 SELECT 
-                    ar.id AS record_id,
-                    aqi_json.aqi,
-                    aqi_json.category,
-                    aqi_json.dominant_pollutant,
-                    aqi_json.colour_code,
-                    p.timestamp,
-                    p.pm25_value, p.pm10_value, p.no2_value, p.so2_value, p.o3_value, p.co_value
-                FROM tiles t
-                JOIN LATERAL (
-                    SELECT id
-                    FROM aq_records
-                    WHERE tile_id = t.id
-                    ORDER BY timestamp DESC, ingestion_timestamp DESC
-                    LIMIT 1
-                ) ar ON TRUE
-                LEFT JOIN LATERAL (
-                    SELECT 
-                        jsonb_object_agg(index_type, value) AS aqi,
-                        jsonb_object_agg(index_type, category) AS category,
-                        jsonb_object_agg(index_type, dominant_pollutant) AS dominant_pollutant,
-                        jsonb_object_agg(index_type, colour_code) AS colour_code
-                    FROM air_quality_index
-                    WHERE record_id = ar.id
-                ) aqi_json ON TRUE
-                LEFT JOIN pollutant_concentration p ON p.record_id = ar.id
-                WHERE t.id = $1;
+                jsonb_object_agg(index_type, value) AS aqi,
+                jsonb_object_agg(index_type, category) AS category,
+                jsonb_object_agg(index_type, dominant_pollutant) AS dominant_pollutant,
+                jsonb_object_agg(index_type, colour_code) AS colour_code
+                FROM air_quality_index
+                WHERE record_id = ar.id
+            ) aqi_json ON TRUE
+            LEFT JOIN pollutant_concentration p ON p.record_id = ar.id
+            WHERE t.id = $1;
             `;
         } else {
             query = `
-                SELECT 
-                    ra.aqi,
-                    ra.category,
-                    ra.dominant_pollutant,
-                    ra.colour_code,
-                    ra.pm25_value, ra.pm10_value, ra.no2_value, ra.so2_value, ra.o3_value, ra.co_value,
-                    ra.timestamp
-                FROM ${level}s r
-                JOIN LATERAL (
-                    SELECT *
-                    FROM regional_aggregates
-                    WHERE level = '${level}' AND region_id = r.id
-                    ORDER BY timestamp DESC, update_timestamp DESC
-                    LIMIT 1
-                ) ra ON TRUE
-                WHERE r.id = $1;
+            SELECT 
+                ra.aqi,
+                ra.category,
+                ra.dominant_pollutant,
+                ra.colour_code,
+                ra.pm25_value, ra.pm10_value, ra.no2_value, ra.so2_value, ra.o3_value, ra.co_value, 
+                ra.timestamp
+            FROM ${level}s r
+            JOIN LATERAL (
+                SELECT *
+                FROM regional_aggregates
+                WHERE level = '${level}' AND region_id = r.id
+                ORDER BY timestamp DESC, update_timestamp DESC
+                LIMIT 1
+            ) ra ON TRUE
+            WHERE r.id = $1;
             `;
         }
 
@@ -105,32 +105,37 @@ export const handler = async (event: APIGatewayProxyEventV2) => {
         }
 
         const row = res.rows[0];
-
         // Safe parsing
         const aqi: Record<string, number> | null = safeParseJSON(row.aqi) ?? null;
         const aqiCategory: Record<string, string> | string | null = safeParseJSON(row.category) ?? null;
         const dominantPollutant: Record<string, string> | string = safeParseJSON(row.dominant_pollutant ?? "unknown");
         const colourCode: Record<string, any> | null = safeParseJSON(row.colour_code) ?? null;
 
-        // Pollutant records
+        // Pollutant records: include impact only for "tile" level
         const pollutants = [
-            { id: "pm25", value: row.pm25_value, unit: "microgram_per_cubic_meter" },
-            { id: "pm10", value: row.pm10_value, unit: "microgram_per_cubic_meter" },
-            { id: "no2", value: row.no2_value, unit: "ppb" },
-            { id: "so2", value: row.so2_value, unit: "ppb" },
-            { id: "o3", value: row.o3_value, unit: "ppb" },
-            { id: "co", value: row.co_value, unit: "ppb" }
+            { id: "pm25", value: row.pm25_value, unit: "microgram_per_cubic_meter", ...(level === "tile" && { impact: row.pm25_impact }) },
+            { id: "pm10", value: row.pm10_value, unit: "microgram_per_cubic_meter", ...(level === "tile" && { impact: row.pm10_impact }) },
+            { id: "no2", value: row.no2_value, unit: "ppb", ...(level === "tile" && { impact: row.no2_impact }) },
+            { id: "so2", value: row.so2_value, unit: "ppb", ...(level === "tile" && { impact: row.so2_impact }) },
+            { id: "o3", value: row.o3_value, unit: "ppb", ...(level === "tile" && { impact: row.o3_impact }) },
+            { id: "co", value: row.co_value, unit: "ppb", ...(level === "tile" && { impact: row.co_impact }) }
         ];
 
         const CurrentRecords = pollutants
             .filter(p => p.value !== null && p.value !== undefined)
-            .map(p => ({
+            .map(p => {
+            const record: any = {
                 pollutantId: p.id,
                 timestamp: row.timestamp,
                 value: p.value,
                 unit: p.unit,
                 level: ratePollutant(p.value, p.id)
-            }));
+            };
+            if (level === "tile" && "impact" in p) {
+                record.impact = p.impact;
+            }
+            return record;
+            });
 
         return {
             aqi,

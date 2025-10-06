@@ -1,4 +1,4 @@
-import { type PollutantId, type Coordinates, type PollutantRecord, type RegionUnit, type TilePopupInformation, type TileDetails, type CurrentAirQualityInfo, HealthImpacts, type PollutantCurrentRecord, type AqiRecord, type AqiTypeId, type HealthRecommendationRecord, type TileMetadata, type RegionPopupInformation, type RegionLevel, type DetailsReturnTypeForRegionLevel, type PopupInfoReturnTypeForRegionLevel, type PopupInfoReturnTypeForRegionLevel} from "../lib/constants";
+import { type PollutantId, type Coordinates, type PollutantRecord, type RegionUnit, type TilePopupInformation, type TileDetails, type CurrentAirQualityInfo, HealthImpacts, type PollutantCurrentRecord, type AqiRecord, type AqiTypeId, type HealthRecommendationRecord, type TileMetadata, type RegionPopupInformation, type RegionLevel, type DetailsReturnTypeForRegionLevel, type PopupInfoReturnTypeForRegionLevel, type PopupInfoReturnTypeForRegionLevel, type CurrentAirQualityInfo, type PollutantCurrentRecord} from "../lib/constants";
 import type { FeatureCollection } from 'geojson';
 
 // Fetch map radius
@@ -86,7 +86,7 @@ export async function fetchCurrentAirQualityInfo(
     level: RegionLevel, 
     id: number
 ): Promise<CurrentAirQualityInfo> {
-  const resp = await fetch(`/sample-responses/${level}/${id}/current-air-quality-info.json`);
+  const resp = await fetch(`/sample-responses/fetchCurrentAirQualityInfo-${level}.json`);
   if (!resp.ok) {
     throw new Error(`Failed to load air quality info for tile ID ${id}`);
   }
@@ -94,16 +94,16 @@ export async function fetchCurrentAirQualityInfo(
   const raw = await resp.json();
 
   // normalise JSON keys and add new field "healthImpact"
-  const currentRecords: PollutantCurrentRecord[] = raw.CurrentRecords.map(
+const currentRecords: PollutantCurrentRecord[] = raw.CurrentRecords.map(
     (r: any) => ({
-      pollutantId: r.pollutantId,
-      timestamp: r.timestamp,
-      value: r.value,
-      unit: r.unit,
-      level: r.level,
-      healthImpact: getHealthImpact(r.pollutantId, r.level)
+        pollutantId: r.pollutantId,
+        timestamp: r.timestamp,
+        value: r.value,
+        unit: r.unit,
+        level: r.level,
+        impact: r.impact ?? getHealthImpact(r.pollutantId, r.level)
     })
-  );
+);
 
   return {
     aqi: raw.aqi,
