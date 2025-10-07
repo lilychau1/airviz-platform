@@ -4,7 +4,6 @@ import {
     type RegionUnit, 
     HealthImpacts, 
     type AqiRecord, 
-    type HealthRecommendationRecord, 
     type TileMetadata, 
     type RegionLevel, 
     type DetailsReturnTypeForRegionLevel, 
@@ -85,9 +84,9 @@ export async function fetchDetails<L extends RegionLevel>(
     level: L, 
     id: number
 ): Promise<DetailsReturnTypeForRegionLevel<L>> {
-    const resp = await fetch(`/sample-responses/${level}/${id}/details.json`); 
+    const resp = await fetch(`/sample-responses/fetchDetails-${level}.json`); 
     if (!resp.ok) {
-        throw new Error(`Failed to load Tile details for ${level} ID ${id}`); 
+        throw new Error(`Failed to load details for ${level} ID ${id}`); 
     }
     return resp.json() as Promise<DetailsReturnTypeForRegionLevel<L>>;
 }

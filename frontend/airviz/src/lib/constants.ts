@@ -107,8 +107,6 @@ export interface RegionDetails {
 
 export interface TileDetails extends RegionDetails{
     boroughRegion: string;
-    zoneRegion: number;
-    postcodeArea: string;
 }
 
 export type RegionLevel = 'tile' | 'borough'; 
