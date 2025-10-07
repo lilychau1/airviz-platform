@@ -106,7 +106,8 @@ const handler = async () => {
                 id SERIAL PRIMARY KEY,
                 tile_id INT NOT NULL,
                 timestamp TIMESTAMP NOT NULL,
-                ingestion_timestamp TIMESTAMP NOT NULL
+                ingestion_timestamp TIMESTAMP NOT NULL,
+                CONSTRAINT uq_aq_records_tile_timestamp UNIQUE (tile_id, timestamp)
             );
         `);
         // Add index for more efficient query
@@ -127,7 +128,14 @@ const handler = async () => {
                 no2_value DOUBLE PRECISION,
                 so2_value DOUBLE PRECISION,
                 o3_value DOUBLE PRECISION,
-                co_value DOUBLE PRECISION
+                co_value DOUBLE PRECISION, 
+                pm25_impact TEXT,
+                pm10_impact TEXT,
+                no2_impact TEXT,
+                so2_impact TEXT,
+                o3_impact TEXT,
+                co_impact TEXT, 
+                CONSTRAINT uq_pollutant_record_tile UNIQUE (record_id, tile_id)
             );
         `);
         await client.query(`
@@ -142,7 +150,8 @@ const handler = async () => {
                 dominant_pollutant VARCHAR(50) NOT NULL,
                 timestamp TIMESTAMP NOT NULL,
                 ingestion_timestamp TIMESTAMP NOT NULL,
-                value INT
+                value INT,
+                CONSTRAINT uq_aqi_record_tile_index UNIQUE (record_id, tile_id, index_type)
             );
         `);
         // Add index for more efficient query
@@ -158,7 +167,8 @@ const handler = async () => {
                 tile_id INT NOT NULL,
                 timestamp TIMESTAMP NOT NULL,
                 ingestion_timestamp TIMESTAMP NOT NULL,
-                recommendations JSONB NOT NULL
+                recommendations JSONB NOT NULL,
+                CONSTRAINT uq_health_record_tile UNIQUE (record_id, tile_id)
             );
         `);
         // Initialise borough table contents
@@ -237,6 +247,9 @@ const handler = async () => {
                 level VARCHAR(20) NOT NULL,
                 region_id INT NOT NULL,
                 aqi JSONB,
+                category VARCHAR(50),            
+                dominant_pollutant VARCHAR(50), 
+                colour_code JSONB,               
                 pm25_value DOUBLE PRECISION,
                 pm10_value DOUBLE PRECISION,
                 no2_value DOUBLE PRECISION,
@@ -249,7 +262,7 @@ const handler = async () => {
                 last_30d_aqi_min JSONB,
                 timestamp TIMESTAMP NOT NULL,
                 update_timestamp TIMESTAMP NOT NULL,
-                CONSTRAINT unique_level_region UNIQUE (level, region_id)
+                CONSTRAINT unique_level_region UNIQUE (level, timestamp, region_id)
             );
         `);
         // Add an index to improve query performance on level + region_id

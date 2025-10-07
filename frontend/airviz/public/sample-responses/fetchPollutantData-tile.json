@@ -1,0 +1,46 @@
+{
+    "level": "tile",
+    "id": 1,
+    "records": [
+        {
+            "id": 1,
+            "timestamp": "2025-10-05T14:00:00.000Z",
+            "pm25Value": 5.16,
+            "pm10Value": 15.61,
+            "no2Value": 7.75,
+            "so2Value": 0.31,
+            "o3Value": 28.33,
+            "coValue": 81.54
+        },
+        {
+            "id": 1,
+            "timestamp": "2025-10-05T15:00:00.000Z",
+            "pm25Value": 5.27,
+            "pm10Value": 15.26,
+            "no2Value": 6.44,
+            "so2Value": 0.28,
+            "o3Value": 30.29,
+            "coValue": 91.71
+        },
+        {
+            "id": 1,
+            "timestamp": "2025-10-05T16:00:00.000Z",
+            "pm25Value": 4.61,
+            "pm10Value": 12.84,
+            "no2Value": 7.93,
+            "so2Value": 0.28,
+            "o3Value": 29.27,
+            "coValue": 81.33
+        },
+        {
+            "id": 1,
+            "timestamp": "2025-10-05T19:00:00.000Z",
+            "pm25Value": 4.84,
+            "pm10Value": 10.81,
+            "no2Value": 11.88,
+            "so2Value": 0.24,
+            "o3Value": 28.6,
+            "coValue": 96.9
+        }
+    ]
+}

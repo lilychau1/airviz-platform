@@ -2,15 +2,13 @@
   import { onMount, onDestroy } from "svelte";
   import ChartLib from "chart.js/auto";
   import type { Chart } from "chart.js";
-  import { fetchAqiData } from "../../../api/MockApi";
-  import { AqiTypes } from "../../constants";
-  import { filterByTimeRange } from "../../utils/utils";
+  import { fetchAqiData } from "../../../api/MockLambdaApi";
 
   export let tileId: number;
 
   let chart: Chart | null = null;
   let containerDiv: HTMLDivElement;
-  let canvasElement: HTMLCanvasElement;
+  let canvasElement: HTMLCanvasElement | null;
 
   let filterMode: "last24" | "custom" = "last24";
 
@@ -50,59 +48,86 @@
     if (!tileId || !containerDiv) return;
 
     try {
+      // Always destroy the chart first, then remove the canvas if it exists
       if (chart) {
         chart.destroy();
         chart = null;
       }
       if (canvasElement && containerDiv.contains(canvasElement)) {
         containerDiv.removeChild(canvasElement);
+        canvasElement = null;
       }
 
+      // Always create a new canvas element for each chart instance
       canvasElement = document.createElement("canvas");
       canvasElement.width = 600;
       canvasElement.height = 300;
       containerDiv.appendChild(canvasElement);
 
       // Fetch both AQI types in parallel
-      const [universalData, usData] = await Promise.all([
-        fetchAqiData('tile', tileId, AqiTypes.UNIVERSAL.id),
-        fetchAqiData('tile', tileId, AqiTypes.US.id),
-      ]);
+      const selectedTimestampPeriod = {start: cutoff, end: selectedTimestamp};
 
-      const filteredUniversal = filterByTimeRange(universalData, cutoff, selectedTimestamp);
-      const filteredUs = filterByTimeRange(usData, cutoff, selectedTimestamp);
+      const data = await fetchAqiData('tile', tileId, selectedTimestampPeriod);
 
+      // Find all unique timestamps across all AQI types
+      const allTimestampsSet = new Set<string>();
+      const aqiTypes = Object.keys(data);
+      console.log("AQI Types:", aqiTypes);
+      aqiTypes.forEach(type => {
+        data[type].forEach((d: { timestamp: string }) => allTimestampsSet.add(d.timestamp));
+      });
+      const allTimestamps = Array.from(allTimestampsSet).sort();
+
+      // Build a map from timestamp to label (date or time)
       const rangeDurationMs = selectedTimestamp - cutoff;
       const showDateOnly = rangeDurationMs > 3 * 24 * 60 * 60 * 1000;
-
-      const labels = filteredUniversal.map(d =>
+      const labels = allTimestamps.map(ts =>
         showDateOnly
-          ? new Date(d.timestamp).toLocaleDateString()
-          : new Date(d.timestamp).toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" })
+          ? new Date(ts).toLocaleDateString()
+          : new Date(ts).toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" })
       );
+
+      // Get all AQI types present in the data
+
+      // For each AQI type, build a dataset with values aligned to allTimestamps (fill missing with null)
+      const datasets = aqiTypes.map(type => {
+        // Try to get a label from AqiTypes constant, fallback to type key
+        const label = type.toUpperCase();
+        // Build a map for quick lookup
+        const valueMap = new Map(data[type].map((d: any) => [d.timestamp, d.value]));
+        // Pick a color for each type (fallback to a default if not enough colors)
+        const colors = [
+          "rgba(255, 99, 132, 1)",
+          "rgba(54, 162, 235, 1)",
+          "rgba(255, 206, 86, 1)",
+          "rgba(75, 192, 192, 1)",
+          "rgba(153, 102, 255, 1)",
+          "rgba(255, 159, 64, 1)"
+        ];
+        const bgColors = [
+          "rgba(255, 99, 132, 0.2)",
+          "rgba(54, 162, 235, 0.2)",
+          "rgba(255, 206, 86, 0.2)",
+          "rgba(75, 192, 192, 0.2)",
+          "rgba(153, 102, 255, 0.2)",
+          "rgba(255, 159, 64, 0.2)"
+        ];
+        const colorIdx = aqiTypes.indexOf(type) % colors.length;
+        return {
+          label,
+          data: allTimestamps.map(ts => valueMap.get(ts) ?? null),
+          borderColor: colors[colorIdx],
+          backgroundColor: bgColors[colorIdx],
+          fill: true,
+          tension: 0.3,
+        };
+      });
 
       chart = new ChartLib(canvasElement.getContext("2d")!, {
         type: "line",
         data: {
           labels,
-          datasets: [
-            {
-              label: AqiTypes.UNIVERSAL.label,
-              data: filteredUniversal.map(d => d.value),
-              borderColor: "rgba(255, 99, 132, 1)",
-              backgroundColor: "rgba(255, 99, 132, 0.2)",
-              fill: true,
-              tension: 0.3,
-            },
-            {
-              label: AqiTypes.US.label,
-              data: filteredUs.map(d => d.value),
-              borderColor: "rgba(54, 162, 235, 1)",
-              backgroundColor: "rgba(54, 162, 235, 0.2)",
-              fill: true,
-              tension: 0.3,
-            },
-          ],
+          datasets,
         },
         options: {
           responsive: true,

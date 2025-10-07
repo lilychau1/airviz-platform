@@ -1,0 +1,26 @@
+{
+    "level": "borough",
+    "id": 1,
+    "records": {
+        "gbr_defra": [
+            {
+                "timestamp": "2025-10-06T19:00:00.000Z",
+                "value": 2
+            },
+            {
+                "timestamp": "2025-10-06T20:00:00.000Z",
+                "value": 2
+            }
+        ],
+        "uaqi": [
+            {
+                "timestamp": "2025-10-06T19:00:00.000Z",
+                "value": 81
+            },
+            {
+                "timestamp": "2025-10-06T20:00:00.000Z",
+                "value": 81
+            }
+        ]
+    }
+}

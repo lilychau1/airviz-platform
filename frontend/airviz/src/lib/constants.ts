@@ -31,23 +31,38 @@ export interface RegionUnit {
     currentAqiColour: Colour
 }
 
-export interface PollutantRecord {
+export interface PollutantRecord_old {
     pollutantId: PollutantId; 
     timestamp: string; 
     value: number;
     unit: PollutantUnitId;
 }
 
+export interface PollutantRecord {
+    id: number; 
+    timestamp: string; 
+    pm25Value: number;
+    pm10Value: number;
+    no2Value: number;
+    so2Value: number;
+    o3Value: number;
+    coValue: number;
+}
+
 export interface PollutantCurrentRecord extends PollutantRecord {
+    pollutantId: PollutantId;
+    timestamp: string;
+    value: number;
+    unit: PollutantUnitId;
     level: number;
-    healthImpact: string;
+    impact: string;
 }
 
 export interface popupInformation{
     name: string; 
     region: string; 
-    currentAqi: number; 
-    currentAqiCategoryLevel: number;
+    currentAqi: { [key: string]: number };
+    currentAqiCategoryLevel: { [key: string]: number };
     currentPm25Level: number; 
     currentPm10Level: number; 
     currentNo2Level: number; 
@@ -59,10 +74,10 @@ export interface TilePopupInformation extends popupInformation{
     boroughRegion: string; 
 }
 export interface RegionPopupInformation extends popupInformation{
-    last30dUnhealthyAQIDays: number;
-    last30dAQIMean: number;
-    last30dAQIMax: number;
-    last30dAQIMin: number;
+    last30dUnhealthyAQIDays: { [key: string]: number };
+    last30dAQIMean: { [key: string]: number };
+    last30dAQIMax: { [key: string]: number };
+    last30dAQIMin: { [key: string]: number };
 }
 
 // Define allowed keys as a union type
@@ -154,33 +169,20 @@ export const HealthImpacts = {
 }
 
 export interface CurrentAirQualityInfo {
-    aqi: number;
-    aqiCategory: string;
-    dominantPollutant: PollutantId;
+    aqi: { [key: string]: number };
+    aqiCategory: { [key: string]: string };
+    dominantPollutant: { [key: string]: string };
     currentRecords: PollutantCurrentRecord[];
 }
-
-export const AqiTypes = {
-    UNIVERSAL: { id: "universal", label: "AQI (Universal)" },
-    US: { id: "us", label: "AQI (U.S.)" }, 
-} as const;
-
-export type AqiTypeKey = keyof typeof AqiTypes;
-
-export type AqiTypeId = typeof AqiTypes[keyof typeof AqiTypes]["id"];
-
-export type AqiTypeLabel = typeof AqiTypes[keyof typeof AqiTypes]["label"];
 
 export interface AqiRecord {
     timestamp: string;
     value: number;
 }
 
-export interface HealthRecommendationRecord {
-    id: number;
-    demographic: string;
-    recommendation: string;
-}
+export type HealthRecommendationRecord = { 
+    [demographic: string]: string 
+};
 
 export const staticMetadata = {
     dataSource: "Google Air Quality",

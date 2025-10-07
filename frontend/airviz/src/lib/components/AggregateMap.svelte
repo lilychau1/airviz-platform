@@ -5,15 +5,17 @@
     import ChartLib from "chart.js/auto";
     import type { Chart } from "chart.js";
 
+    import {
+        fetchMapRadius, 
+        loadRegionalGeoJSON
+    } from '../../api/MockApi';
     import { 
         fetchAllRegions, 
         fetchPollutantData, 
-        fetchMapRadius, 
         fetchPopupInformation, 
-        loadRegionalGeoJSON
-    } from '../../api/MockApi';
-    import { Pollutants, type RegionUnit, type Coordinates, LevelCategory, type RegionLevel, type PopupInfoReturnTypeForRegionLevel, type RegionPopupInformation } from '../constants';
-    import { fetchCurrentLocation, filterByTimeRange } from '../utils/utils';
+    } from '../../api/MockLambdaApi'
+    import { type RegionUnit, type Coordinates, LevelCategory, type RegionLevel, type PopupInfoReturnTypeForRegionLevel } from '../constants';
+    import { fetchCurrentLocation } from '../utils/utils';
     
     const mapTilerAPIKey: string = import.meta.env.VITE_MAPTILER_API_KEY as string;
 
@@ -28,14 +30,14 @@
     let regionLevel: RegionLevel = 'borough'
 
     // placeholder date for testing
-    const now = new Date("2025-08-11T20:00:00Z").getTime();
+    const now = new Date("2025-08-11T20:20:00Z").getTime();
     let sliderHour = 0;
     let selectedTimestamp = now;
 
     // Selected regions for comparison
     let selectedRegionIds: (number | null)[] = [null, null]; // Allow up to two selected IDs
     let comparePopup: maplibregl.Popup | null = null;
-    let compareRegionData: [RegionPopupInformation | null, RegionPopupInformation | null] = [null, null];
+    let compareRegionData: [PopupInfoReturnTypeForRegionLevel<RegionLevel> | null, PopupInfoReturnTypeForRegionLevel<RegionLevel> | null] = [null, null];
 
     async function refreshRegions() {
         // Only update if all necessary info is present. Otherwise do nothing
@@ -138,8 +140,8 @@
         regionId2: number
     ) {
         const [info1, info2] = await Promise.all([
-            fetchPopupInformation(regionLevel, regionId1) as Promise<RegionPopupInformation>,
-            fetchPopupInformation(regionLevel, regionId2) as Promise<RegionPopupInformation>,
+            fetchPopupInformation(regionLevel, regionId1) as Promise<PopupInfoReturnTypeForRegionLevel<typeof regionLevel>>,
+            fetchPopupInformation(regionLevel, regionId2) as Promise<PopupInfoReturnTypeForRegionLevel<typeof regionLevel>>,
         ]);
 
         compareRegionData = [info1, info2];
@@ -490,11 +492,26 @@
             popupContent.appendChild(regionInformationDiv); 
 
             fetchPopupInformation(regionLevel, regionId).then((data) => {
+                // Unpack AQI values and categories for all keys (e.g. uaqi, gbr_defra)
+                let aqiHtml = '';
+                if (data.currentAqi && data.currentAqiCategoryLevel) {
+                    for (const key of Object.keys(data.currentAqi)) {
+                        const aqiValue = data.currentAqi[key];
+                        const catLevel = data.currentAqiCategoryLevel[key];
+                        const cat = LevelCategory[catLevel as 1 | 2 | 3];
+                        aqiHtml += `
+                            <div>
+                                <span style="font-weight:bold">${key.toUpperCase()} AQI:</span>
+                                <span style="color: ${cat?.colour ?? 'black'}">${aqiValue}</span>
+                            </div>
+                        `;
+                    }
+                }
+
                 regionInformationDiv.innerHTML = `
                     <strong>Name: ${data.name}</strong><br>
                     Region: ${data.region}<br>
-                    View in Google Map
-                    AQI: <span style="color: ${LevelCategory[data.currentAqiCategoryLevel as 1 | 2 | 3]?.colour ?? 'black'}">${data.currentAqi}<br></span>
+                    ${aqiHtml}
                     <span style="color: ${LevelCategory[data.currentPm25Level as 1 | 2 | 3]?.colour ?? 'black'}">PM2.5</span>&nbsp;&nbsp;&nbsp;&nbsp;
                     <span style="color: ${LevelCategory[data.currentPm10Level as 1 | 2 | 3]?.colour ?? 'black'}">PM10</span>&nbsp;&nbsp;&nbsp;&nbsp;
                     <span style="color: ${LevelCategory[data.currentNo2Level as 1 | 2 | 3]?.colour ?? 'black'}">NO2</span>&nbsp;&nbsp;&nbsp;&nbsp;
@@ -519,33 +536,13 @@
 
             try {
                 // Placeholder: Fetch last 24 hours' records for the specific region ID, PM2.5 and PM10 pollutants
-                const [
-                    pm25Data, 
-                    pm10Data, 
-                    no2Data, 
-                    coData, 
-                    o3Data, 
-                    so2Data, 
-                ] = await Promise.all([
-                    fetchPollutantData(regionLevel, regionId, Pollutants.PM25.id), 
-                    fetchPollutantData(regionLevel, regionId, Pollutants.PM10.id), 
-                    fetchPollutantData(regionLevel, regionId, Pollutants.NO2.id), 
-                    fetchPollutantData(regionLevel, regionId, Pollutants.CO.id), 
-                    fetchPollutantData(regionLevel, regionId, Pollutants.O3.id), 
-                    fetchPollutantData(regionLevel, regionId, Pollutants.SO2.id), 
-                ]);
-
                 const showHours = 24;
                 const cutoff = selectedTimestamp - showHours * 60 * 60 * 1000; 
+                const selectedTimestampPeriod = {start: cutoff, end: selectedTimestamp};
 
-                const filteredPm25 = filterByTimeRange(pm25Data, cutoff, selectedTimestamp); 
-                const filteredPm10 = filterByTimeRange(pm10Data, cutoff, selectedTimestamp); 
-                const filteredNo2 = filterByTimeRange(no2Data, cutoff, selectedTimestamp); 
-                const filteredCo = filterByTimeRange(coData, cutoff, selectedTimestamp); 
-                const filteredO3 = filterByTimeRange(o3Data, cutoff, selectedTimestamp); 
-                const filteredSo2 = filterByTimeRange(so2Data, cutoff, selectedTimestamp); 
+                const pollutantData = await fetchPollutantData(regionLevel, regionId, selectedTimestampPeriod);
 
-                const labels = filteredPm25.map(d => new Date(d.timestamp).toLocaleTimeString([], {
+                const labels = pollutantData.map(d => new Date(d.timestamp).toLocaleTimeString([], {
                     hour: '2-digit', 
                     minute: '2-digit'
                 }));
@@ -569,7 +566,7 @@
                             datasets: [
                                 {
                                     label: 'PM2.5 (µg/m³)',
-                                    data: filteredPm25.map(d => d.value),
+                                    data: pollutantData.map(d => d.pm25Value),
                                     yAxisID: 'y-left',
                                     borderColor: 'rgba(255, 99, 132, 1)', 
                                     backgroundColor: 'rgba(255, 99, 132, 0.2)',
@@ -578,7 +575,7 @@
                                 },
                                 {
                                     label: 'PM10 (µg/m³)',
-                                    data: filteredPm10.map(d => d.value),
+                                    data: pollutantData.map(d => d.pm10Value),
                                     yAxisID: 'y-left',
                                     borderColor: 'rgba(54, 162, 235, 1)',
                                     backgroundColor: 'rgba(54, 162, 235, 0.2)',
@@ -587,7 +584,7 @@
                                 },
                                 {
                                     label: 'NO2 (ppb)',
-                                    data: filteredNo2.map(d => d.value),
+                                    data: pollutantData.map(d => d.no2Value),
                                     yAxisID: 'y-right',
                                     borderColor: 'rgba(255, 206, 86, 1)', 
                                     backgroundColor: 'rgba(255, 206, 86, 0.2)',
@@ -596,7 +593,7 @@
                                 },
                                 {
                                     label: 'CO (ppb)',
-                                    data: filteredCo.map(d => d.value),
+                                    data: pollutantData.map(d => d.coValue),
                                     yAxisID: 'y-right',
                                     borderColor: 'rgba(153, 102, 255, 1)',
                                     backgroundColor: 'rgba(153, 102, 255, 0.2)',
@@ -605,7 +602,7 @@
                                 },
                                 {
                                     label: 'O3 (ppb)',
-                                    data: filteredO3.map(d => d.value),
+                                    data: pollutantData.map(d => d.o3Value),
                                     yAxisID: 'y-right',
                                     borderColor: 'rgba(255, 159, 64, 1)',
                                     backgroundColor: 'rgba(255, 159, 64, 0.2)',
@@ -614,7 +611,7 @@
                                 },
                                 {
                                     label: 'SO2 (ppb)',
-                                    data: filteredSo2.map(d => d.value),
+                                    data: pollutantData.map(d => d.so2Value),
                                     yAxisID: 'y-right',
                                     borderColor: 'rgba(75, 192, 192, 1)',
                                     backgroundColor: 'rgba(75, 192, 192, 0.2)',
@@ -713,8 +710,21 @@
     }
 
     $: if (sliderHour !== undefined) {
-        selectedTimestamp = now - sliderHour * 3600 * 1000;
+        const currentDate = new Date(now);
+
+        // Snap the base time ("now") to the latest full hour
+        const roundedNow = new Date(currentDate);
+        roundedNow.setMinutes(0, 0, 0);
+
+        // Subtract the number of hours from the snapped base
+        const adjustedDate = new Date(roundedNow);
+        adjustedDate.setHours(roundedNow.getHours() - sliderHour);
+
+        selectedTimestamp = adjustedDate.getTime();
+
+        console.log(`Selected timestamp updated to: ${adjustedDate.toISOString()}`);
     }
+
     $: if (map && selectedTimestamp !== undefined) {
         refreshRegions();
     }
@@ -725,7 +735,7 @@
     <div id="map" class="map-landing-container"></div>
 
     <div class="time-slider-container">
-        <label for="timeSlider">Show Hour: {24 - sliderHour}h ago</label>
+        <label for="timeSlider">Show Hour: {sliderHour}h ago</label>
         <input 
             id="timeSlider" 
             type="range" 
@@ -733,6 +743,7 @@
             max="23" 
             bind:value={sliderHour} 
             step="1" 
+            style="direction: rtl;" 
         />
         <div class="time-slider-timestamp">
             {new Date(selectedTimestamp).toLocaleString()}

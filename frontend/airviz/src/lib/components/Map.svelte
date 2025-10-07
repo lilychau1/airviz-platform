@@ -6,13 +6,18 @@
     import type { Chart } from "chart.js";
 
     import { 
+        // fetchAllRegions, 
+        // fetchPollutantData, 
+        fetchMapRadius, 
+        // fetchPopupInformation 
+    } from '../../api/MockApi';
+    import { 
         fetchAllRegions, 
         fetchPollutantData, 
-        fetchMapRadius, 
         fetchPopupInformation 
-    } from '../../api/MockApi';
-    import { Pollutants, type RegionUnit, type Coordinates, LevelCategory } from '../constants';
-    import { fetchCurrentLocation, filterByTimeRange } from '../utils/utils';
+    } from '../../api/MockLambdaApi'
+    import { type RegionUnit, type Coordinates, LevelCategory } from '../constants';
+    import { fetchCurrentLocation } from '../utils/utils';
 
     const mapTilerAPIKey: string = import.meta.env.VITE_MAPTILER_API_KEY as string;
     console.log(mapTilerAPIKey)
@@ -193,14 +198,28 @@
                 tileInformationDiv.innerHTML = 'Loading tile details...'; 
                 tileInformationDiv.className = 'popup-information'; 
                 popupContent.appendChild(tileInformationDiv); 
-
+            
                 fetchPopupInformation('tile', tileId).then((data) => {
+                    // Unpack AQI values and categories for all keys (e.g. uaqi, gbr_defra)
+                    let aqiHtml = '';
+                    if (data.currentAqi && data.currentAqiCategoryLevel) {
+                        for (const key of Object.keys(data.currentAqi)) {
+                            const aqiValue = data.currentAqi[key];
+                            const catLevel = data.currentAqiCategoryLevel[key];
+                            const cat = LevelCategory[catLevel as 1 | 2 | 3];
+                            aqiHtml += `
+                                <div>
+                                    <span style="font-weight:bold">${key.toUpperCase()} AQI:</span>
+                                    <span style="color: ${cat?.colour ?? 'black'}">${aqiValue}</span>
+                                </div>
+                            `;
+                        }
+                    }
+
                     tileInformationDiv.innerHTML = `
                         <strong>Name: ${data.name}</strong><br>
                         Region: ${data.region}<br>
-                        Borough: ${data.boroughRegion}<br>
-                        View in Google Map
-                        AQI: <span style="color: ${LevelCategory[data.currentAqiCategoryLevel as 1 | 2 | 3]?.colour ?? 'black'}">${data.currentAqi}<br></span>
+                        ${aqiHtml}
                         <span style="color: ${LevelCategory[data.currentPm25Level as 1 | 2 | 3]?.colour ?? 'black'}">PM2.5</span>&nbsp;&nbsp;&nbsp;&nbsp;
                         <span style="color: ${LevelCategory[data.currentPm10Level as 1 | 2 | 3]?.colour ?? 'black'}">PM10</span>&nbsp;&nbsp;&nbsp;&nbsp;
                         <span style="color: ${LevelCategory[data.currentNo2Level as 1 | 2 | 3]?.colour ?? 'black'}">NO2</span>&nbsp;&nbsp;&nbsp;&nbsp;
@@ -208,6 +227,7 @@
                         <span style="color: ${LevelCategory[data.currentSo2Level as 1 | 2 | 3]?.colour ?? 'black'}">SO2</span>&nbsp;&nbsp;&nbsp;&nbsp;
                         <span style="color: ${LevelCategory[data.currentCoLevel as 1 | 2 | 3]?.colour ?? 'black'}">CO</span>
                     `;
+
                 }).catch((error) => {
                     tileInformationDiv.innerHTML = `<span style="color: red;">Failed to load tile information.</span>`;
                     console.error(error);
@@ -224,33 +244,13 @@
 
                 try {
                     // Placeholder: Fetch last 24 hours' records for the specific Tile ID, PM2.5 and PM10 pollutants
-                    const [
-                        pm25Data, 
-                        pm10Data, 
-                        no2Data, 
-                        coData, 
-                        o3Data, 
-                        so2Data, 
-                    ] = await Promise.all([
-                        fetchPollutantData('tile', tileId, Pollutants.PM25.id), 
-                        fetchPollutantData('tile', tileId, Pollutants.PM10.id), 
-                        fetchPollutantData('tile', tileId, Pollutants.NO2.id), 
-                        fetchPollutantData('tile', tileId, Pollutants.CO.id), 
-                        fetchPollutantData('tile', tileId, Pollutants.O3.id), 
-                        fetchPollutantData('tile', tileId, Pollutants.SO2.id), 
-                    ]);
-
                     const showHours = 24;
                     const cutoff = selectedTimestamp - showHours * 60 * 60 * 1000; 
+                    const selectedTimestampPeriod = {start: cutoff, end: selectedTimestamp};
 
-                    const filteredPm25 = filterByTimeRange(pm25Data, cutoff, selectedTimestamp); 
-                    const filteredPm10 = filterByTimeRange(pm10Data, cutoff, selectedTimestamp); 
-                    const filteredNo2 = filterByTimeRange(no2Data, cutoff, selectedTimestamp); 
-                    const filteredCo = filterByTimeRange(coData, cutoff, selectedTimestamp); 
-                    const filteredO3 = filterByTimeRange(o3Data, cutoff, selectedTimestamp); 
-                    const filteredSo2 = filterByTimeRange(so2Data, cutoff, selectedTimestamp); 
+                    const pollutantData = await fetchPollutantData('tile', tileId, selectedTimestampPeriod);
 
-                    const labels = filteredPm25.map(d => new Date(d.timestamp).toLocaleTimeString([], {
+                    const labels = pollutantData.map(d => new Date(d.timestamp).toLocaleTimeString([], {
                         hour: '2-digit', 
                         minute: '2-digit'
                     }));
@@ -274,7 +274,7 @@
                                 datasets: [
                                     {
                                         label: 'PM2.5 (µg/m³)',
-                                        data: filteredPm25.map(d => d.value),
+                                        data: pollutantData.map(d => d.pm25Value),
                                         yAxisID: 'y-left',
                                         borderColor: 'rgba(255, 99, 132, 1)', 
                                         backgroundColor: 'rgba(255, 99, 132, 0.2)',
@@ -283,7 +283,7 @@
                                     },
                                     {
                                         label: 'PM10 (µg/m³)',
-                                        data: filteredPm10.map(d => d.value),
+                                        data: pollutantData.map(d => d.pm10Value),
                                         yAxisID: 'y-left',
                                         borderColor: 'rgba(54, 162, 235, 1)',
                                         backgroundColor: 'rgba(54, 162, 235, 0.2)',
@@ -292,7 +292,7 @@
                                     },
                                     {
                                         label: 'NO2 (ppb)',
-                                        data: filteredNo2.map(d => d.value),
+                                        data: pollutantData.map(d => d.no2Value),
                                         yAxisID: 'y-right',
                                         borderColor: 'rgba(255, 206, 86, 1)', 
                                         backgroundColor: 'rgba(255, 206, 86, 0.2)',
@@ -301,7 +301,7 @@
                                     },
                                     {
                                         label: 'CO (ppb)',
-                                        data: filteredCo.map(d => d.value),
+                                        data: pollutantData.map(d => d.coValue),
                                         yAxisID: 'y-right',
                                         borderColor: 'rgba(153, 102, 255, 1)',
                                         backgroundColor: 'rgba(153, 102, 255, 0.2)',
@@ -310,7 +310,7 @@
                                     },
                                     {
                                         label: 'O3 (ppb)',
-                                        data: filteredO3.map(d => d.value),
+                                        data: pollutantData.map(d => d.o3Value),
                                         yAxisID: 'y-right',
                                         borderColor: 'rgba(255, 159, 64, 1)',
                                         backgroundColor: 'rgba(255, 159, 64, 0.2)',
@@ -319,7 +319,7 @@
                                     },
                                     {
                                         label: 'SO2 (ppb)',
-                                        data: filteredSo2.map(d => d.value),
+                                        data: pollutantData.map(d => d.so2Value),
                                         yAxisID: 'y-right',
                                         borderColor: 'rgba(75, 192, 192, 1)',
                                         backgroundColor: 'rgba(75, 192, 192, 0.2)',
@@ -424,16 +424,28 @@
     }
 
     $: if (sliderHour !== undefined) {
-        selectedTimestamp = now - sliderHour * 3600 * 1000;
-        refreshTiles();
+        const currentDate = new Date(now);
+
+        // Snap the base time ("now") to the latest full hour
+        const roundedNow = new Date(currentDate);
+        roundedNow.setMinutes(0, 0, 0);
+
+        // Subtract the number of hours from the snapped base
+        const adjustedDate = new Date(roundedNow);
+        adjustedDate.setHours(roundedNow.getHours() - sliderHour);
+
+        selectedTimestamp = adjustedDate.getTime();
+
+        console.log(`Selected timestamp updated to: ${adjustedDate.toISOString()}`);
     }
+
 </script>
 
 <div class="map-wrapper">
     <div id="map" class="map-landing-container"></div>
 
     <div class="time-slider-container">
-        <label for="timeSlider">Show Hour: {24 - sliderHour}h ago</label>
+        <label for="timeSlider">Show Hour: {sliderHour}h ago</label>
         <input 
             id="timeSlider" 
             type="range" 

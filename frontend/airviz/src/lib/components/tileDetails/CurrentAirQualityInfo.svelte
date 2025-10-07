@@ -1,7 +1,7 @@
 <script lang="ts">
   import { onMount } from "svelte";
   import type { CurrentAirQualityInfo } from "../../constants";
-  import { fetchCurrentAirQualityInfo } from "../../../api/MockApi";
+  import { fetchCurrentAirQualityInfo } from "../../../api/MockLambdaApi";
 
   export let tileId: number;
 
@@ -11,7 +11,7 @@
 
   onMount(async () => {
     try {
-      airQualityInfo = await fetchCurrentAirQualityInfo(tileId);
+      airQualityInfo = await fetchCurrentAirQualityInfo('tile', tileId);
     } catch (e) {
       error = `Failed to fetch air quality info for tile ID ${tileId}`;
       console.error(error, e);
@@ -23,9 +23,9 @@
   function getDominantHealthImpact() {
     if (!airQualityInfo) return "Unknown";
     const dominant = airQualityInfo.currentRecords.find(
-      r => r.pollutantId === airQualityInfo!.dominantPollutant
+      r => Object.values(airQualityInfo!.dominantPollutant).includes(r.pollutantId)
     );
-    return dominant?.healthImpact ?? "Unknown";
+    return dominant?.impact ?? "Unknown";
   }
 </script>
 
@@ -37,22 +37,29 @@
     {:else if error}
         <p>{error}</p>
     {:else if airQualityInfo}
-        <!-- Cards Section -->
-        <div class="current-air-quality-cards">
-            <!-- AQI Card -->
-            <div class="current-air-quality-card">
-                <div class="current-air-quality-card-title">AQI</div>
-                <div class="current-air-quality-card-value">{airQualityInfo.aqi}</div>
-                <div class="current-air-quality-card-footer">{airQualityInfo.aqiCategory}</div>
+      <!-- Cards Section -->
+      <div class="current-air-quality-cards">
+        <!-- AQI Cards -->
+        {#each Object.entries(airQualityInfo.aqi) as [aqiType, aqiValue]}
+          <div class="current-air-quality-card">
+            <div class="current-air-quality-card-title">{aqiType.toUpperCase()} AQI</div>
+            <div class="current-air-quality-card-value">{aqiValue}</div>
+            <div class="current-air-quality-card-footer">
+              {airQualityInfo.aqiCategory[aqiType] ?? ''}
             </div>
+          </div>
+        {/each}
 
-            <!-- Dominant Pollutant Card -->
-            <div class="current-air-quality-card">
-                <div class="current-air-quality-card-title">Dominant Pollutant</div>
-                <div class="current-air-quality-card-value">{airQualityInfo.dominantPollutant.toUpperCase()}</div>
-                <div class="current-air-quality-card-footer">{getDominantHealthImpact()}</div>
-            </div>      
-        </div>
+        <!-- Dominant Pollutant Cards -->
+        {#each Object.entries(airQualityInfo.dominantPollutant) as [aqiType, pollutant]}
+          <div class="current-air-quality-card">
+            <div class="current-air-quality-card-title">{aqiType.toUpperCase()} Dominant Pollutant</div>
+            <div class="current-air-quality-card-value">{pollutant.toUpperCase()}</div>
+            <div class="current-air-quality-card-footer">
+            </div>
+          </div>
+        {/each}
+      </div>
 
         <!-- Table Section -->
         <h3 class="pollutant-concentration">Pollutant Concentration</h3>
@@ -73,7 +80,7 @@
                 <td>{record.value}</td>
                 <td>{record.unit}</td>
                 <td>{record.level}</td>
-                <td>{record.healthImpact}</td>
+                <td>{record.impact}</td>
                 </tr>
             {/each}
             </tbody>

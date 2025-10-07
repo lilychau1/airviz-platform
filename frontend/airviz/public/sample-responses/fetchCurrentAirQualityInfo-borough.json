@@ -1,0 +1,57 @@
+{
+    "aqi": {
+        "uaqi": 81,
+        "gbr_defra": 2
+    },
+    "aqiCategory": "Excellent air quality",
+    "dominantPollutant": "o3",
+    "colourCode": {
+        "red": 0.258823535,
+        "blue": 0.20784314,
+        "green": 0.87058825
+    },
+    "CurrentRecords": [
+        {
+            "pollutantId": "pm25",
+            "timestamp": "2025-10-06T19:00:00.000Z",
+            "value": 10.54,
+            "unit": "microgram_per_cubic_meter",
+            "level": 1
+        },
+        {
+            "pollutantId": "pm10",
+            "timestamp": "2025-10-06T19:00:00.000Z",
+            "value": 21.8,
+            "unit": "microgram_per_cubic_meter",
+            "level": 1
+        },
+        {
+            "pollutantId": "no2",
+            "timestamp": "2025-10-06T19:00:00.000Z",
+            "value": 23.49,
+            "unit": "ppb",
+            "level": 1
+        },
+        {
+            "pollutantId": "so2",
+            "timestamp": "2025-10-06T19:00:00.000Z",
+            "value": 0.45,
+            "unit": "ppb",
+            "level": 1
+        },
+        {
+            "pollutantId": "o3",
+            "timestamp": "2025-10-06T19:00:00.000Z",
+            "value": 23.98,
+            "unit": "ppb",
+            "level": 1
+        },
+        {
+            "pollutantId": "co",
+            "timestamp": "2025-10-06T19:00:00.000Z",
+            "value": 195.85,
+            "unit": "ppb",
+            "level": 3
+        }
+    ]
+}

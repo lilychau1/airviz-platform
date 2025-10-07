@@ -1,19 +1,19 @@
-import { type PollutantId, type Coordinates, type PollutantRecord_old, type RegionUnit, type TilePopupInformation, type TileDetails, type CurrentAirQualityInfo, HealthImpacts, type PollutantCurrentRecord, type AqiRecord, type AqiTypeId, type HealthRecommendationRecord, type TileMetadata, type RegionPopupInformation, type RegionLevel, type DetailsReturnTypeForRegionLevel, type PopupInfoReturnTypeForRegionLevel} from "../lib/constants";
+import {
+    type PollutantId, 
+    type PollutantRecord, 
+    type RegionUnit, 
+    HealthImpacts, 
+    type AqiRecord, 
+    type HealthRecommendationRecord, 
+    type TileMetadata, 
+    type RegionLevel, 
+    type DetailsReturnTypeForRegionLevel, 
+    type PopupInfoReturnTypeForRegionLevel, 
+    type CurrentAirQualityInfo, 
+    type PollutantCurrentRecord,
+    type HealthRecommendationRecord
+} from "../lib/constants";
 import type { FeatureCollection } from 'geojson';
-
-// Fetch current location
-
-export async function fetchCurrentLocation(): Promise<Coordinates> {
-    const resp = await fetch('/mock/current-location.json');
-    if (!resp.ok) throw new Error("Failed to fetch current locations");
-    
-    const data = await resp.json();
-
-    return {
-        longitude: data.longitude, 
-        latitude: data.latitude, 
-    }
-}
 
 // Fetch map radius
 export async function fetchMapRadius(): Promise<number> {
@@ -29,22 +29,15 @@ export async function fetchAllRegions(
     radius: number, 
     timestamp: number
 ): Promise<RegionUnit[]> {
-    const timestampDate = new Date(timestamp);
-    timestampDate.setMinutes(0, 0, 0);
-    const isoTimestampString = timestampDate.toISOString().replace(/\.\d{3}Z$/, 'Z');;
-    console.log(`/mock/${level}s.json`)
-    const resp = await fetch(`/mock/${level}s.json`)
+    console.log(`/sample-responses/fetchAllRegions-${level}.json`)
+    
+    const resp = await fetch(`/sample-responses/fetchAllRegions-${level}.json`)
     if (!resp.ok) throw new Error("Failed to fetch tiles");
+    
     const data = await resp.json();
-    const regionDataForTimestamp = data[isoTimestampString];
+    const regionDataForTimestamp: RegionUnit[] = data["regions"];
 
-    if (regionDataForTimestamp) {
-        console.log('Tiles for this hour:', regionDataForTimestamp);
-    } else {
-        console.log('No tile data found for timestamp:', isoTimestampString);
-    }
-
-    return regionDataForTimestamp.map((p: any) => ({
+    return regionDataForTimestamp.map((p: RegionUnit) => ({
         id: p.id, 
         longitude: p.longitude, 
         latitude: p.latitude, 
@@ -56,15 +49,22 @@ export async function fetchAllRegions(
 export async function fetchPollutantData(
     level: string, 
     id: number, 
-    pollutantId: PollutantId
-): Promise<PollutantRecord_old[]> {
-    // TODO: no pollutantId, fetch all at once
-    const resp = await fetch(`/mock/${level}/${id}/${pollutantId}.json`); 
+    selectedTimestampPeriod: {start: number, end: number},
+): Promise<PollutantRecord[]> {
+    const selectedTimestampPeriodUtc = {
+        start: new Date(selectedTimestampPeriod.start).getTime(),
+        end: new Date(selectedTimestampPeriod.end).getTime()
+    };
+
+    const resp = await fetch(`/sample-responses/fetchPollutantData-${level}.json`); 
+    const data = await resp.json();
+    const allRecords: PollutantRecord[] = data["records"];
+
     if (!resp.ok) {
-        throw new Error(`Failed to load ${pollutantId} data for ${level} ${id}`); 
+        throw new Error(`Failed to load pollutant data for ${level} ${id}`); 
     }
 
-    return resp.json() as Promise<PollutantRecord_old[]>;
+    return allRecords;
 }
 
 // Fetch tile information
@@ -72,8 +72,8 @@ export async function fetchPopupInformation<L extends RegionLevel>(
     level: L, 
     id: number
 ): Promise<PopupInfoReturnTypeForRegionLevel<L>> {
-    const resp = await fetch(`/mock/${level}/${id}/information.json`); 
-    console.log(`/mock/${level}/${id}/information.json`)
+    const resp = await fetch(`/sample-responses/fetchPopupInformation-${level}.json`); 
+    console.log(`/sample-responses/fetchPopupInformation-${level}.json`)
     if (!resp.ok) {
         throw new Error(`Failed to load data for ${level} ID ${id}`); 
     }
@@ -85,7 +85,7 @@ export async function fetchDetails<L extends RegionLevel>(
     level: L, 
     id: number
 ): Promise<DetailsReturnTypeForRegionLevel<L>> {
-    const resp = await fetch(`/mock/${level}/${id}/details.json`); 
+    const resp = await fetch(`/sample-responses/${level}/${id}/details.json`); 
     if (!resp.ok) {
         throw new Error(`Failed to load Tile details for ${level} ID ${id}`); 
     }
@@ -104,7 +104,7 @@ export async function fetchCurrentAirQualityInfo(
     level: RegionLevel, 
     id: number
 ): Promise<CurrentAirQualityInfo> {
-  const resp = await fetch(`/mock/${level}/${id}/current-air-quality-info.json`);
+  const resp = await fetch(`/sample-responses/fetchCurrentAirQualityInfo-${level}.json`);
   if (!resp.ok) {
     throw new Error(`Failed to load air quality info for tile ID ${id}`);
   }
@@ -112,16 +112,16 @@ export async function fetchCurrentAirQualityInfo(
   const raw = await resp.json();
 
   // normalise JSON keys and add new field "healthImpact"
-  const currentRecords: PollutantCurrentRecord[] = raw.CurrentRecords.map(
+const currentRecords: PollutantCurrentRecord[] = raw.CurrentRecords.map(
     (r: any) => ({
-      pollutantId: r.pollutantId,
-      timestamp: r.timestamp,
-      value: r.value,
-      unit: r.unit,
-      level: r.level,
-      impact: getHealthImpact(r.pollutantId, r.level)
+        pollutantId: r.pollutantId,
+        timestamp: r.timestamp,
+        value: r.value,
+        unit: r.unit,
+        level: r.level,
+        impact: r.impact ?? getHealthImpact(r.pollutantId, r.level)
     })
-  );
+);
 
   return {
     aqi: raw.aqi,
@@ -135,34 +135,40 @@ export async function fetchCurrentAirQualityInfo(
 export async function fetchAqiData(
     level: string, 
     id: number, 
-    aqiTypeId: AqiTypeId
-): Promise<AqiRecord[]> {
-    // TODO: no aqiTypeId, fetch all at once
-    const resp = await fetch(`/mock/${level}/${id}/aqi-${aqiTypeId}.json`); 
-    if (!resp.ok) {
-        throw new Error(`Failed to load AQI (${aqiTypeId}) data for ${level} ${id}`); 
-    }
+    selectedTimestampPeriod: {start: number, end: number},
+): Promise<Record<string, AqiRecord[]>> {
+    // Convert start and end to UTC datetime numbers
+    const selectedTimestampPeriodUtc = {
+        start: new Date(selectedTimestampPeriod.start).getTime(),
+        end: new Date(selectedTimestampPeriod.end).getTime()
+    };
 
-    return resp.json() as Promise<AqiRecord[]>;
+    const resp = await fetch(`/sample-responses/fetchAqiData-${level}.json`); 
+    const data = await resp.json();
+    if (!resp.ok) {
+        throw new Error(`Failed to load AQI data for ${level} ${id}`); 
+    }
+    return data["records"];
 }
 
 // Fetch health recommendations
 export async function fetchTileHealthRecommendations(
     tileId: number
 ): Promise<HealthRecommendationRecord[]> {
-    const resp = await fetch(`/mock/tile/${tileId}/health-recommendations.json`); 
+    const resp = await fetch(`/sample-responses/fetchTileHealthRecommendations.json`); 
     if (!resp.ok) {
         throw new Error(`Failed to load health recommendation data for tile ${tileId}`); 
     }
 
-    return resp.json() as Promise<HealthRecommendationRecord[]>;
+    const data = await resp.json();
+    return data["recommendations"] as HealthRecommendationRecord[];
 }
 
 // Fetch metadata
 export async function fetchTileMetadata(
     tileId: number
 ): Promise<TileMetadata>{
-    const resp = await fetch(`/mock/tile/${tileId}/metadata.json`); 
+    const resp = await fetch(`/sample-responses/tile/${tileId}/metadata.json`); 
     if (!resp.ok) {
         throw new Error(`Failed to load metadata for tile ${tileId}`); 
     }
