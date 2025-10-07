@@ -1,18 +1,9 @@
 <script lang="ts">
   import { onMount } from "svelte";
   import maplibregl, { Marker } from "maplibre-gl";
+  import type { TileDetails } from "../../constants";
 
-  export let tile: {
-    id: number;
-    name: string;
-    latitude: number;
-    longitude: number;
-    region: string;
-    boroughRegion: string;
-    zoneRegion: number;
-    postcodeArea: string;
-    description?: string;
-  };
+  export let tile: TileDetails;
 
   let map: maplibregl.Map;
   const mapTilerAPIKey: string = import.meta.env.VITE_MAPTILER_API_KEY as string;
@@ -45,10 +36,6 @@
         <div>{tile.region}</div>
         <div><strong>Borough Region:</strong></div>
         <div>{tile.boroughRegion}</div>
-        <div><strong>Zone Region:</strong></div>
-        <div>{tile.zoneRegion}</div>
-        <div><strong>Postcode Area:</strong></div>
-        <div>{tile.postcodeArea}</div>
         {#if tile.description}
           <div><strong>Description:</strong></div>
           <div>{tile.description}</div>

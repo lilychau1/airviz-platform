@@ -231,6 +231,24 @@ export class ApiComputeStack extends cdk.Stack {
         );
         props!.dbSecret.grantRead(fetchTileHealthRecommendationsFunction);
 
+        // Fetch Details
+        const fetchDetailsFunction = new lambdaNodejs.NodejsFunction(
+            this, 
+            'fetchDetailsFunction', {
+                entry: '../backend/lambda/fetchDetails/index.ts',
+                runtime: lambda.Runtime.NODEJS_18_X,
+                handler: 'index.handler',
+                timeout: cdk.Duration.minutes(10),
+                memorySize: 512,
+                layers: [aqiLayer, utilsLayer],
+                environment: {
+                    DB_SECRET_ARN: props!.dbSecret.secretArn,
+                    DB_NAME: props!.databaseName
+                },
+            }
+        );
+        props!.dbSecret.grantRead(fetchDetailsFunction);
+        
         // Add API Gateway
         const httpApi = new apigatewayv2.HttpApi(
             this, 
@@ -333,6 +351,16 @@ export class ApiComputeStack extends cdk.Stack {
             integration: new integrations.HttpLambdaIntegration(
                 'fetchTileHealthRecommendationsFunction', 
                 fetchTileHealthRecommendationsFunction, 
+            ), 
+        });
+
+        // fetchDetails
+        httpApi.addRoutes({
+            path: '/fetchDetails', 
+            methods: [apigatewayv2.HttpMethod.POST], 
+            integration: new integrations.HttpLambdaIntegration(
+                'fetchDetailsFunction', 
+                fetchDetailsFunction, 
             ), 
         });
     }

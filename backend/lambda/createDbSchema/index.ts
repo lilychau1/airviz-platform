@@ -83,6 +83,7 @@ export const handler = async () => {
             CREATE TABLE IF NOT EXISTS boroughs (
                 id SERIAL PRIMARY KEY,
                 name VARCHAR(255) NOT NULL, 
+                region VARCHAR(255) NOT NULL,
                 location POINT NOT NULL, 
                 inserted_at TIMESTAMP NOT NULL, 
                 updated_at TIMESTAMP NOT NULL, 
@@ -223,7 +224,7 @@ export const handler = async () => {
             // Create inserting SQL clause for borough information
             const valuesClause = boroughs
                 .map((_: Borough, i: number) => 
-                    `($${i * 7 + 1}, $${i * 7 + 2}, POINT($${i * 7 + 3}, $${i * 7 + 4}), $${i * 7 + 5}, $${i * 7 + 6}, $${i * 7 + 7})`
+                    `($${i * 8 + 1}, $${i * 8 + 2}, $${i * 8 + 3}, POINT($${i * 8 + 4}, $${i * 8 + 5}), $${i * 8 + 6}, $${i * 8 + 7}, $${i * 8 + 8})`
                 )
                 .join(', ');
 
@@ -231,6 +232,7 @@ export const handler = async () => {
             const params = boroughs.flatMap((borough: Borough, i: number) => [
                 i + 1, // id
                 borough.name, // name
+                'Greater London', // region placeholder
                 borough.longitude, // POINT X
                 borough.latitude, // POINT Y
                 now, // inserted_at
@@ -240,7 +242,7 @@ export const handler = async () => {
             
             // Run query
             await client.query(
-                `INSERT INTO boroughs (id, name, location, inserted_at, updated_at, description) VALUES ${valuesClause}`,
+                `INSERT INTO boroughs (id, name, region, location, inserted_at, updated_at, description) VALUES ${valuesClause}`,
                 params
             );
 
