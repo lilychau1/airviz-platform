@@ -6,15 +6,10 @@
     import type { Chart } from "chart.js";
 
     import { 
-        // fetchAllRegions, 
-        // fetchPollutantData, 
-        fetchMapRadius, 
-        // fetchPopupInformation 
-    } from '../../api/MockApi';
-    import { 
         fetchAllRegions, 
         fetchPollutantData, 
-        fetchPopupInformation 
+        fetchPopupInformation, 
+        fetchMapRadius, 
     } from '../../api/MockLambdaApi'
     import { type RegionUnit, type Coordinates, LevelCategory } from '../constants';
     import { fetchCurrentLocation } from '../utils/utils';

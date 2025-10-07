@@ -1,5 +1,5 @@
 <script lang="ts">
-    import { submitForm } from '../api/MockApi'; 
+    import { submitForm } from '../api/MockLambdaApi'; 
 
     let name = '';
     let email = '';

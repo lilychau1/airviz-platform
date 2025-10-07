@@ -4,7 +4,6 @@ import {
     type RegionUnit, 
     HealthImpacts, 
     type AqiRecord, 
-    type HealthRecommendationRecord, 
     type TileMetadata, 
     type RegionLevel, 
     type DetailsReturnTypeForRegionLevel, 

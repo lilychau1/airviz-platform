@@ -5,14 +5,12 @@
     import ChartLib from "chart.js/auto";
     import type { Chart } from "chart.js";
 
-    import {
-        fetchMapRadius, 
-        loadRegionalGeoJSON
-    } from '../../api/MockApi';
     import { 
         fetchAllRegions, 
         fetchPollutantData, 
         fetchPopupInformation, 
+        fetchMapRadius, 
+        loadRegionalGeoJSON,
     } from '../../api/MockLambdaApi'
     import { type RegionUnit, type Coordinates, LevelCategory, type RegionLevel, type PopupInfoReturnTypeForRegionLevel } from '../constants';
     import { fetchCurrentLocation } from '../utils/utils';
