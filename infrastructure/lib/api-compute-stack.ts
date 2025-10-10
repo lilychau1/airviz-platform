@@ -6,6 +6,8 @@ import * as integrations from 'aws-cdk-lib/aws-apigatewayv2-integrations';
 import { Secret } from 'aws-cdk-lib/aws-secretsmanager';
 import * as s3 from 'aws-cdk-lib/aws-s3';
 import * as lambdaNodejs from 'aws-cdk-lib/aws-lambda-nodejs';
+import * as scheduler from 'aws-cdk-lib/aws-scheduler';
+import * as iam from 'aws-cdk-lib/aws-iam';
 
 import * as dotenv from 'dotenv';
 import * as path from 'path';
@@ -77,29 +79,6 @@ export class ApiComputeStack extends cdk.Stack {
             secretStringValue: cdk.SecretValue.unsafePlainText(process.env.GOOGLE_AIR_QUALITY_API!),
         });
 
-        const ingestAqDataFunction = new lambdaNodejs.NodejsFunction(
-            this, 
-            'ingestAqDataFunction', {
-                entry: '../backend/lambda/ingestAqData/index.ts',
-                handler: 'handler',
-                runtime: lambda.Runtime.NODEJS_18_X,
-                bundling: {},
-                timeout: cdk.Duration.minutes(10),
-                memorySize: 512,
-                layers: [aqiLayer, utilsLayer],
-                environment: {
-                    DB_SECRET_ARN: props!.dbSecret.secretArn,
-                    DB_NAME: props!.databaseName,
-                    GOOGLE_API_SECRET_ARN: googleAqApiKeySecret.secretArn,
-                    TILE_COORDS_BUCKET: props!.bucket.bucketName,
-                    TILE_COORDS_FILENAME: props!.tileCoordsKey,
-                },
-            }
-        );
-        props!.dbSecret.grantRead(ingestAqDataFunction);
-        googleAqApiKeySecret.grantRead(ingestAqDataFunction);
-        
-        props!.bucket.grantRead(ingestAqDataFunction);
 
         // Aggregate regional metrics
         const aggregateRegionalMetricsFunction = new lambdaNodejs.NodejsFunction(
@@ -119,6 +98,48 @@ export class ApiComputeStack extends cdk.Stack {
             }
         );
         props!.dbSecret.grantRead(aggregateRegionalMetricsFunction);
+
+        // Initialise API Gateway
+        const httpApi = new apigatewayv2.HttpApi(
+            this, 
+            'HttpApi', {
+                apiName: 'AirVizApi', 
+                createDefaultStage: true, 
+                corsPreflight: {
+                    allowOrigins: ['*'],   // or restrict to your frontend domain
+                    allowMethods: [
+                        apigatewayv2.CorsHttpMethod.GET, 
+                        apigatewayv2.CorsHttpMethod.POST
+                    ],
+                }, 
+            }
+        ); 
+
+        // Ingest AQ data
+        const ingestAqDataFunction = new lambdaNodejs.NodejsFunction(
+            this, 
+            'ingestAqDataFunction', {
+                entry: '../backend/lambda/ingestAqData/index.ts',
+                handler: 'handler',
+                runtime: lambda.Runtime.NODEJS_18_X,
+                bundling: {},
+                timeout: cdk.Duration.minutes(10),
+                memorySize: 512,
+                layers: [aqiLayer, utilsLayer],
+                environment: {
+                    DB_SECRET_ARN: props!.dbSecret.secretArn,
+                    DB_NAME: props!.databaseName,
+                    GOOGLE_API_SECRET_ARN: googleAqApiKeySecret.secretArn,
+                    TILE_COORDS_BUCKET: props!.bucket.bucketName,
+                    TILE_COORDS_FILENAME: props!.tileCoordsKey,
+                    API_BASE_URL: httpApi.apiEndpoint,
+                },
+            }
+        );
+        props!.dbSecret.grantRead(ingestAqDataFunction);
+        googleAqApiKeySecret.grantRead(ingestAqDataFunction);
+        
+        props!.bucket.grantRead(ingestAqDataFunction);
 
         // Fetch all regions
         const fetchAllRegionsFunction = new lambdaNodejs.NodejsFunction(
@@ -249,22 +270,7 @@ export class ApiComputeStack extends cdk.Stack {
         );
         props!.dbSecret.grantRead(fetchDetailsFunction);
         
-        // Add API Gateway
-        const httpApi = new apigatewayv2.HttpApi(
-            this, 
-            'HttpApi', {
-                apiName: 'AirVizApi', 
-                createDefaultStage: true, 
-                corsPreflight: {
-                    allowOrigins: ['*'],   // or restrict to your frontend domain
-                    allowMethods: [
-                        apigatewayv2.CorsHttpMethod.GET, 
-                        apigatewayv2.CorsHttpMethod.POST
-                    ],
-                }, 
-            }
-        ); 
-
+        // API Gateway route for CreateDbSchema
         httpApi.addRoutes({
             path: '/createDbSchema', 
             methods: [apigatewayv2.HttpMethod.POST], 
@@ -274,7 +280,7 @@ export class ApiComputeStack extends cdk.Stack {
             ), 
         });
 
-        // ingestAqData
+        // API Gateway route for ingestAqData
         httpApi.addRoutes({
             path: '/ingestAqData', 
             methods: [apigatewayv2.HttpMethod.POST], 
@@ -284,7 +290,7 @@ export class ApiComputeStack extends cdk.Stack {
             ), 
         });
 
-        // aggregateRegionalMetrics
+        // API Gateway route for aggregateRegionalMetrics
         httpApi.addRoutes({
             path: '/aggregateRegionalMetrics', 
             methods: [apigatewayv2.HttpMethod.POST], 
@@ -294,7 +300,8 @@ export class ApiComputeStack extends cdk.Stack {
             ), 
         });
 
-        // fetchAllRegions
+
+        // API Gateway route for fetchAllRegions
         httpApi.addRoutes({
             path: '/fetchAllRegions', 
             methods: [apigatewayv2.HttpMethod.POST], 
@@ -304,7 +311,7 @@ export class ApiComputeStack extends cdk.Stack {
             ), 
         });
 
-        // fetchPopupInformation
+        // API Gateway route for fetchPopupInformation
         httpApi.addRoutes({
             path: '/fetchPopupInformation', 
             methods: [apigatewayv2.HttpMethod.POST], 
@@ -314,7 +321,7 @@ export class ApiComputeStack extends cdk.Stack {
             ), 
         });
 
-        // fetchPollutantData
+        // API Gateway route for fetchPollutantData
         httpApi.addRoutes({
             path: '/fetchPollutantData', 
             methods: [apigatewayv2.HttpMethod.POST], 
@@ -324,7 +331,7 @@ export class ApiComputeStack extends cdk.Stack {
             ), 
         });
 
-        // fetchAqiData
+        // API Gateway route for fetchAqiData
         httpApi.addRoutes({
             path: '/fetchAqiData', 
             methods: [apigatewayv2.HttpMethod.POST], 
@@ -334,7 +341,7 @@ export class ApiComputeStack extends cdk.Stack {
             ), 
         });
 
-        // fetchCurrentAirQualityInfo
+        // API Gateway route for fetchCurrentAirQualityInfo
         httpApi.addRoutes({
             path: '/fetchCurrentAirQualityInfo', 
             methods: [apigatewayv2.HttpMethod.POST], 
@@ -344,7 +351,7 @@ export class ApiComputeStack extends cdk.Stack {
             ), 
         });
 
-        // fetchTileHealthRecommendations
+        // API Gateway route for fetchTileHealthRecommendations
         httpApi.addRoutes({
             path: '/fetchTileHealthRecommendations', 
             methods: [apigatewayv2.HttpMethod.POST], 
@@ -354,7 +361,7 @@ export class ApiComputeStack extends cdk.Stack {
             ), 
         });
 
-        // fetchDetails
+        // API Gateway route for fetchDetails
         httpApi.addRoutes({
             path: '/fetchDetails', 
             methods: [apigatewayv2.HttpMethod.POST], 
@@ -362,6 +369,27 @@ export class ApiComputeStack extends cdk.Stack {
                 'fetchDetailsFunction', 
                 fetchDetailsFunction, 
             ), 
+        });
+
+        // Schedule hourly ingestion of AQ data by invoking the Lambda function directly
+        const lambdaInvokeRole = new iam.Role(this, 'LambdaInvokeRole', {
+            assumedBy: new iam.ServicePrincipal('scheduler.amazonaws.com'),
+        });
+
+        lambdaInvokeRole.addToPolicy(new iam.PolicyStatement({
+            actions: ['lambda:InvokeFunction'],
+            resources: [ingestAqDataFunction.functionArn],
+        }));
+
+        new scheduler.CfnSchedule(this, 'IngestAqDataSchedule', {
+            flexibleTimeWindow: { mode: 'OFF' },
+            // Scheduled to run every hour at minute 1 (e.g.: 1:01, 2:01, etc)
+            scheduleExpression: 'cron(1 * * * ? *)', 
+            target: {
+                arn: ingestAqDataFunction.functionArn,
+                roleArn: lambdaInvokeRole.roleArn,
+                input: JSON.stringify({}), // Empty JSON payload
+            },
         });
     }
 }
