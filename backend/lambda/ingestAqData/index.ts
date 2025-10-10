@@ -3,6 +3,7 @@ import { S3Client, GetObjectCommand } from '@aws-sdk/client-s3';
 import { Readable } from 'stream';
 import csvParser = require('csv-parser');
 import { getSecret } from '/opt/nodejs/utils';
+import fetch from 'node-fetch';
 
 const s3Client = new S3Client({});
 
@@ -417,10 +418,23 @@ export const handler = async () => {
             await bulkInsertHealthRecommendations(client, healthRecommendationData);
 
             console.log(`Completed ingestion of records from index ${i} to ${Math.min(i+batchSize-1, coords.length-1)}`);
-        }
 
+            console.log('Ingest step complete.');
+
+        }
+        
+        const apiBaseUrl = process.env.API_BASE_URL;
+        const response = await fetch(`${apiBaseUrl}/aggregateRegionalMetrics`, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ level: 'borough' }),
+        });
+
+        const text = await response.text();
+        console.log('aggregateRegionalMetrics response:', text);
+        
         await client.end();
-        return { statusCode: 200, body: JSON.stringify({ message: 'Batch ingestion succeeded.' }) };
+        return { statusCode: 200, body: JSON.stringify({ message: 'Batch ingestion and aggregation succeeded.' }) };
     } catch (error) {
         if (client) await client.end();
         console.error('Ingestion failed', error);
