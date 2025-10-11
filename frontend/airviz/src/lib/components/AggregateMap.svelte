@@ -28,7 +28,7 @@
     let regionLevel: RegionLevel = 'borough'
 
     // placeholder date for testing
-    const now = new Date("2025-08-11T20:20:00Z").getTime();
+    const now = new Date();
     let sliderHour = 0;
     let selectedTimestamp = now;
 

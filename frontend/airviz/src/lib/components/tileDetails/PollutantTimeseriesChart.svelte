@@ -12,7 +12,7 @@
 
   let filterMode: "last24" | "custom" = "last24";
 
-  const now = new Date("2025-08-11T20:00:00Z");
+  const now = new Date();
 
   // String values for inputs bound to datetime-local
   let customFromStr = toDateTimeLocalString(new Date(now.getTime() - 24 * 3600 * 1000));
