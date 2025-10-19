@@ -106,7 +106,7 @@ export class ApiComputeStack extends cdk.Stack {
                 apiName: 'AirVizApi', 
                 createDefaultStage: true, 
                 corsPreflight: {
-                    allowOrigins: ['*'],   // or restrict to your frontend domain
+                    allowOrigins: ['*'], 
                     allowMethods: [
                         apigatewayv2.CorsHttpMethod.GET, 
                         apigatewayv2.CorsHttpMethod.POST

@@ -286,6 +286,44 @@ nav a {
   font-size: 0.85rem;
 }
 
+.aqi-legend {
+    position: absolute;
+    bottom: 75px;
+    right: 20px;
+    background: rgba(255, 255, 255, 0.9);
+    padding: 10px 14px;
+    border-radius: 10px;
+    font-family: sans-serif;
+    font-size: 12px;
+    box-shadow: 0 2px 6px rgba(0,0,0,0.2);
+    z-index: 10;
+    width: 180px;
+}
+
+.legend-title {
+    font-weight: bold;
+    margin-bottom: 6px;
+    text-align: center;
+}
+
+.legend-gradient {
+    height: 12px;
+    border-radius: 6px;
+    background: linear-gradient(
+        to right, 
+        #ff0000, 
+        #ffcc00, 
+        #00e600  
+    );
+    margin-bottom: 5px;
+}
+
+.legend-labels {
+    display: flex;
+    justify-content: space-between;
+    font-size: 11px;
+}
+
 /* Tile details */
 
 .tile-details-container h1.tile-name {
