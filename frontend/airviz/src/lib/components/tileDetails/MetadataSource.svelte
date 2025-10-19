@@ -1,7 +1,7 @@
 <script lang="ts">
     import { onMount } from "svelte";
     import { staticMetadata, type TileMetadata, type Metadata } from "../../constants";
-    import { fetchTileMetadata } from "../../../api/mockLambdaApi";
+    import { fetchTileMetadata } from "../../../api/LambdaApi";
 
     export let tileId: number;
 

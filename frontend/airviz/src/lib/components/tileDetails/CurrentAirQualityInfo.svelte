@@ -1,7 +1,7 @@
 <script lang="ts">
   import { onMount } from "svelte";
   import type { CurrentAirQualityInfo } from "../../constants";
-  import { fetchCurrentAirQualityInfo } from "../../../api/MockLambdaApi";
+  import { fetchCurrentAirQualityInfo } from "../../../api/LambdaApi";
 
   export let tileId: number;
 

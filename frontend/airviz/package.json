@@ -23,6 +23,7 @@
     "@observablehq/stdlib": "^5.8.8",
     "chart.js": "^4.5.0",
     "maplibre-gl": "^5.7.0",
+    "papaparse": "^5.5.3",
     "svelte-spa-router": "^4.0.1"
   }
 }

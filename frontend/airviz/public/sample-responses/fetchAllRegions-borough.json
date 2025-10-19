@@ -9,5 +9,15 @@
                 "blue":0.20392157,
                 "green":0.7764706
             }
+        }, 
+        {
+            "id":2,
+            "longitude":-0.107359,
+            "latitude":51.547311,
+            "currentAqiColour":{
+                "red":0.5,
+                "blue":0.20392157,
+                "green":0.7764706
+            }
         }
 ]}

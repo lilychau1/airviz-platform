@@ -1,7 +1,7 @@
 <script lang="ts">
     import { onMount } from "svelte";
     import type { HealthRecommendationRecord } from "../../constants";
-    import { fetchTileHealthRecommendations } from "../../../api/MockLambdaApi";
+    import { fetchTileHealthRecommendations } from "../../../api/LambdaApi";
 
     export let tileId: number;
 

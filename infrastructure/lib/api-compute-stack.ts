@@ -67,12 +67,12 @@ export class ApiComputeStack extends cdk.Stack {
         props!.dbSecret.grantRead(CreateDbSchemaFunction);
         props!.bucket.grantRead(CreateDbSchemaFunction);
 
-        // Create trigger to run the CreateDbSchemaFunction Lambda after stack deployment
-        new triggers.Trigger(this, 'DeployRunCreateDbSchemaTrigger', {
-            handler: CreateDbSchemaFunction,
-            timeout: cdk.Duration.minutes(10),
-            invocationType: triggers.InvocationType.EVENT, 
-        });
+        // // Create trigger to run the CreateDbSchemaFunction Lambda after stack deployment
+        // new triggers.Trigger(this, 'DeployRunCreateDbSchemaTrigger', {
+        //     handler: CreateDbSchemaFunction,
+        //     timeout: cdk.Duration.minutes(10),
+        //     invocationType: triggers.InvocationType.EVENT, 
+        // });
 
         // Google API key secret
         const googleAqApiKeySecret = new Secret(this, 'GoogleApiAqKeySecret', {
@@ -109,8 +109,10 @@ export class ApiComputeStack extends cdk.Stack {
                     allowOrigins: ['*'], 
                     allowMethods: [
                         apigatewayv2.CorsHttpMethod.GET, 
-                        apigatewayv2.CorsHttpMethod.POST
+                        apigatewayv2.CorsHttpMethod.POST, 
+                        apigatewayv2.CorsHttpMethod.OPTIONS
                     ],
+                    allowHeaders: ['Content-Type', 'Authorization'], 
                 }, 
             }
         ); 

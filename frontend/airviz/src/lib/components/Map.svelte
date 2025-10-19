@@ -10,7 +10,7 @@
         fetchPollutantData, 
         fetchPopupInformation, 
         fetchMapRadius, 
-    } from '../../api/MockLambdaApi'
+     } from '../../api/lambdaApi';
     import { type RegionUnit, type Coordinates, LevelCategory } from '../constants';
     import { fetchCurrentLocation } from '../utils/utils';
 
@@ -24,26 +24,41 @@
     let chart: Chart | null = null;
 
     // placeholder date for testing
-    const now = new Date();
+    const now = Number(new Date());
     let sliderHour = 0;
     let selectedTimestamp = now;
+
+    function adjustColourSensitivity(tile: RegionUnit, sensitivity = 2): { red: number; green: number; blue: number } {
+        const clamp = (val: number) => Math.min(Math.max(val, 0), 1);
+
+        // Apply sensitivity only to red and green
+        const red = clamp(Math.pow(tile.currentAqiColour.red, 1 / sensitivity));
+        const green = clamp(Math.pow(tile.currentAqiColour.green, 1 / sensitivity));
+        const blue = 0; // always zero to stay in red→green spectrum
+
+        return { red, green, blue };
+    }
 
     function updateMapSourceData(tiles: RegionUnit[]) {
         if (!map || !map.isStyleLoaded()) return;
 
-        const geojson: GeoJSON.FeatureCollection = {
-            type: "FeatureCollection",
-            features: tiles.map(tile => ({
-                type: "Feature",
-                geometry: { type: "Point", coordinates: [tile.longitude, tile.latitude] },
-                properties: {
-                    id: tile.id,
-                    red: tile.currentAqiColour.red,
-                    green: tile.currentAqiColour.green,
-                    blue: tile.currentAqiColour.blue,
-                }
-            }))
-        };
+            const geojson: GeoJSON.FeatureCollection = {
+                type: "FeatureCollection",
+                features: tiles.map(tile => {
+                    const { red, green, blue } = adjustColourSensitivity(tile, 2); 
+                    return {
+                        type: "Feature",
+                        geometry: { type: "Point", coordinates: [tile.longitude, tile.latitude] },
+                        properties: {
+                            id: tile.id,
+                            red,
+                            green,
+                            blue
+                        }
+                    };
+                })
+            };
+
 
         if (map.getSource("points")) {
             (map.getSource("points") as maplibregl.GeoJSONSource).setData(geojson);
@@ -73,8 +88,8 @@
         try {
             const tiles = await fetchAllRegions(
                 'tile', 
-                currentLocation.latitude,
                 currentLocation.longitude,
+                currentLocation.latitude,
                 mapRadius,
                 selectedTimestamp
             );
@@ -85,6 +100,10 @@
         }
     }
 
+    function getRadiusFromZoom(zoom: number): number {
+        return 2 ** (15 - zoom); 
+    }
+
     onMount(async () => {
         // Placeholder: Fetch current locations with coordinates
         currentLocation = await fetchCurrentLocation();
@@ -92,8 +111,8 @@
         // Placeholder: Fetch all locations on map area with latitude, longitude and radius
         allTiles = await fetchAllRegions(
             'tile', 
-            currentLocation.latitude, 
             currentLocation.longitude, 
+            currentLocation.latitude,
             mapRadius, 
             selectedTimestamp
         );
@@ -158,6 +177,7 @@
             map.on('moveend', () => {
                 const center = map.getCenter();
                 currentLocation = { latitude: center.lat, longitude: center.lng };
+                mapRadius = getRadiusFromZoom(map.getZoom());
                 refreshTiles();
             });
 

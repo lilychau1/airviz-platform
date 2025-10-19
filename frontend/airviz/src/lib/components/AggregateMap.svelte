@@ -9,9 +9,8 @@
         fetchAllRegions, 
         fetchPollutantData, 
         fetchPopupInformation, 
-        fetchMapRadius, 
         loadRegionalGeoJSON,
-    } from '../../api/MockLambdaApi'
+    } from '../../api/LambdaApi'
     import { type RegionUnit, type Coordinates, LevelCategory, type RegionLevel, type PopupInfoReturnTypeForRegionLevel } from '../constants';
     import { fetchCurrentLocation } from '../utils/utils';
     
@@ -28,7 +27,7 @@
     let regionLevel: RegionLevel = 'borough'
 
     // placeholder date for testing
-    const now = new Date();
+    const now = Number(new Date());
     let sliderHour = 0;
     let selectedTimestamp = now;
 
@@ -37,35 +36,74 @@
     let comparePopup: maplibregl.Popup | null = null;
     let compareRegionData: [PopupInfoReturnTypeForRegionLevel<RegionLevel> | null, PopupInfoReturnTypeForRegionLevel<RegionLevel> | null] = [null, null];
 
+    let refreshTimeout: ReturnType<typeof setTimeout> | null = null;
+
+    function scheduleRefresh() {
+        if (refreshTimeout) clearTimeout(refreshTimeout);
+        refreshTimeout = setTimeout(() => {
+            refreshRegions();
+        }, 300); // wait 300ms after the last trigger
+    }
+
+    function adjustColourSensitivity(tile: RegionUnit, sensitivity = 1): { red: number; green: number; blue: number } {
+        const clamp = (val: number) => Math.min(Math.max(val, 0), 1);
+
+        // Apply sensitivity only to red and green
+        const red = clamp(Math.pow(tile.currentAqiColour.red, 1 / sensitivity));
+        const green = clamp(Math.pow(tile.currentAqiColour.green, 1 / sensitivity));
+        const blue = 0; // always zero to stay in red→green spectrum
+
+        return { red, green, blue };
+    }
+
+    function getFeatureCentroid(feature: GeoJSON.Feature): [number, number] {
+        if (feature.geometry.type === 'Point') {
+            return feature.geometry.coordinates as [number, number];
+        } else if (feature.geometry.type === 'Polygon') {
+            const coords = feature.geometry.coordinates[0];
+            const lng = coords.reduce((sum, c) => sum + c[0], 0) / coords.length;
+            const lat = coords.reduce((sum, c) => sum + c[1], 0) / coords.length;
+            return [lng, lat];
+        } else if (feature.geometry.type === 'MultiPolygon') {
+            const coords = feature.geometry.coordinates[0][0];
+            const lng = coords.reduce((sum, c) => sum + c[0], 0) / coords.length;
+            const lat = coords.reduce((sum, c) => sum + c[1], 0) / coords.length;
+            return [lng, lat];
+        }
+        return [0, 0];
+    }
     async function refreshRegions() {
         // Only update if all necessary info is present. Otherwise do nothing
         if (!regionLevel || !currentLocation || !mapRadius) return;
 
-        allRegions = await fetchAllRegions(
+        allRegions = await fetchAllRegionsCached(
             regionLevel,
-            currentLocation.latitude,
             currentLocation.longitude,
+            currentLocation.latitude,
             mapRadius,
             selectedTimestamp
         );
-        geojsonRegion = await loadRegionalGeoJSON(regionLevel);
+        geojsonRegion = await loadRegionalGeoJSONCached(regionLevel);
 
         const extraRegionDataMap = new Map<number, RegionUnit>();
         for (const region of allRegions) {
             extraRegionDataMap.set(region.id, region);
         }
         geojsonRegion.features.forEach(feature => {
-            const id = feature.properties?.fid;
+            const id = feature.properties?.dbId;
             if (id !== undefined) {
                 const numericId = typeof id === 'string' ? Number(id) : id;
+
                 if (extraRegionDataMap.has(numericId)) {
                     const extraData = extraRegionDataMap.get(numericId);
+                    const adjustedColour = adjustColourSensitivity(extraData!);
+
                     if (extraData !== undefined) {
                         feature.properties = {
                             ...feature.properties,
                             longitude: extraData.longitude,
                             latitude: extraData.latitude,
-                            currentAqiColour: extraData.currentAqiColour,
+                            currentAqiColour: adjustedColour,
                         };
                     }
                 }
@@ -83,7 +121,7 @@
 
         // Filter features with selectedRegionIds (ignoring null)
         const selectedFeatures = geojsonRegion.features.filter(f => 
-            selectedRegionIds.includes(Number(f.properties?.fid))
+            selectedRegionIds.includes(Number(f.properties?.dbId))
         );
 
         // Update 'selected-regions' source data
@@ -98,7 +136,7 @@
     function handleRegionClick(e: MapLayerMouseEvent) {
         const feature = e.features?.[0];
         if (!feature) return;
-        const regionId = Number(feature.properties?.fid);
+        const regionId = Number(feature.properties?.dbId);
         if (!regionId) return;
 
         // Toggle select/deselect
@@ -129,8 +167,6 @@
         } else if (selectedRegionIds[0] && selectedRegionIds[1]) {
             showComparePopup(selectedRegionIds[0], selectedRegionIds[1]);
         }
-        console.log(map.getSource('selected-regions'));
-        console.log(map.getLayer('selected-regions-outline'));
     }
 
     async function showComparePopup(
@@ -138,30 +174,35 @@
         regionId2: number
     ) {
         const [info1, info2] = await Promise.all([
-            fetchPopupInformation(regionLevel, regionId1) as Promise<PopupInfoReturnTypeForRegionLevel<typeof regionLevel>>,
-            fetchPopupInformation(regionLevel, regionId2) as Promise<PopupInfoReturnTypeForRegionLevel<typeof regionLevel>>,
+            fetchPopupInformationCached(regionLevel, regionId1) as Promise<PopupInfoReturnTypeForRegionLevel<typeof regionLevel>>,
+            fetchPopupInformationCached(regionLevel, regionId2) as Promise<PopupInfoReturnTypeForRegionLevel<typeof regionLevel>>,
         ]);
 
         compareRegionData = [info1, info2];
 
         // Find GeoJSON features for each selected region
-        const feature1 = geojsonRegion.features.find(f => Number(f.properties?.fid) === regionId1);
-        const feature2 = geojsonRegion.features.find(f => Number(f.properties?.fid) === regionId2);
+        const feature1 = geojsonRegion.features.find(f => Number(f.properties?.dbId) === regionId1);
+        const feature2 = geojsonRegion.features.find(f => Number(f.properties?.dbId) === regionId2);
 
         if (!feature1 || !feature2) {
             console.warn("GeoJSON features not found for one or both selected regions");
             return;
         }
 
-        // Use GeoJSON geometry coordinates [lng, lat]
-        const coord1 = [feature1.properties?.longitude, feature1.properties?.latitude];
-        const coord2 = [feature2.properties?.longitude, feature2.properties?.latitude];
+        // // Use GeoJSON geometry coordinates [lng, lat]
+        // const coord1 = [feature1.properties?.longitude, feature1.properties?.latitude];
+        // const coord2 = [feature2.properties?.longitude, feature2.properties?.latitude];
 
-        // Calculate midpoint for popup placement
-        const lngLat = [
-            (coord1[0] + coord2[0]) / 2,
-            (coord1[1] + coord2[1]) / 2
-        ] as [number, number]; 
+        // // Calculate midpoint for popup placement
+        // const lngLat = [
+        //     (coord1[0] + coord2[0]) / 2,
+        //     (coord1[1] + coord2[1]) / 2
+        // ] as [number, number]; 
+
+
+        const [lng1, lat1] = getFeatureCentroid(feature1);
+        const [lng2, lat2] = getFeatureCentroid(feature2);
+        const lngLat: [number, number] = [(lng1 + lng2) / 2, (lat1 + lat2) / 2];
 
         if (comparePopup) comparePopup.remove();
 
@@ -333,19 +374,67 @@
         }, 0);
     }
 
+    function getRadiusFromZoom(zoom: number): number {
+        return 2 ** (15 - zoom); 
+    }
+
+    // cache for all regions fetches
+    const allRegionsCache = new Map<string, RegionUnit[]>();
+
+    async function fetchAllRegionsCached(regionLevel: RegionLevel, lon: number, lat: number, radius: number, timestamp: number) {
+        const key = `${regionLevel}_${timestamp}_${lon.toFixed(4)}_${lat.toFixed(4)}_${radius.toFixed(2)}`;
+        if (allRegionsCache.has(key)) {
+            return allRegionsCache.get(key)!;
+        }
+
+        const regions = await fetchAllRegions(regionLevel, lon, lat, radius, timestamp);
+        allRegionsCache.set(key, regions);
+        return regions;
+    }
+
+    // cache for geojson fetches
+    const geojsonCache = new Map<RegionLevel, GeoJSON.FeatureCollection>();
+
+    async function loadRegionalGeoJSONCached(regionLevel: RegionLevel) {
+        if (geojsonCache.has(regionLevel)) return geojsonCache.get(regionLevel)!;
+        const geojson = await loadRegionalGeoJSON(regionLevel);
+        geojsonCache.set(regionLevel, geojson);
+        return geojson;
+    }
+
+    // cache for popup information fetches
+    const popupInfoCache = new Map<string, PopupInfoReturnTypeForRegionLevel<RegionLevel> | null>();
+
+    async function fetchPopupInformationCached(level: RegionLevel, id: number) {
+        const key = `${level}_${id}`;
+        if (popupInfoCache.has(key)) return popupInfoCache.get(key);
+
+        try {
+            const info = await fetchPopupInformation(level, id);
+            popupInfoCache.set(key, info);
+            return info;
+        } catch (err) {
+            console.error(`Failed to load data for ${level} ID ${id}`, err);
+            popupInfoCache.set(key, null); // mark as failed to avoid immediate retry
+            return null;
+        }
+    }
+
+
+
     onMount(async () => {
         // Placeholder: Fetch current locations with coordinates
         currentLocation = await fetchCurrentLocation();
-        mapRadius = await fetchMapRadius();
+        mapRadius = 30;
         // Placeholder: Fetch all locations on map area with latitude, longitude and radius
-        allRegions = await fetchAllRegions(
+        allRegions = await fetchAllRegionsCached(
             regionLevel, 
-            currentLocation.latitude, 
             currentLocation.longitude, 
+            currentLocation.latitude, 
             mapRadius, 
             selectedTimestamp
         );
-        const geojsonRegion = await loadRegionalGeoJSON(regionLevel);
+        const geojsonRegion = await loadRegionalGeoJSONCached(regionLevel);
 
         initialiseMap(geojsonRegion);
 
@@ -366,6 +455,51 @@
         
         const geojson: GeoJSON.FeatureCollection = geojson_
         
+        // Update borough. mappings: GeoJSON 'lad22nm' -> DB ID
+        const geoToDbIdMap: Record<string, number> = {
+            "Barking and Dagenham": 1,
+            "Barnet": 2,
+            "Bexley": 3,
+            "Brent": 4,
+            "Bromley": 5,
+            "Camden": 6,
+            "Croydon": 7,
+            "Ealing": 8,
+            "Enfield": 9,
+            "Greenwich": 10,
+            "Hackney": 11,
+            "Hammersmith and Fulham": 12,
+            "Haringey": 13,
+            "Harrow": 14,
+            "Havering": 15,
+            "Hillingdon": 16,
+            "Hounslow": 17,
+            "Islington": 18,
+            "Kensington and Chelsea": 19,
+            "Kingston upon Thames": 20,
+            "Lambeth": 21,
+            "Lewisham": 22,
+            "Merton": 23,
+            "Newham": 24,
+            "Redbridge": 26,
+            "Richmond upon Thames": 26,
+            "Southwark": 27,
+            "Sutton": 28,
+            "Tower Hamlets": 29,
+            "Waltham Forest": 30,
+            "Wandsworth": 31,
+            "Westminster": 32,
+        };
+
+        geojson.features.forEach(feature => {
+            if (!feature.properties) return;
+
+            const ladName = feature.properties?.lad22nm;
+            if (ladName && geoToDbIdMap[ladName]) {
+                feature.properties.dbId = geoToDbIdMap[ladName];
+            }
+        });
+
         // Create a map from region ID to the extra region info for fast lookup
         const extraRegionDataMap = new Map<number, RegionUnit>();
         for (const region of allRegions) {
@@ -373,17 +507,19 @@
         }
 
         geojson.features.forEach(feature => {
-        const id = feature.properties?.fid;
+        const id = feature.properties?.dbId;
         if (id !== undefined) {
             const numericId = typeof id === 'string' ? Number(id) : id;
             if (extraRegionDataMap.has(numericId)) {
                 const extraData = extraRegionDataMap.get(numericId);
                 if (extraData !== undefined) {
+                    const adjustedColour = adjustColourSensitivity(extraData);
+
                     feature.properties = {
                         ...feature.properties,
                         longitude: extraData.longitude,
                         latitude: extraData.latitude,
-                        currentAqiColour: extraData.currentAqiColour,
+                        currentAqiColour: adjustedColour,
                         // Method 2: flatten initially when expanding feature properties
                         // currentAqiColourRed: extraData.currentAqiColour.red,
                         // currentAqiColourGreen: extraData.currentAqiColour.green,
@@ -430,6 +566,17 @@
                 },
             });
 
+            map.addLayer({
+                id: "regions-outline",
+                type: "line",
+                source: regionLevel,
+                paint: {
+                    "line-color": "#333", 
+                    "line-width": 0.6, 
+                    "line-opacity": 0.7,
+                },
+            });
+
             map.addSource('selected-regions', {
                 type: 'geojson',
                 data: {
@@ -447,6 +594,7 @@
                     'line-width': 4, 
                 },
             });
+
         })
 
         let popupIsHovered = false;
@@ -458,239 +606,136 @@
             className: "map-popup"
         });
 
-        map.on("mousemove", "regions-fill", async (e) => {
-            if (!e.features || e.features.length === 0) return; 
+        let hoverTimeout: ReturnType<typeof setTimeout> | null = null;
+        let lastHoveredRegionId: number | null = null;
 
-            dotIsHovered = true;
+        map.on("mousemove", "regions-fill", (e) => {
+            if (!e.features || e.features.length === 0) return;
+
+            const feature = e.features[0];
+            const regionId = Number(feature.properties?.dbId);
+            if (!regionId) return;
+
+            const coordinates = getFeatureCentroid(feature);
+
+            // Update cursor immediately
             map.getCanvas().style.cursor = "pointer";
-            const feature = e.features?.[0];
 
-            console.log(feature.properties)
+            // If hovering the same region, do nothing
+            if (lastHoveredRegionId === regionId) return;
+            lastHoveredRegionId = regionId;
 
-            const longitude = feature.properties?.longitude;
-            const latitude = feature.properties?.latitude;
-            const regionId = feature.properties?.fid;
-            if (regionId === undefined || longitude === undefined || latitude === undefined) return; 
-            
-            const coordinates: [number, number] = [longitude, latitude];
+            // Clear any previous hover timer
+            if (hoverTimeout) clearTimeout(hoverTimeout);
 
-            if (!regionId) {
-                console.warn(`${regionLevel} ID not found in feature properties`); 
-                return;
-            }
+            hoverTimeout = setTimeout(async () => {
+                lastHoveredRegionId = null; // reset after fetch
 
-            // Initialise pop-up content space∂
-            const popupContent = document.createElement('div'); 
-            popupContent.className = 'popup-chart-container';
+                const popupContent = document.createElement('div');
+                popupContent.className = 'popup-chart-container';
 
-            // Popup region information
-            const regionInformationDiv = document.createElement('div'); 
-            regionInformationDiv.innerHTML = `Loading ${regionLevel} details...`; 
-            regionInformationDiv.className = 'popup-information'; 
-            popupContent.appendChild(regionInformationDiv); 
+                // Region information placeholder
+                const regionInformationDiv = document.createElement('div'); 
+                regionInformationDiv.innerHTML = `Loading ${regionLevel} details...`; 
+                regionInformationDiv.className = 'popup-information';
+                popupContent.appendChild(regionInformationDiv);
 
-            fetchPopupInformation(regionLevel, regionId).then((data) => {
-                // Unpack AQI values and categories for all keys (e.g. uaqi, gbr_defra)
-                let aqiHtml = '';
-                if (data.currentAqi && data.currentAqiCategoryLevel) {
-                    for (const key of Object.keys(data.currentAqi)) {
-                        const aqiValue = data.currentAqi[key];
-                        const catLevel = data.currentAqiCategoryLevel[key];
-                        const cat = LevelCategory[catLevel as 1 | 2 | 3];
-                        aqiHtml += `
-                            <div>
-                                <span style="font-weight:bold">${key.toUpperCase()} AQI:</span>
-                                <span style="color: ${cat?.colour ?? 'black'}">${aqiValue}</span>
-                            </div>
+                // Fetch popup info (cached)
+                try {
+                    const data = await fetchPopupInformationCached(regionLevel, regionId);
+                    if (data) {
+                        let aqiHtml = '';
+                        if (data.currentAqi && data.currentAqiCategoryLevel) {
+                            for (const key of Object.keys(data.currentAqi)) {
+                                const aqiValue = data.currentAqi[key];
+                                const catLevel = data.currentAqiCategoryLevel[key];
+                                const cat = LevelCategory[catLevel as 1 | 2 | 3];
+                                aqiHtml += `<div><strong>${key.toUpperCase()} AQI:</strong> <span style="color:${cat?.colour ?? 'black'}">${aqiValue}</span></div>`;
+                            }
+                        }
+
+                        regionInformationDiv.innerHTML = `
+                            <strong>Name: ${data.name}</strong><br>
+                            Region: ${data.region}<br>
+                            ${aqiHtml}
+                            <span style="color: ${LevelCategory[data.currentPm25Level as 1 | 2 | 3]?.colour ?? 'black'}">PM2.5</span>
+                            <span style="color: ${LevelCategory[data.currentPm10Level as 1 | 2 | 3]?.colour ?? 'black'}">PM10</span>
+                            <span style="color: ${LevelCategory[data.currentNo2Level as 1 | 2 | 3]?.colour ?? 'black'}">NO2</span>
+                            <span style="color: ${LevelCategory[data.currentO3Level as 1 | 2 | 3]?.colour ?? 'black'}">O3</span>
+                            <span style="color: ${LevelCategory[data.currentSo2Level as 1 | 2 | 3]?.colour ?? 'black'}">SO2</span>
+                            <span style="color: ${LevelCategory[data.currentCoLevel as 1 | 2 | 3]?.colour ?? 'black'}">CO</span>
                         `;
+                    } else {
+                        regionInformationDiv.innerHTML = `<span style="color: red;">Failed to load ${regionLevel} information.</span>`;
                     }
+                } catch (err) {
+                    console.error(err);
+                    regionInformationDiv.innerHTML = `<span style="color: red;">Failed to load ${regionLevel} information.</span>`;
                 }
 
-                regionInformationDiv.innerHTML = `
-                    <strong>Name: ${data.name}</strong><br>
-                    Region: ${data.region}<br>
-                    ${aqiHtml}
-                    <span style="color: ${LevelCategory[data.currentPm25Level as 1 | 2 | 3]?.colour ?? 'black'}">PM2.5</span>&nbsp;&nbsp;&nbsp;&nbsp;
-                    <span style="color: ${LevelCategory[data.currentPm10Level as 1 | 2 | 3]?.colour ?? 'black'}">PM10</span>&nbsp;&nbsp;&nbsp;&nbsp;
-                    <span style="color: ${LevelCategory[data.currentNo2Level as 1 | 2 | 3]?.colour ?? 'black'}">NO2</span>&nbsp;&nbsp;&nbsp;&nbsp;
-                    <span style="color: ${LevelCategory[data.currentO3Level as 1 | 2 | 3]?.colour ?? 'black'}">O3</span>&nbsp;&nbsp;&nbsp;&nbsp;
-                    <span style="color: ${LevelCategory[data.currentSo2Level as 1 | 2 | 3]?.colour ?? 'black'}">SO2</span>&nbsp;&nbsp;&nbsp;&nbsp;
-                    <span style="color: ${LevelCategory[data.currentCoLevel as 1 | 2 | 3]?.colour ?? 'black'}">CO</span>
-                `;
+                // Google map link
+                const googleMapLink = document.createElement('a');
+                googleMapLink.href = `https://www.google.com/maps?q=${coordinates[1]},${coordinates[0]}`;
+                googleMapLink.target = '_blank';
+                googleMapLink.rel = 'noopener noreferrer';
+                googleMapLink.textContent = `View ${regionLevel} in Google Map`;
+                popupContent.appendChild(googleMapLink);
 
-            }).catch((error) => {
-                regionInformationDiv.innerHTML = `<span style="color: red;">Failed to load ${regionLevel} information.</span>`;
-                console.error(error);
-            });
-            
-            // Google map link
-            const googleMapLink = document.createElement('a');
-            googleMapLink.href = `https://www.google.com/maps?q=${coordinates[1]},${coordinates[0]}`;
-            googleMapLink.target = '_blank';
-            googleMapLink.rel = 'noopener noreferrer';
-            googleMapLink.textContent = `View ${regionLevel} in Google Map`;
+                // Fetch pollutant data after debounce
+                try {
+                    const pollutantData = await fetchPollutantData(regionLevel, regionId, {
+                        start: selectedTimestamp - 24 * 60 * 60 * 1000,
+                        end: selectedTimestamp
+                    });
 
-            popupContent.appendChild(googleMapLink);
+                    const labels = pollutantData.map(d => new Date(d.timestamp).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }));
 
-            try {
-                // Placeholder: Fetch last 24 hours' records for the specific region ID, PM2.5 and PM10 pollutants
-                const showHours = 24;
-                const cutoff = selectedTimestamp - showHours * 60 * 60 * 1000; 
-                const selectedTimestampPeriod = {start: cutoff, end: selectedTimestamp};
+                    const popupChartCanvas = document.createElement('canvas');
+                    popupChartCanvas.className = 'popup-chart-canvas';
+                    popupContent.appendChild(popupChartCanvas);
 
-                const pollutantData = await fetchPollutantData(regionLevel, regionId, selectedTimestampPeriod);
+                    popup.setLngLat(coordinates).setDOMContent(popupContent).addTo(map);
 
-                const labels = pollutantData.map(d => new Date(d.timestamp).toLocaleTimeString([], {
-                    hour: '2-digit', 
-                    minute: '2-digit'
-                }));
-
-                const popupChartCanvas = document.createElement('canvas'); 
-                popupChartCanvas.className = 'popup-chart-canvas';
-                popupContent.appendChild(popupChartCanvas); 
-
-                popup.setLngLat(coordinates).setDOMContent(popupContent).addTo(map);
-                
-                if (chart) {
-                    chart.destroy(); 
-                    chart = null; 
-                }
-                
-                chart = new ChartLib(
-                    popupChartCanvas, {
-                        type: 'line', 
+                    if (chart) chart.destroy();
+                    chart = new ChartLib(popupChartCanvas, {
+                        type: 'line',
                         data: {
-                            labels: labels, 
+                            labels,
                             datasets: [
-                                {
-                                    label: 'PM2.5 (µg/m³)',
-                                    data: pollutantData.map(d => d.pm25Value),
-                                    yAxisID: 'y-left',
-                                    borderColor: 'rgba(255, 99, 132, 1)', 
-                                    backgroundColor: 'rgba(255, 99, 132, 0.2)',
-                                    fill: true,
-                                    tension: 0.3,
-                                },
-                                {
-                                    label: 'PM10 (µg/m³)',
-                                    data: pollutantData.map(d => d.pm10Value),
-                                    yAxisID: 'y-left',
-                                    borderColor: 'rgba(54, 162, 235, 1)',
-                                    backgroundColor: 'rgba(54, 162, 235, 0.2)',
-                                    fill: true,
-                                    tension: 0.3,
-                                },
-                                {
-                                    label: 'NO2 (ppb)',
-                                    data: pollutantData.map(d => d.no2Value),
-                                    yAxisID: 'y-right',
-                                    borderColor: 'rgba(255, 206, 86, 1)', 
-                                    backgroundColor: 'rgba(255, 206, 86, 0.2)',
-                                    fill: true,
-                                    tension: 0.3,
-                                },
-                                {
-                                    label: 'CO (ppb)',
-                                    data: pollutantData.map(d => d.coValue),
-                                    yAxisID: 'y-right',
-                                    borderColor: 'rgba(153, 102, 255, 1)',
-                                    backgroundColor: 'rgba(153, 102, 255, 0.2)',
-                                    fill: true,
-                                    tension: 0.3,
-                                },
-                                {
-                                    label: 'O3 (ppb)',
-                                    data: pollutantData.map(d => d.o3Value),
-                                    yAxisID: 'y-right',
-                                    borderColor: 'rgba(255, 159, 64, 1)',
-                                    backgroundColor: 'rgba(255, 159, 64, 0.2)',
-                                    fill: true,
-                                    tension: 0.3,
-                                },
-                                {
-                                    label: 'SO2 (ppb)',
-                                    data: pollutantData.map(d => d.so2Value),
-                                    yAxisID: 'y-right',
-                                    borderColor: 'rgba(75, 192, 192, 1)',
-                                    backgroundColor: 'rgba(75, 192, 192, 0.2)',
-                                    fill: true,
-                                    tension: 0.3,
-                                }
+                                { label: 'PM2.5', data: pollutantData.map(d => d.pm25Value), borderColor: 'rgba(255,99,132,1)', backgroundColor: 'rgba(255,99,132,0.2)', fill: true, tension: 0.3 },
+                                { label: 'PM10', data: pollutantData.map(d => d.pm10Value), borderColor: 'rgba(54,162,235,1)', backgroundColor: 'rgba(54,162,235,0.2)', fill: true, tension: 0.3 },
+                                { label: 'NO2', data: pollutantData.map(d => d.no2Value), borderColor: 'rgba(255,206,86,1)', backgroundColor: 'rgba(255,206,86,0.2)', fill: true, tension: 0.3 },
+                                { label: 'CO', data: pollutantData.map(d => d.coValue), borderColor: 'rgba(153,102,255,1)', backgroundColor: 'rgba(153,102,255,0.2)', fill: true, tension: 0.3 },
+                                { label: 'O3', data: pollutantData.map(d => d.o3Value), borderColor: 'rgba(255,159,64,1)', backgroundColor: 'rgba(255,159,64,0.2)', fill: true, tension: 0.3 },
+                                { label: 'SO2', data: pollutantData.map(d => d.so2Value), borderColor: 'rgba(75,192,192,1)', backgroundColor: 'rgba(75,192,192,0.2)', fill: true, tension: 0.3 }
                             ]
-                        }, 
+                        },
                         options: {
                             responsive: true,
                             maintainAspectRatio: false,
                             scales: {
-                                x: {
-                                    display: true,
-                                    title: {
-                                        display: true,
-                                        text: 'Time'
-                                    }
-                                },
-                                'y-left': {
-                                    type: 'linear', 
-                                    position: 'left', 
-                                    title: {
-                                        display: true,
-                                        text: 'Concentration (µg/m³)'
-                                    }, 
-                                    min: 0, 
-                                }, 
-                                'y-right': {
-                                    type: 'linear',
-                                    position: 'right',
-                                    title: {
-                                        display: true,
-                                        text: 'Concentration (Parts Per Billion)'
-                                    },
-                                    grid: {
-                                        drawOnChartArea: false 
-                                    },
-                                    min: 0, 
-                                }
-                            },
-                            plugins: {
-                                legend: {
-                                    display: true,
-                                    position: 'top', 
-                                    labels: {
-                                        font: {
-                                            size: 10 
-                                        },
-                                        usePointStyle: true,
-                                        padding: 5
-                                    }
-                                }
-                            },
-                            layout: {
-                                padding: {
-                                    top: 10,             
-                                }
+                                x: { display: true },
+                                y: { type: 'linear', position: 'left', min: 0 },
+                                y1: { type: 'linear', position: 'right', grid: { drawOnChartArea: false }, min: 0 }
                             }
                         }
-                    }
-                ); 
-            } catch (error) {
-                console.error("Failed to fetch pollutant data:", error);
-                popup.remove();
-            }
-
-            setTimeout(() => {
-                const popupEl = document.querySelector('.maplibregl-popup');
-                if (popupEl) {
-                    popupEl.addEventListener('mouseenter', () => { popupIsHovered = true; });
-                    popupEl.addEventListener('mouseleave', () => {
-                        popupIsHovered = false;
-                        setTimeout(() => {
-                            if (!dotIsHovered && !popupIsHovered) {
-                                popup.remove();
-                            }
-                        }, 10);
                     });
+                } catch (err) {
+                    console.error("Failed to fetch pollutant data:", err);
+                    popup.remove();
                 }
-            }, 0);
+            }, 300); // 300ms debounce
+        });
+        map.on('moveend', () => {
+            const center = map.getCenter();
+            currentLocation = { latitude: center.lat, longitude: center.lng };
+
+            // Dynamically compute radius based on zoom level
+            mapRadius = getRadiusFromZoom(map.getZoom());
+
+            console.log(`Updated center: ${center.lng.toFixed(4)}, ${center.lat.toFixed(4)} radius: ${mapRadius.toFixed(2)}`);
+
+            scheduleRefresh(); // Fetch updated data
         });
 
         map.on("mouseleave", "regions-fill", () => {
@@ -724,7 +769,7 @@
     }
 
     $: if (map && selectedTimestamp !== undefined) {
-        refreshRegions();
+        scheduleRefresh();
     }
 </script>
 

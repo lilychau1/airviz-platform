@@ -1,7 +1,7 @@
 <script lang="ts">
     import { params } from 'svelte-spa-router';
     import TileDetailsSection from '../lib/components/tileDetails/TileDetailsSection.svelte';
-    import { fetchDetails } from '../api/MockLambdaApi';
+    import { fetchDetails } from '../api/LambdaApi';
     import type { TileDetails } from '../lib/constants';
     import CurrentAirQualityInfo from '../lib/components/tileDetails/CurrentAirQualityInfo.svelte';
     import PollutantTimeseriesChart from '../lib/components/tileDetails/PollutantTimeseriesChart.svelte';

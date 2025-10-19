@@ -2,7 +2,7 @@
   import { onMount, onDestroy } from "svelte";
   import ChartLib from "chart.js/auto";
   import type { Chart } from "chart.js";
-  import { fetchAqiData } from "../../../api/MockLambdaApi";
+  import { fetchAqiData } from "../../../api/LambdaApi";
 
   export let tileId: number;
 
