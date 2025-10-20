@@ -95,19 +95,24 @@ export async function fetchPollutantData(
 // Fetch tile information
 export async function fetchPopupInformation<L extends RegionLevel>(
     level: L, 
-    id: number
+    id: number,
+    timestamp: number
 ): Promise<PopupInfoReturnTypeForRegionLevel<L>> {
+
+    const body = { level, id, timestamp } as Record<string, any>;
+
     const resp = await fetch(`${LAMBDA_API_BASE_URL}/fetchPopupInformation`, {
         method: "POST",
         headers: {
             "Content-Type": "application/json"
         },
-        body: JSON.stringify({ level, id })
+        body: JSON.stringify(body)
     });
 
     if (!resp.ok) {
         throw new Error(`Failed to load data for ${level} ID ${id}`); 
     }
+
     return resp.json() as Promise<PopupInfoReturnTypeForRegionLevel<L>>;
 }
 

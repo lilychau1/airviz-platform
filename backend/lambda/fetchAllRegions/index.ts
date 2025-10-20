@@ -124,14 +124,14 @@ export const handler = async (event: APIGatewayProxyEventV2) => {
         }
         query = `
             WITH latest_records AS (
-            SELECT
+            SELECT DISTINCT ON (tile_id)
                 id,
                 tile_id,
-                timestamp,
-                ingestion_timestamp
+                timestamp
             FROM aq_records
             WHERE tile_id = ANY($1::int[])
-              AND timestamp = $2::timestamptz
+                AND timestamp <= $2::timestamptz
+            ORDER BY tile_id, timestamp DESC
             ),
             avg_colour AS (
             SELECT

@@ -9,6 +9,7 @@ export type RegionLevel = "tile" | "borough";
 export interface FetchPopupInput {
     level: RegionLevel;
     id: number;
+    timestamp?: number;
 }
 
 export interface TilePopupInformation {
@@ -50,6 +51,24 @@ export const handler = async (event: APIGatewayProxyEventV2) => {
     try {
         const input: FetchPopupInput = JSON.parse(event.body || "{}");
         const level: RegionLevel = input.level;
+        // Compute the timestamp to use for the query
+        let lastFullHour: Date;
+
+        const inputTime = input.timestamp ? new Date(Number(input.timestamp)) : new Date();
+
+        // Check if the input timestamp is already at the start of an hour
+        const isExactHour = inputTime.getUTCMinutes() === 0 && inputTime.getUTCSeconds() === 0 && inputTime.getUTCMilliseconds() === 0;
+
+        if (isExactHour) {
+            lastFullHour = inputTime;
+        } else {
+            // Round down to the last full hour
+            lastFullHour = new Date(inputTime);
+            lastFullHour.setUTCMinutes(0, 0, 0);
+        }
+
+        console.log('Input timestamp:', inputTime.toISOString());
+        console.log('Query timestamp (last full hour):', lastFullHour.toISOString());
 
         const secretId = process.env.DB_SECRET_ARN!;
         const dbCreds = await getSecret(secretId);
@@ -69,7 +88,8 @@ export const handler = async (event: APIGatewayProxyEventV2) => {
         await client.connect();
 
         let query: string;
-        const params = [input.id];
+
+        const params = [input.id, lastFullHour]; 
 
         if (level === "tile") {
             query = `
@@ -91,6 +111,7 @@ export const handler = async (event: APIGatewayProxyEventV2) => {
                     SELECT id
                     FROM aq_records
                     WHERE tile_id = t.id
+                    AND timestamp <= $2
                     ORDER BY timestamp DESC, ingestion_timestamp DESC
                     LIMIT 1
                 ) ar ON TRUE
@@ -121,22 +142,11 @@ export const handler = async (event: APIGatewayProxyEventV2) => {
                     ra.last_30d_aqi_min
                 FROM ${level}s r
                 LEFT JOIN LATERAL (
-                    SELECT 
-                        region_id,
-                        aqi, 
-                        pm25_value, 
-                        pm10_value, 
-                        no2_value, 
-                        so2_value, 
-                        o3_value, 
-                        co_value,
-                        last_30d_unhealthy_aqi_days,
-                        last_30d_aqi_mean,
-                        last_30d_aqi_max,
-                        last_30d_aqi_min
+                    SELECT *
                     FROM regional_aggregates
-                    WHERE 
-                        level = '${level}' AND region_id = r.id
+                    WHERE level = '${level}' 
+                    AND region_id = r.id
+                    AND timestamp <= $2
                     ORDER BY timestamp DESC, update_timestamp DESC
                     LIMIT 1
                 ) ra ON TRUE

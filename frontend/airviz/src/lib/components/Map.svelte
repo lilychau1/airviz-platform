@@ -29,6 +29,10 @@
 
     function adjustColourSensitivity(tile: RegionUnit, sensitivity = 2): { red: number; green: number; blue: number } {
         const clamp = (val: number) => Math.min(Math.max(val, 0), 1);
+        
+        if (!tile.currentAqiColour) {
+            return { red: 0, green: 0, blue: 0 }; // fallback to black or gray
+        }
 
         // Apply sensitivity only to red and green
         const red = clamp(Math.pow(tile.currentAqiColour.red, 1 / sensitivity));
@@ -126,18 +130,19 @@
     }
 
     // Cache for tile popup info
-    const tilePopupCache = new globalThis.Map<number, any>(); // or proper type if known
+    const tilePopupCache = new globalThis.Map<string, any>(); // or proper type if known
 
-    async function fetchTilePopupCached(tileId: number) {
-        if (tilePopupCache.has(tileId)) return tilePopupCache.get(tileId);
+    async function fetchTilePopupCached(tileId: number, timestamp: number) {
+        const key = `${tileId}_${timestamp}`;
+        if (tilePopupCache.has(key)) return tilePopupCache.get(key);
 
         try {
-            const info = await fetchPopupInformation('tile', tileId);
-            tilePopupCache.set(tileId, info);
+            const info = await fetchPopupInformation('tile', tileId, timestamp);
+            tilePopupCache.set(key, info);
             return info;
         } catch (err) {
             console.error(`Failed to fetch popup info for tile ${tileId}`, err);
-            tilePopupCache.set(tileId, null); 
+            tilePopupCache.set(key, null);
             return null;
         }
     }
@@ -251,7 +256,7 @@
                 tileInformationDiv.className = 'popup-information'; 
                 popupContent.appendChild(tileInformationDiv); 
 
-                fetchTilePopupCached(tileId).then((data) => {
+                fetchTilePopupCached(tileId, selectedTimestamp).then((data) => {
                     // Unpack AQI values and categories for all keys (e.g. uaqi, gbr_defra)
                     let aqiHtml = '';
                     if (data.currentAqi && data.currentAqiCategoryLevel) {
@@ -487,7 +492,7 @@
         adjustedDate.setHours(roundedNow.getHours() - sliderHour);
 
         selectedTimestamp = adjustedDate.getTime();
-
+        refreshTiles();
         console.log(`Selected timestamp updated to: ${adjustedDate.toISOString()}`);
     }
 

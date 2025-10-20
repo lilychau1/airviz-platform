@@ -48,6 +48,10 @@
     function adjustColourSensitivity(tile: RegionUnit, sensitivity = 1): { red: number; green: number; blue: number } {
         const clamp = (val: number) => Math.min(Math.max(val, 0), 1);
 
+        if (!tile.currentAqiColour) {
+            return { red: 0, green: 0, blue: 0 }; // fallback to black or gray
+        }
+
         // Apply sensitivity only to red and green
         const red = clamp(Math.pow(tile.currentAqiColour.red, 1 / sensitivity));
         const green = clamp(Math.pow(tile.currentAqiColour.green, 1 / sensitivity));
@@ -182,8 +186,8 @@
         regionId2: number
     ) {
         const [info1, info2] = await Promise.all([
-            fetchPopupInformationCached(regionLevel, regionId1) as Promise<PopupInfoReturnTypeForRegionLevel<typeof regionLevel>>,
-            fetchPopupInformationCached(regionLevel, regionId2) as Promise<PopupInfoReturnTypeForRegionLevel<typeof regionLevel>>,
+            fetchPopupInformationCached(regionLevel, regionId1, selectedTimestamp) as Promise<PopupInfoReturnTypeForRegionLevel<typeof regionLevel>>,
+            fetchPopupInformationCached(regionLevel, regionId2, selectedTimestamp) as Promise<PopupInfoReturnTypeForRegionLevel<typeof regionLevel>>,
         ]);
 
         compareRegionData = [info1, info2];
@@ -483,12 +487,12 @@
     // cache for popup information fetches
     const popupInfoCache = new Map<string, PopupInfoReturnTypeForRegionLevel<RegionLevel> | null>();
 
-    async function fetchPopupInformationCached(level: RegionLevel, id: number) {
-        const key = `${level}_${id}`;
+    async function fetchPopupInformationCached(level: RegionLevel, id: number, timestamp: number) {
+        const key = `${level}_${id}_${timestamp}`;
         if (popupInfoCache.has(key)) return popupInfoCache.get(key);
 
         try {
-            const info = await fetchPopupInformation(level, id);
+            const info = await fetchPopupInformation(level, id, timestamp);
             popupInfoCache.set(key, info);
             return info;
         } catch (err) {
@@ -720,7 +724,7 @@
 
                 // Fetch popup info (cached)
                 try {
-                    const data = await fetchPopupInformationCached(regionLevel, regionId);
+                    const data = await fetchPopupInformationCached(regionLevel, regionId, selectedTimestamp);
                     if (data) {
                         let aqiHtml = '';
                         if (data.currentAqi && data.currentAqiCategoryLevel) {
