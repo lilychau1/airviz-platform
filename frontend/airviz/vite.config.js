@@ -5,6 +5,10 @@ import svg from '@poppanator/sveltekit-svg';
 export default defineConfig({
   plugins: [
     svelte(),
-    svg() // options optional
-  ]
+    svg()
+  ],
+  build: {
+    outDir: 'dist',
+  },
+  base: '/', 
 });
