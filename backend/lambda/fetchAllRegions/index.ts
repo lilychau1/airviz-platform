@@ -124,43 +124,44 @@ export const handler = async (event: APIGatewayProxyEventV2) => {
         }
         query = `
             WITH latest_records AS (
-            SELECT DISTINCT ON (tile_id)
-                id,
-                tile_id,
-                timestamp
-            FROM aq_records
-            WHERE tile_id = ANY($1::int[])
-                AND timestamp <= $2::timestamptz
-            ORDER BY tile_id, timestamp DESC
+                SELECT DISTINCT ON (tile_id)
+                    id,
+                    tile_id,
+                    timestamp
+                FROM aq_records
+                WHERE tile_id = ANY($1::int[])
+                    AND timestamp <= $2::timestamptz
+                ORDER BY tile_id, timestamp DESC
             ),
             avg_colour AS (
-            SELECT
-                aqi.record_id,
-                AVG((aqi.colour_code->>'red')::float) AS red,
-                AVG((aqi.colour_code->>'green')::float) AS green,
-                AVG((aqi.colour_code->>'blue')::float) AS blue
-            FROM air_quality_index aqi
-            WHERE aqi.record_id IN (SELECT id FROM latest_records)
-            GROUP BY aqi.record_id
+                SELECT
+                    aqi.record_id,
+                    AVG(CASE WHEN aqi.index_type = 'uaqi' THEN (aqi.colour_code->>'red')::float ELSE NULL END) AS red,
+                    AVG(CASE WHEN aqi.index_type = 'uaqi' THEN (aqi.colour_code->>'green')::float ELSE NULL END) AS green,
+                    AVG(CASE WHEN aqi.index_type = 'uaqi' THEN (aqi.colour_code->>'blue')::float ELSE NULL END) AS blue
+                FROM air_quality_index aqi
+                WHERE aqi.record_id IN (SELECT id FROM latest_records)
+                GROUP BY aqi.record_id
             )
             SELECT
-            t.id,
-            t.location[0] AS longitude,
-            t.location[1] AS latitude,
-            CASE
-                WHEN avg_colour.record_id IS NOT NULL THEN
-                jsonb_build_object(
-                    'red', avg_colour.red,
-                    'green', avg_colour.green,
-                    'blue', avg_colour.blue
-                )
-                ELSE NULL
-            END AS colour_code
+                t.id,
+                t.location[0] AS longitude,
+                t.location[1] AS latitude,
+                CASE
+                    WHEN avg_colour.record_id IS NOT NULL THEN
+                        jsonb_build_object(
+                            'red', avg_colour.red,
+                            'green', avg_colour.green,
+                            'blue', avg_colour.blue
+                        )
+                    ELSE NULL
+                END AS colour_code
             FROM ${table} t
             LEFT JOIN latest_records r ON t.id = r.tile_id
             LEFT JOIN avg_colour ON avg_colour.record_id = r.id
             WHERE t.id = ANY($1::int[]);
         `;
+
 
         const latestRes = await client.query(query, params);
 
