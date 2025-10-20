@@ -15,7 +15,6 @@
     import { fetchCurrentLocation } from '../utils/utils';
 
     const mapTilerAPIKey: string = import.meta.env.VITE_MAPTILER_API_KEY as string;
-    console.log(mapTilerAPIKey)
     let currentLocation: Coordinates;
     let mapRadius: number; 
     let allTiles: RegionUnit[];
@@ -86,8 +85,7 @@
     async function refreshTiles() {
         if (!currentLocation || !mapRadius) return;
         try {
-            const tiles = await fetchAllRegions(
-                'tile', 
+            const tiles = await fetchAllTilesCached(
                 currentLocation.longitude,
                 currentLocation.latitude,
                 mapRadius,
@@ -104,14 +102,54 @@
         return 2 ** (15 - zoom); 
     }
 
+    // Cache for all tiles fetches
+    function coordsCacheKey(lon: number, lat: number, zoomRadius: number): string {
+        const roundCoord = (v: number, step: number) => Math.round(v / step);
+        const step = zoomRadius / 100; 
+        return `${roundCoord(lon, step)}_${roundCoord(lat, step)}`;
+    }
+
+    const allTilesCache = new globalThis.Map<string, RegionUnit[]>();
+
+    async function fetchAllTilesCached(
+        lon: number,
+        lat: number,
+        radius: number,
+        timestamp: number
+    ) {
+        const key = `${timestamp}_${coordsCacheKey(lon, lat, radius)}_${radius}`;
+        if (allTilesCache.has(key)) return allTilesCache.get(key)!;
+
+        const tiles = await fetchAllRegions('tile', lon, lat, radius, timestamp);
+        allTilesCache.set(key, tiles);
+        return tiles;
+    }
+
+    // Cache for tile popup info
+    const tilePopupCache = new globalThis.Map<number, any>(); // or proper type if known
+
+    async function fetchTilePopupCached(tileId: number) {
+        if (tilePopupCache.has(tileId)) return tilePopupCache.get(tileId);
+
+        try {
+            const info = await fetchPopupInformation('tile', tileId);
+            tilePopupCache.set(tileId, info);
+            return info;
+        } catch (err) {
+            console.error(`Failed to fetch popup info for tile ${tileId}`, err);
+            tilePopupCache.set(tileId, null); 
+            return null;
+        }
+    }
+
+
     onMount(async () => {
         // Placeholder: Fetch current locations with coordinates
         currentLocation = await fetchCurrentLocation();
         mapRadius = await fetchMapRadius();
         // Placeholder: Fetch all locations on map area with latitude, longitude and radius
-        allTiles = await fetchAllRegions(
-            'tile', 
-            currentLocation.longitude, 
+        allTiles = await fetchAllTilesCached(
+            currentLocation.longitude,
             currentLocation.latitude,
             mapRadius, 
             selectedTimestamp
@@ -172,7 +210,6 @@
                     "circle-stroke-color": "#fff"
                 }
             });
-            console.log(JSON.stringify(geojson.features, null, 2));
 
             map.on('moveend', () => {
                 const center = map.getCenter();
@@ -213,8 +250,8 @@
                 tileInformationDiv.innerHTML = 'Loading tile details...'; 
                 tileInformationDiv.className = 'popup-information'; 
                 popupContent.appendChild(tileInformationDiv); 
-            
-                fetchPopupInformation('tile', tileId).then((data) => {
+
+                fetchTilePopupCached(tileId).then((data) => {
                     // Unpack AQI values and categories for all keys (e.g. uaqi, gbr_defra)
                     let aqiHtml = '';
                     if (data.currentAqi && data.currentAqiCategoryLevel) {

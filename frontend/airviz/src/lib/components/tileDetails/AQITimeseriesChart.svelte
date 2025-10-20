@@ -72,7 +72,7 @@
       // Find all unique timestamps across all AQI types
       const allTimestampsSet = new Set<string>();
       const aqiTypes = Object.keys(data);
-      console.log("AQI Types:", aqiTypes);
+
       aqiTypes.forEach(type => {
         data[type].forEach((d: { timestamp: string }) => allTimestampsSet.add(d.timestamp));
       });

@@ -449,11 +449,19 @@
     }
 
     // cache for all regions fetches
+    function coordsCacheKey(lon: number, lat: number, zoomRadius: number): string {
+        const roundCoord = (v: number, step: number) => Math.round(v / step);
+        const step = zoomRadius / 20; 
+        return `${roundCoord(lon, step)}_${roundCoord(lat, step)}`;
+    }
+
     const allRegionsCache = new Map<string, RegionUnit[]>();
 
     async function fetchAllRegionsCached(regionLevel: RegionLevel, lon: number, lat: number, radius: number, timestamp: number) {
-        const key = `${regionLevel}_${timestamp}_${lon.toFixed(4)}_${lat.toFixed(4)}_${radius.toFixed(2)}`;
+        const key = `${regionLevel}_${timestamp}_${coordsCacheKey(lon, lat, radius)}`;
+
         if (allRegionsCache.has(key)) {
+            console.log("Using cached regions for", key);
             return allRegionsCache.get(key)!;
         }
 
@@ -834,8 +842,6 @@
         adjustedDate.setHours(roundedNow.getHours() - sliderHour);
 
         selectedTimestamp = adjustedDate.getTime();
-
-        console.log(`Selected timestamp updated to: ${adjustedDate.toISOString()}`);
     }
 
     $: if (map && selectedTimestamp !== undefined) {

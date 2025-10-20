@@ -43,13 +43,7 @@ export async function fetchAllRegions(
             timestamp
         })
     });
-    console.log(`curl -X POST ${LAMBDA_API_BASE_URL}/fetchAllRegions -H "Content-Type: application/json" -d '${JSON.stringify({
-        level,
-        currentLongitude,
-        currentLatitude,
-        radius,
-        timestamp
-    })}'`);
+
     if (!resp.ok) throw new Error("Failed to fetch tiles");
 
     const data = await resp.json();
@@ -110,7 +104,7 @@ export async function fetchPopupInformation<L extends RegionLevel>(
         },
         body: JSON.stringify({ level, id })
     });
-    console.log(`curl -X POST ${LAMBDA_API_BASE_URL}/fetchPopupInformation -H "Content-Type: application/json" -d '${JSON.stringify({ level, id })}'`);
+
     if (!resp.ok) {
         throw new Error(`Failed to load data for ${level} ID ${id}`); 
     }
