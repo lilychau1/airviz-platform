@@ -169,6 +169,14 @@
         }
     }
 
+    function formatValue(val: any) {
+        if (val === null || val === undefined) return '-';
+        if (typeof val === 'object') {
+            return Object.entries(val).map(([k, v]) => `${k}: ${v}`).join(', ');
+        }
+        return val.toString();
+    }
+
     async function showComparePopup(
         regionId1: number, 
         regionId2: number
@@ -257,37 +265,72 @@
             const val1 = getValue(info1);
             const val2 = getValue(info2);
 
-            const tr = document.createElement('tr');
+            if (val1 && typeof val1 === 'object' && val2 && typeof val2 === 'object') {
+                // If both values are objects, create a row per key
+                Object.keys(val1).forEach(key => {
+                    const tr = document.createElement('tr');
 
-            const tdLabel = document.createElement('td');
-            tdLabel.textContent = label;
+                    const tdLabel = document.createElement('td');
+                    tdLabel.textContent = `${label} (${key})`;
 
-            const tdVal1 = document.createElement('td');
-            tdVal1.textContent = val1 !== null && val1 !== undefined ? val1.toString() : '-';
+                    const tdVal1 = document.createElement('td');
+                    tdVal1.textContent = val1[key] !== undefined ? val1[key].toString() : '-';
 
-            const tdVal2 = document.createElement('td');
-            tdVal2.textContent = val2 !== null && val2 !== undefined ? val2.toString() : '-';
+                    const tdVal2 = document.createElement('td');
+                    tdVal2.textContent = val2[key] !== undefined ? val2[key].toString() : '-';
 
-            // Determine which value is better and add CSS class for styling
-            if (val1 !== null && val1 !== undefined && val2 !== null && val2 !== undefined) {
-                if (val1 === val2) {
-                    // Tie
-                    tdVal1.classList.add('compare-equal');
-                    tdVal2.classList.add('compare-equal');
-                } else if ((betterIsLower && val1 < val2) || (!betterIsLower && val1 > val2)) {
-                    tdVal1.classList.add('compare-better');
-                    tdVal2.classList.add('compare-worse');
-                } else {
-                    tdVal1.classList.add('compare-worse');
-                    tdVal2.classList.add('compare-better');
+                    // Optional: highlight better/worse
+                    if (val1[key] !== undefined && val2[key] !== undefined) {
+                        if (val1[key] === val2[key]) {
+                            tdVal1.classList.add('compare-equal');
+                            tdVal2.classList.add('compare-equal');
+                        } else if ((betterIsLower && val1[key] < val2[key]) || (!betterIsLower && val1[key] > val2[key])) {
+                            tdVal1.classList.add('compare-better');
+                            tdVal2.classList.add('compare-worse');
+                        } else {
+                            tdVal1.classList.add('compare-worse');
+                            tdVal2.classList.add('compare-better');
+                        }
+                    }
+
+                    tr.appendChild(tdLabel);
+                    tr.appendChild(tdVal1);
+                    tr.appendChild(tdVal2);
+
+                    tbody.appendChild(tr);
+                });
+            } else {
+                // Single value case
+                const tr = document.createElement('tr');
+
+                const tdLabel = document.createElement('td');
+                tdLabel.textContent = label;
+
+                const tdVal1 = document.createElement('td');
+                tdVal1.textContent = val1 !== null && val1 !== undefined ? val1.toString() : '-';
+
+                const tdVal2 = document.createElement('td');
+                tdVal2.textContent = val2 !== null && val2 !== undefined ? val2.toString() : '-';
+
+                if (val1 !== null && val1 !== undefined && val2 !== null && val2 !== undefined) {
+                    if (val1 === val2) {
+                        tdVal1.classList.add('compare-equal');
+                        tdVal2.classList.add('compare-equal');
+                    } else if ((betterIsLower && val1 < val2) || (!betterIsLower && val1 > val2)) {
+                        tdVal1.classList.add('compare-better');
+                        tdVal2.classList.add('compare-worse');
+                    } else {
+                        tdVal1.classList.add('compare-worse');
+                        tdVal2.classList.add('compare-better');
+                    }
                 }
+
+                tr.appendChild(tdLabel);
+                tr.appendChild(tdVal1);
+                tr.appendChild(tdVal2);
+
+                tbody.appendChild(tr);
             }
-
-            tr.appendChild(tdLabel);
-            tr.appendChild(tdVal1);
-            tr.appendChild(tdVal2);
-
-            tbody.appendChild(tr);
         });
 
         table.appendChild(tbody);
@@ -298,6 +341,9 @@
         const charts: Chart[] = [];
 
         metrics.forEach(({ label, getValue }) => {
+            const val1 = getValue(info1);
+            const val2 = getValue(info2);
+
             const chartWrapper = document.createElement('div');
             chartWrapper.className = "compare-mini-chart";
 
@@ -316,33 +362,57 @@
             const ctx = canvas.getContext('2d');
             if (!ctx) return;
 
-            const chartInstance = new ChartLib(ctx, {
-                type: "bar",
-                data: {
-                    labels: [info1.name, info2.name],
-                    datasets: [{
-                        label: label,
-                        data: [getValue(info1), getValue(info2)],
+            // If the value is an object, create separate datasets per key
+            let datasets: any[] = [];
+            if (val1 && typeof val1 === 'object' && val2 && typeof val2 === 'object') {
+                Object.keys(val1).forEach((key, idx) => {
+                    datasets.push({
+                        label: key,
+                        data: [val1[key], val2[key]],
                         backgroundColor: [
-                            "rgba(255, 99, 132, 0.7)",
-                            "rgba(54, 162, 235, 0.7)"
+                            `rgba(${50 + idx*40}, 99, 132, 0.7)`,
+                            `rgba(${50 + idx*40}, 162, 235, 0.7)`
                         ],
                         borderColor: [
-                            "rgba(255, 99, 132, 1)",
-                            "rgba(54, 162, 235, 1)"
+                            `rgba(${50 + idx*40}, 99, 132, 1)`,
+                            `rgba(${50 + idx*40}, 162, 235, 1)`
                         ],
                         borderWidth: 1
-                    }]
+                    });
+                });
+            } else {
+                // Single numeric value
+                datasets = [{
+                    label,
+                    data: [val1 ?? 0, val2 ?? 0],
+                    backgroundColor: [
+                        "rgba(255, 99, 132, 0.7)",
+                        "rgba(54, 162, 235, 0.7)"
+                    ],
+                    borderColor: [
+                        "rgba(255, 99, 132, 1)",
+                        "rgba(54, 162, 235, 1)"
+                    ],
+                    borderWidth: 1
+                }];
+            }
+
+            const chartInstance = new ChartLib(ctx, {
+                type: 'bar',
+                data: {
+                    labels: [info1.name, info2.name],
+                    datasets
                 },
                 options: {
                     responsive: false,
-                    maintainAspectRatio: false,
+                    maintainAspectRatio: true,
+                    aspectRatio: 1,
                     scales: {
                         y: { beginAtZero: true },
                         x: { display: false }
                     },
                     plugins: {
-                        legend: { display: false }
+                        legend: { display: true }
                     }
                 }
             });
