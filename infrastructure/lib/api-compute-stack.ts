@@ -61,6 +61,7 @@ export class ApiComputeStack extends cdk.Stack {
                     BOROUGH_COORDS_FILENAME: props!.boroughCoordsKey,
                     TILE_COORDS_FILENAME: props!.tileCoordsKey,
                 },
+                insightsVersion: lambda.LambdaInsightsVersion.VERSION_1_0_98_0,
             }
         );
 
@@ -95,6 +96,7 @@ export class ApiComputeStack extends cdk.Stack {
                     DB_SECRET_ARN: props!.dbSecret.secretArn,
                     DB_NAME: props!.databaseName
                 },
+                insightsVersion: lambda.LambdaInsightsVersion.VERSION_1_0_98_0,
             }
         );
         props!.dbSecret.grantRead(aggregateRegionalMetricsFunction);
@@ -136,6 +138,7 @@ export class ApiComputeStack extends cdk.Stack {
                     TILE_COORDS_FILENAME: props!.tileCoordsKey,
                     API_BASE_URL: httpApi.apiEndpoint,
                 },
+                insightsVersion: lambda.LambdaInsightsVersion.VERSION_1_0_98_0,
             }
         );
         props!.dbSecret.grantRead(ingestAqDataFunction);
@@ -158,6 +161,7 @@ export class ApiComputeStack extends cdk.Stack {
                     DB_SECRET_ARN: props!.dbSecret.secretArn,
                     DB_NAME: props!.databaseName
                 },
+                insightsVersion: lambda.LambdaInsightsVersion.VERSION_1_0_98_0,
             }
         );
         props!.dbSecret.grantRead(fetchAllRegionsFunction);
@@ -178,6 +182,7 @@ export class ApiComputeStack extends cdk.Stack {
                     DB_SECRET_ARN: props!.dbSecret.secretArn,
                     DB_NAME: props!.databaseName
                 },
+                insightsVersion: lambda.LambdaInsightsVersion.VERSION_1_0_98_0,
             }
         );
         props!.dbSecret.grantRead(fetchPopupInformationFunction);
@@ -196,6 +201,7 @@ export class ApiComputeStack extends cdk.Stack {
                     DB_SECRET_ARN: props!.dbSecret.secretArn,
                     DB_NAME: props!.databaseName
                 },
+                insightsVersion: lambda.LambdaInsightsVersion.VERSION_1_0_98_0,
             }
         );
         props!.dbSecret.grantRead(fetchPollutantDataFunction);
@@ -214,6 +220,7 @@ export class ApiComputeStack extends cdk.Stack {
                     DB_SECRET_ARN: props!.dbSecret.secretArn,
                     DB_NAME: props!.databaseName
                 },
+                insightsVersion: lambda.LambdaInsightsVersion.VERSION_1_0_98_0,
             }
         );
         props!.dbSecret.grantRead(fetchAqiDataFunction);
@@ -232,6 +239,7 @@ export class ApiComputeStack extends cdk.Stack {
                     DB_SECRET_ARN: props!.dbSecret.secretArn,
                     DB_NAME: props!.databaseName
                 },
+                insightsVersion: lambda.LambdaInsightsVersion.VERSION_1_0_98_0,
             }
         );
         props!.dbSecret.grantRead(fetchCurrentAirQualityInfoFunction);
