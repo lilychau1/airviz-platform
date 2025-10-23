@@ -393,8 +393,8 @@ export class ApiComputeStack extends cdk.Stack {
 
         new scheduler.CfnSchedule(this, 'IngestAqDataSchedule', {
             flexibleTimeWindow: { mode: 'OFF' },
-            // Scheduled to run every hour at minute 1 (e.g.: 1:01, 2:01, etc)
-            scheduleExpression: 'cron(1 * * * ? *)', 
+            // Scheduled to run every hour at minute 5 (e.g.: 1:05, 2:05, etc)
+            scheduleExpression: 'cron(5 * * * ? *)', 
             target: {
                 arn: ingestAqDataFunction.functionArn,
                 roleArn: lambdaInvokeRole.roleArn,
