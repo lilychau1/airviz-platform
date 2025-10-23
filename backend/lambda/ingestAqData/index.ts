@@ -381,18 +381,25 @@ export const handler = async () => {
 
 
                 aqData.indexes.forEach(idx => {
+                    const color = idx.color || {};
                     aqiData.push({
                         recordId,
                         tileId: tile.id,
                         indexType: idx.code,
                         category: idx.category,
-                        colourCode: idx.color,
-                        dominantPollutant: idx.dominantPollutant,
+                        colourCode: {
+                            red: color.red ?? 0,
+                            green: color.green ?? 0,
+                            blue: color.blue ?? 0,
+                            alpha: color.alpha ?? 1  // Default alpha if missing
+                        },
+                        dominantPollutant: idx.dominantPollutant ?? 'unknown',
                         timestamp,
                         ingestionTimestamp,
                         value: idx.aqi,
                     });
                 });
+
 
                 const recommendations: Record<string, string> = {};
                 Object.entries(aqData.healthRecommendations).forEach(([popGroup, val]) => {
