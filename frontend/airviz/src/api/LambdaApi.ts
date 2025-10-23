@@ -45,13 +45,7 @@ export async function fetchAllRegions(
                 timestamp: attemptTimestamp
             })
         });
-        console.log(`curl -X POST '${LAMBDA_API_BASE_URL}/fetchAllRegions' -H 'Content-Type: application/json' -d '${JSON.stringify({
-            level,
-            currentLongitude,
-            currentLatitude,
-            radius,
-            timestamp: attemptTimestamp
-        })}'`);
+
         if (!resp.ok) throw new Error("Failed to fetch tiles");
 
         const data = await resp.json();
@@ -178,39 +172,38 @@ export async function fetchCurrentAirQualityInfo(
     level: RegionLevel, 
     id: number
 ): Promise<CurrentAirQualityInfo> {
-const resp = await fetch(`${LAMBDA_API_BASE_URL}/fetchCurrentAirQualityInfo`, {
-    method: "POST",
-    headers: {
-        "Content-Type": "application/json"
-    },
-    body: JSON.stringify({ level, id })
-});
+    const resp = await fetch(`${LAMBDA_API_BASE_URL}/fetchCurrentAirQualityInfo`, {
+        method: "POST",
+        headers: {
+            "Content-Type": "application/json"
+        },
+        body: JSON.stringify({ level, id })
+    });
 
-console.log(`curl -X POST '${LAMBDA_API_BASE_URL}/fetchCurrentAirQualityInfo' -H 'Content-Type: application/json' -d '${JSON.stringify({ level, id })}'`);
-  if (!resp.ok) {
-    throw new Error(`Failed to load air quality info for tile ID ${id}`);
-  }
+    if (!resp.ok) {
+        throw new Error(`Failed to load air quality info for tile ID ${id}`);
+    }
 
-  const raw = await resp.json();
+    const raw = await resp.json();
 
-  // normalise JSON keys and add new field "healthImpact"
-const currentRecords: PollutantCurrentRecord[] = raw.CurrentRecords.map(
-    (r: any) => ({
-        pollutantId: r.pollutantId,
-        timestamp: r.timestamp,
-        value: r.value,
-        unit: r.unit,
-        level: r.level,
-        impact: r.impact ?? getHealthImpact(r.pollutantId, r.level)
-    })
-);
+    // normalise JSON keys and add new field "healthImpact"
+    const currentRecords: PollutantCurrentRecord[] = raw.CurrentRecords.map(
+        (r: any) => ({
+            pollutantId: r.pollutantId,
+            timestamp: r.timestamp,
+            value: r.value,
+            unit: r.unit,
+            level: r.level,
+            impact: r.impact ?? getHealthImpact(r.pollutantId, r.level)
+        })
+    );
 
-  return {
-    aqi: raw.aqi,
-    aqiCategory: raw.aqiCategory,
-    dominantPollutant: raw.dominantPollutant,
-    currentRecords
-  };
+    return {
+        aqi: raw.aqi,
+        aqiCategory: raw.aqiCategory,
+        dominantPollutant: raw.dominantPollutant,
+        currentRecords
+    };
 }
 
 // Fetch aqi records

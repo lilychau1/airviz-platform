@@ -465,7 +465,7 @@
         const key = `${regionLevel}_${timestamp}_${coordsCacheKey(lon, lat, radius)}`;
 
         if (allRegionsCache.has(key)) {
-            console.log("Using cached regions for", key);
+            // console.log("Using cached regions for", key);
             return allRegionsCache.get(key)!;
         }
 
@@ -622,7 +622,7 @@
 
         });
         
-        console.log(`Map initialized center: [${map.getCenter().lng.toFixed(6)}, ${map.getCenter().lat.toFixed(6)}]`);
+        // console.log(`Map initialized center: [${map.getCenter().lng.toFixed(6)}, ${map.getCenter().lat.toFixed(6)}]`);
         
         map.on('load', () => {
 
@@ -815,7 +815,7 @@
             // Dynamically compute radius based on zoom level
             mapRadius = getRadiusFromZoom(map.getZoom());
 
-            console.log(`Updated center: ${center.lng.toFixed(4)}, ${center.lat.toFixed(4)} radius: ${mapRadius.toFixed(2)}`);
+            // console.log(`Updated center: ${center.lng.toFixed(4)}, ${center.lat.toFixed(4)} radius: ${mapRadius.toFixed(2)}`);
 
             scheduleRefresh(); // Fetch updated data
         });

@@ -191,7 +191,7 @@
             center: [currentLocation.longitude, currentLocation.latitude],
             zoom: 15
         });
-        console.log(`Map initialized center: [${map.getCenter().lng.toFixed(6)}, ${map.getCenter().lat.toFixed(6)}]`);
+        // console.log(`Map initialized center: [${map.getCenter().lng.toFixed(6)}, ${map.getCenter().lat.toFixed(6)}]`);
 
         map.on("load", () => {
             map.addSource("points", {
@@ -493,7 +493,7 @@
 
         selectedTimestamp = adjustedDate.getTime();
         refreshTiles();
-        console.log(`Selected timestamp updated to: ${adjustedDate.toISOString()}`);
+        // console.log(`Selected timestamp updated to: ${adjustedDate.toISOString()}`);
     }
 
 </script>
