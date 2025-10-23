@@ -8,7 +8,7 @@
 
   let chart: Chart | null = null;
   let containerDiv: HTMLDivElement;
-  let canvasElement: HTMLCanvasElement;
+  let canvasElement: HTMLCanvasElement | null;
 
   let filterMode: "last24" | "custom" = "last24";
 
@@ -49,13 +49,19 @@
     if (!tileId || !containerDiv) return;
 
     try {
+      // Remove old chart and canvas before creating a new one
       if (chart) {
         chart.destroy();
         chart = null;
       }
-      // Remove old canvas after destroying chart
+
+      // Remove all canvas children from the container to ensure no reused canvas
+      Array.from(containerDiv.querySelectorAll("canvas")).forEach((c) => c.remove());
+      canvasElement = null;
+
       if (canvasElement && containerDiv.contains(canvasElement)) {
         containerDiv.removeChild(canvasElement);
+        canvasElement = null;
       }
 
       // Create new canvas
@@ -67,13 +73,14 @@
       const selectedTimestampPeriod = {start: cutoff, end: selectedTimestamp};
       const pollutantData = await fetchPollutantData('tile', tileId, selectedTimestampPeriod);
 
-      const rangeDurationMs = selectedTimestamp - cutoff;
-      const showDateOnly = rangeDurationMs > 3 * 24 * 60 * 60 * 1000;
-
       const labels = pollutantData.map((d) =>
-        showDateOnly
-          ? new Date(d.timestamp).toLocaleDateString()
-          : new Date(d.timestamp).toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" })
+        new Date(d.timestamp).toLocaleString([], {
+          year: "numeric",
+          month: "2-digit",
+          day: "2-digit",
+          hour: "2-digit",
+          minute: "2-digit"
+        })
       );
 
       chart = new ChartLib(canvasElement.getContext("2d")!, {
@@ -238,7 +245,6 @@
     Custom
   </button>
 </div>
-
 {#if filterMode === "custom"}
   <div class="date-pickers">
     <input
@@ -246,7 +252,7 @@
       bind:value={customFromStr}
       max={customToStr}
       step="3600"
-      on:change={() => {
+      on:blur={() => {
         if (new Date(customFromStr) > new Date(customToStr)) {
           customToStr = customFromStr;
         }
@@ -257,7 +263,7 @@
       bind:value={customToStr}
       min={customFromStr}
       step="3600"
-      on:change={() => {
+      on:blur={() => {
         if (new Date(customToStr) < new Date(customFromStr)) {
           customFromStr = customToStr;
         }

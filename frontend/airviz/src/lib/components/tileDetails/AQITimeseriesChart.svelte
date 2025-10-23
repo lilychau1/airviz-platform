@@ -53,10 +53,9 @@
         chart.destroy();
         chart = null;
       }
-      if (canvasElement && containerDiv.contains(canvasElement)) {
-        containerDiv.removeChild(canvasElement);
-        canvasElement = null;
-      }
+      // Remove all canvas children from the container to ensure no reused canvas
+      Array.from(containerDiv.querySelectorAll("canvas")).forEach((c) => c.remove());
+      canvasElement = null;
 
       // Always create a new canvas element for each chart instance
       canvasElement = document.createElement("canvas");
@@ -79,12 +78,14 @@
       const allTimestamps = Array.from(allTimestampsSet).sort();
 
       // Build a map from timestamp to label (date or time)
-      const rangeDurationMs = selectedTimestamp - cutoff;
-      const showDateOnly = rangeDurationMs > 3 * 24 * 60 * 60 * 1000;
       const labels = allTimestamps.map(ts =>
-        showDateOnly
-          ? new Date(ts).toLocaleDateString()
-          : new Date(ts).toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" })
+        new Date(ts).toLocaleString([], {
+          year: "numeric",
+          month: "2-digit",
+          day: "2-digit",
+          hour: "2-digit",
+          minute: "2-digit"
+        })
       );
 
       // Get all AQI types present in the data
@@ -228,7 +229,7 @@
       bind:value={customFromStr}
       max={customToStr}
       step="3600"
-      on:change={() => {
+      on:blur={() => {
         if (new Date(customFromStr) > new Date(customToStr)) {
           customToStr = customFromStr;
         }
@@ -239,7 +240,7 @@
       bind:value={customToStr}
       min={customFromStr}
       step="3600"
-      on:change={() => {
+      on:blur={() => {
         if (new Date(customToStr) < new Date(customFromStr)) {
           customFromStr = customToStr;
         }
@@ -247,5 +248,6 @@
     />
   </div>
 {/if}
+
 
 <div class="details-chart-container" bind:this={containerDiv}></div>

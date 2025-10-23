@@ -30,34 +30,66 @@ export async function fetchAllRegions(
     radius: number, 
     timestamp: number
 ): Promise<RegionUnit[]> {
-    const resp = await fetch(`${LAMBDA_API_BASE_URL}/fetchAllRegions`, {
-        method: "POST",
-        headers: {
-            "Content-Type": "application/json"
-        },
-        body: JSON.stringify({
+    let attemptTimestamp = timestamp;
+    while (true) {
+        const resp = await fetch(`${LAMBDA_API_BASE_URL}/fetchAllRegions`, {
+            method: "POST",
+            headers: {
+                "Content-Type": "application/json"
+            },
+            body: JSON.stringify({
+                level,
+                currentLongitude,
+                currentLatitude,
+                radius,
+                timestamp: attemptTimestamp
+            })
+        });
+        console.log(`curl -X POST '${LAMBDA_API_BASE_URL}/fetchAllRegions' -H 'Content-Type: application/json' -d '${JSON.stringify({
             level,
             currentLongitude,
             currentLatitude,
             radius,
-            timestamp
-        })
-    });
+            timestamp: attemptTimestamp
+        })}'`);
+        if (!resp.ok) throw new Error("Failed to fetch tiles");
 
-    if (!resp.ok) throw new Error("Failed to fetch tiles");
+        const data = await resp.json();
+        const regions: RegionUnit[] = data.map((p: any) => ({
+            id: p.id,
+            longitude: p.longitude,
+            latitude: p.latitude,
+            currentAqiColour: p.currentAqiColour
+                ? {
+                    red: p.currentAqiColour.red,
+                    green: p.currentAqiColour.green,
+                    blue: p.currentAqiColour.blue
+                }
+                : {
+                    red: 0.5,
+                    green: 0.5,
+                    blue: 0.5
+                }
+        }));
 
-    const data = await resp.json();
-    // Map the returned data to RegionUnit[]
-    return data.map((p: any) => ({
-        id: p.id,
-        longitude: p.longitude,
-        latitude: p.latitude,
-        currentAqiColour: {
-            red: p.currentAqiColour.red,
-            green: p.currentAqiColour.green,
-            blue: p.currentAqiColour.blue
+        // Check if any field is null in any region
+        const hasNull = regions.some(region =>
+            region.id == null ||
+            region.longitude == null ||
+            region.latitude == null ||
+            region.currentAqiColour == null ||
+            region.currentAqiColour.red == null ||
+            region.currentAqiColour.green == null ||
+            region.currentAqiColour.blue == null
+        );
+
+        if (!hasNull) {
+            return regions;
         }
-    }));
+
+        // Subtract 1 hour (3600000 ms) and try again
+        attemptTimestamp -= 3600000;
+    }
 }
 
 // Fetch pollutant records
@@ -153,6 +185,8 @@ const resp = await fetch(`${LAMBDA_API_BASE_URL}/fetchCurrentAirQualityInfo`, {
     },
     body: JSON.stringify({ level, id })
 });
+
+console.log(`curl -X POST '${LAMBDA_API_BASE_URL}/fetchCurrentAirQualityInfo' -H 'Content-Type: application/json' -d '${JSON.stringify({ level, id })}'`);
   if (!resp.ok) {
     throw new Error(`Failed to load air quality info for tile ID ${id}`);
   }
