@@ -127,5 +127,32 @@ curl -X POST "https://iklfsbywzk.execute-api.eu-west-2.amazonaws.com/fetchTileHe
   -H "Content-Type: application/json" \
   -d '{"tileId": 1}'
 
+# lambda URL test
+# fetchPopupInformationFunction
+curl -X POST "https://cxeros2koqhmztbz6ua3ezo62q0sfnst.lambda-url.eu-west-2.on.aws/" \
+  -H "Content-Type: application/json" \
+  -d '{"level": "borough", "id": 1}'
+
+# fetchAllRegionsFunction
+# https://gcs3gq3wfvayaxjon7xhzpvq240kkfoo.lambda-url.eu-west-2.on.aws/
+
+# fetchPollutantDataFunction
+# https://6nwwkdag6obmcrfod5bceiqbkm0wyocf.lambda-url.eu-west-2.on.aws/
+
+# fetchCurrentAirQualityInfoFunction
+# https://n6qxjr5l6xwotvaraomvcvr6ga0yohrq.lambda-url.eu-west-2.on.aws/
+
+# fetchTileHealthRecommendationsFunction
+# https://33ggzvl5hdvue6bnjj5fo3gkh40ostue.lambda-url.eu-west-2.on.aws/
+
+# fetchAqiDataFunction
+# https://iwv5xs6tz23gt5vhooewfsgbrq0txrkr.lambda-url.eu-west-2.on.aws/
+
+# fetchPopupInformationFunction
+# https://cxeros2koqhmztbz6ua3ezo62q0sfnst.lambda-url.eu-west-2.on.aws/
+
+# fetchDetailsFunction
+# https://pgazwhjp3rqrhfddpgf66jfpju0bdjvb.lambda-url.eu-west-2.on.aws/
+
 # Connect to the PostgreSQL database
 psql -h datastoragestack-airvizrds74c12fed-o9mgl2tch08a.cv4cc6au2bzg.eu-west-2.rds.amazonaws.com -U airvizAdmin -d airviz -p 5432
