@@ -1,6 +1,7 @@
 #!/usr/bin/env node
 import * as cdk from 'aws-cdk-lib';
 import { ApiComputeStack } from '../lib/api-compute-stack';
+import { ApiComputeStackProvisionedLambda } from '../lib/api-compute-stack-provisioned-lambda';
 import { AuthStack } from '../lib/auth-stack';
 import { DataStorageStack } from '../lib/data-storage-stack';
 import { MonitoringStack } from '../lib/monitoring-stack';
@@ -24,6 +25,16 @@ new ApiComputeStack(app, 'ApiComputeStack', {
   boroughCoordsKey: dataStorageStack.boroughCoordsKey, 
 });
 
+
+new ApiComputeStackProvisionedLambda(app, 'ApiComputeStackProvisionedLambda', {
+  env,
+  dbSecret: dataStorageStack.secret,
+  // dbEndpoint: dataStorageStack.database.dbInstanceEndpointAddress,
+  databaseName: dataStorageStack.databaseName, 
+  bucket: dataStorageStack.airVizBucket, 
+  tileCoordsKey: dataStorageStack.tileCoordsKey, 
+  boroughCoordsKey: dataStorageStack.boroughCoordsKey, 
+});
 
 // new InfrastructureStack(app, 'InfrastructureStack', {
   /* If you don't specify 'env', this stack will be environment-agnostic.

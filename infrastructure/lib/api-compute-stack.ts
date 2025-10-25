@@ -164,6 +164,17 @@ export class ApiComputeStack extends cdk.Stack {
                 insightsVersion: lambda.LambdaInsightsVersion.VERSION_1_0_98_0,
             }
         );
+
+        // Public Function URL (invoke directly without API Gateway)
+        const fetchAllRegionsFunctionUrl = fetchAllRegionsFunction.addFunctionUrl({
+            authType: lambda.FunctionUrlAuthType.NONE,
+            cors: {
+            allowedOrigins: ['*'],
+            allowedMethods: [lambda.HttpMethod.GET, lambda.HttpMethod.POST],
+            allowedHeaders: ['Content-Type', 'Authorization'],
+            },
+        });
+
         props!.dbSecret.grantRead(fetchAllRegionsFunction);
         
         props!.bucket.grantRead(fetchAllRegionsFunction);
@@ -185,6 +196,16 @@ export class ApiComputeStack extends cdk.Stack {
                 insightsVersion: lambda.LambdaInsightsVersion.VERSION_1_0_98_0,
             }
         );
+
+        const fetchPopupInformationFunctionUrl = fetchPopupInformationFunction.addFunctionUrl({
+            authType: lambda.FunctionUrlAuthType.NONE,
+            cors: {
+            allowedOrigins: ['*'],
+            allowedMethods: [lambda.HttpMethod.GET, lambda.HttpMethod.POST],
+            allowedHeaders: ['Content-Type', 'Authorization'],
+            },
+        });
+
         props!.dbSecret.grantRead(fetchPopupInformationFunction);
 
         // Fetch pollutant data
@@ -204,6 +225,16 @@ export class ApiComputeStack extends cdk.Stack {
                 insightsVersion: lambda.LambdaInsightsVersion.VERSION_1_0_98_0,
             }
         );
+
+        const fetchPollutantDataFunctionUrl = fetchPollutantDataFunction.addFunctionUrl({
+            authType: lambda.FunctionUrlAuthType.NONE,
+            cors: {
+                allowedOrigins: ['*'],
+                allowedMethods: [lambda.HttpMethod.GET, lambda.HttpMethod.POST],
+                allowedHeaders: ['Content-Type', 'Authorization'],
+            },
+        });
+
         props!.dbSecret.grantRead(fetchPollutantDataFunction);
 
         // Fetch AQI data
@@ -223,6 +254,15 @@ export class ApiComputeStack extends cdk.Stack {
                 insightsVersion: lambda.LambdaInsightsVersion.VERSION_1_0_98_0,
             }
         );
+        const fetchAqiDataFunctionUrl = fetchAqiDataFunction.addFunctionUrl({
+            authType: lambda.FunctionUrlAuthType.NONE,
+            cors: {
+                allowedOrigins: ['*'],
+                allowedMethods: [lambda.HttpMethod.GET, lambda.HttpMethod.POST],
+                allowedHeaders: ['Content-Type', 'Authorization'],
+            },
+        });
+
         props!.dbSecret.grantRead(fetchAqiDataFunction);
 
         // Fetch Air Quality information
@@ -242,6 +282,16 @@ export class ApiComputeStack extends cdk.Stack {
                 insightsVersion: lambda.LambdaInsightsVersion.VERSION_1_0_98_0,
             }
         );
+
+        const fetchCurrentAirQualityInfoFunctionUrl = fetchCurrentAirQualityInfoFunction.addFunctionUrl({
+            authType: lambda.FunctionUrlAuthType.NONE,
+            cors: {
+                allowedOrigins: ['*'],
+                allowedMethods: [lambda.HttpMethod.GET, lambda.HttpMethod.POST],
+                allowedHeaders: ['Content-Type', 'Authorization'],
+            },
+        });
+
         props!.dbSecret.grantRead(fetchCurrentAirQualityInfoFunction);
 
         // Fetch Air Quality information
@@ -262,6 +312,14 @@ export class ApiComputeStack extends cdk.Stack {
         );
         props!.dbSecret.grantRead(fetchTileHealthRecommendationsFunction);
 
+        const fetchTileHealthRecommendationsFunctionUrl = fetchTileHealthRecommendationsFunction.addFunctionUrl({
+            authType: lambda.FunctionUrlAuthType.NONE,
+            cors: {
+                allowedOrigins: ['*'],
+                allowedMethods: [lambda.HttpMethod.GET, lambda.HttpMethod.POST],
+                allowedHeaders: ['Content-Type', 'Authorization'],
+            },
+        });
         // Fetch Details
         const fetchDetailsFunction = new lambdaNodejs.NodejsFunction(
             this, 
@@ -278,6 +336,16 @@ export class ApiComputeStack extends cdk.Stack {
                 },
             }
         );
+
+        const fetchDetailsFunctionUrl = fetchDetailsFunction.addFunctionUrl({
+            authType: lambda.FunctionUrlAuthType.NONE,
+            cors: {
+                allowedOrigins: ['*'],
+                allowedMethods: [lambda.HttpMethod.GET, lambda.HttpMethod.POST],
+                allowedHeaders: ['Content-Type', 'Authorization'],
+            },
+        });
+
         props!.dbSecret.grantRead(fetchDetailsFunction);
         
         // API Gateway route for CreateDbSchema
