@@ -156,3 +156,12 @@ curl -X POST "https://cxeros2koqhmztbz6ua3ezo62q0sfnst.lambda-url.eu-west-2.on.a
 
 # Connect to the PostgreSQL database
 psql -h datastoragestack-airvizrds74c12fed-o9mgl2tch08a.cv4cc6au2bzg.eu-west-2.rds.amazonaws.com -U airvizAdmin -d airviz -p 5432
+
+# Run k6
+cd ../tests/
+tmux new -s k6_test
+./automate_k6_runs.sh 
+
+# dotenv k6 run k6_1_serverless_lambda_api_gateway.js --out json=./logs/k6_run.json
+# dotenv k6 run k6_2_provisioned_lambda_api_gateway.js --out json=./logs/k6_run.json
+# dotenv k6 run k6_3_serverless_lambda_no_api_gateway.js --out json=./logs/k6_run.json

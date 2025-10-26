@@ -1,8 +1,10 @@
 import http from 'k6/http';
 import { check } from 'k6';
 
-const BASE_URL = __ENV.TEST_API || __ENV.SERVERLESS_LAMBDA_API_GATEWAY_BASE_URL;
-
+const BASE_URL = __ENV.PROVISIONED_LAMBDA_API_GATEWAY_BASE_URL;
+if (!BASE_URL) {
+    throw new Error("BASE_URL environment variable is not set");
+}
 
 function getFullHourUTC(date) {
     const d = new Date(date);
