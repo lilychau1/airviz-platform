@@ -1,7 +1,10 @@
 # airviz-platform
 An air quality visualisation platform for Greater London.
 
-Link to project: https://airvizlondon.netlify.app/
+Link to project: [https://airvizlondon.netlify.app/](https://airvizlondon.netlify.app/{target=_blank})
+
+<img width="2115" height="1203" alt="image" src="https://github.com/user-attachments/assets/1ca58665-4f12-4606-b1ce-392883a95255" />
+
 
 ## Introduction
 This project is a proof-of-concept for a low-cost cloud visualisation platform for near-real-time environmental data, for resource-constrained organisations to develop and present to their target audience. 
